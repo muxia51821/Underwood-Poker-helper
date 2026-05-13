@@ -1,0 +1,620 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiVW5kZXJ3b29kJ3MgdGFibGUgYWdlbnQiLCJzaG9ydF9uYW1lIjoi5pyo55qE54mM5bqm5Yqp5omLIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMwZjE3MmEiLCJ0aGVtZV9jb2xvciI6IiNmOTczMTYifQ=="><title>Underwood's table agent </title><style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#0f172a;color:#e2e8f0;display:flex;justify-content:center;align-items:flex-start;min-height:100vh;padding:16px;padding-bottom:env(safe-area-inset-bottom)}
+.app{max-width:480px;width:100%;background:#1e293b;border-radius:24px;padding:20px 16px;box-shadow:0 12px 40px rgba(0,0,0,.5);margin:10px 0;position:relative}
+.app__settings{position:relative;display:flex;justify-content:flex-end;margin-bottom:14px}
+.app__settings-btn{background:#334155;border:none;width:36px;height:36px;border-radius:50%;color:#94a3b8;font-size:1.2em;cursor:pointer}
+.app__settings-menu{position:absolute;top:44px;right:0;background:#1e293b;border:1px solid #475569;border-radius:12px;padding:10px;display:none;flex-direction:column;gap:8px;z-index:10}
+.app__settings-menu.is-visible{display:flex}
+.app__settings-option{background:#334155;border:none;padding:8px 14px;border-radius:20px;font-size:0.8em;color:#94a3b8;cursor:pointer;display:flex;align-items:center;gap:4px}
+.app__settings-option.is-active{background:#0f3460;color:#4ade80}
+.app__title{text-align:center;font-size:1.5em;margin-bottom:16px;color:#f97316}
+.version-tag{font-size:0.55em;color:#94a3b8;font-weight:normal;margin-left:4px}
+.nav{display:flex;gap:4px;margin-bottom:18px;background:#0f172a;border-radius:14px;padding:4px}
+.nav__btn{flex:1;padding:10px 4px;font-size:0.75em;font-weight:600;border:none;border-radius:10px;background:transparent;color:#94a3b8;cursor:pointer;white-space:nowrap}
+.nav__btn--active{background:#f97316;color:#fff}
+.panel{display:none}.panel.is-visible{display:block}
+.card{background:#0f3460;border-radius:16px;padding:16px 14px;margin-bottom:14px}
+.card__title{font-size:1.05em;font-weight:bold;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.card__title--flex{justify-content:space-between}
+.field{display:block;font-size:0.9em;margin:10px 0 4px;color:#cbd5e1}
+.input,.select,.textarea{width:100%;padding:10px 12px;background:#1e293b;border:1px solid #475569;border-radius:8px;color:#f1f5f9;font-size:1em;font-family:inherit}
+.input:focus,.select:focus,.textarea:focus{outline:none;border-color:#f97316}
+.row{display:flex;gap:10px}.row>*{flex:1}
+.btn{background:#f97316;color:#fff;border:none;font-size:0.95em;font-weight:bold;padding:12px;border-radius:12px;cursor:pointer;width:100%;margin-top:12px}
+.btn:hover{background:#ea580c}.btn:active{transform:scale(0.98)}
+.btn--secondary{background:#334155}.btn--secondary:hover{background:#475569}
+.btn--mini{font-size:0.75em;padding:6px 10px;background:#334155;border-radius:8px;border:none;color:#e2e8f0;cursor:pointer;margin-top:4px;width:auto}
+.btn--mini:hover{background:#475569}
+.btn--danger{background:#991b1b}.btn--danger:hover{background:#7f1d1d}
+.btn--emergency{background:#dc2626;animation:pulse 2s infinite}.btn--emergency:hover{background:#b91c1c}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(220,38,38,0.7)}70%{box-shadow:0 0 0 10px rgba(220,38,38,0)}100%{box-shadow:0 0 0 0 rgba(220,38,38,0)}}
+.result{background:#0f172a;border-radius:12px;padding:14px;margin-top:14px;font-size:0.9em;line-height:1.6;color:#cbd5e1}
+.highlight{color:#facc15;font-weight:bold}.text-win{color:#4ade80;font-weight:bold}.text-lose{color:#f87171;font-weight:bold}
+.text-muted{font-size:0.7em;color:#64748b;text-align:center;margin-top:6px}
+.timer__display{font-size:3em;font-weight:bold;text-align:center;margin:10px 0;letter-spacing:2px}
+.timer__phase{display:inline-block;padding:4px 14px;border-radius:20px;font-size:0.8em;font-weight:600;margin-bottom:6px}
+.timer__phase--work{background:#166534;color:#4ade80}.timer__phase--rest{background:#991b1b;color:#fca5a5}
+.timer__stats{text-align:center;margin:12px 0}
+.timer__stats-number{font-size:2em;font-weight:bold;color:#facc15}
+.timer__stats-label{font-size:0.75em;color:#94a3b8;margin-bottom:4px}
+.timer__reset-btn{background:#475569;padding:4px 12px;font-size:0.7em;border-radius:8px;cursor:pointer}
+.log-table{width:100%;border-collapse:collapse;margin-top:8px;font-size:0.7em;color:#cbd5e1}
+.log-table td,.log-table th{padding:4px 6px;border-bottom:1px solid #334155;text-align:center}
+.log-table th{color:#94a3b8;font-weight:500}
+.log__toggle{font-size:0.8em;color:#94a3b8;cursor:pointer;text-align:center;margin-top:8px}
+.radio-group{display:flex;gap:12px;margin:8px 0}
+.radio-group label{background:#1e293b;padding:6px 12px;border-radius:12px;display:flex;align-items:center;gap:6px;font-size:0.9em;cursor:pointer}
+.radio-group input[type=radio]{width:auto;margin:0}
+.outs-grid{display:flex;flex-wrap:wrap;gap:3px;margin:5px 0 8px}
+.outs-grid .btn--mini{font-size:0.65em;padding:3px 6px;border-radius:6px}
+.bet-sizes{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0 10px}
+.bet-sizes .btn--mini{background:#1e293b;border:1px solid #475569}
+.cheatsheet{width:100%;border-collapse:collapse;font-size:0.7em;margin-top:4px}
+.cheatsheet td,.cheatsheet th{padding:4px 6px;border-bottom:1px solid #334155;text-align:center}
+.cheatsheet th{background:#1e293b}.cheatsheet tr.is-current{background:#f97316;color:#fff}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.stats__item{background:#0f172a;border-radius:10px;padding:10px;text-align:center}
+.stats__item--win{background:linear-gradient(135deg,#0f172a,#0a2f1a)}
+.stats__item--lose{background:linear-gradient(135deg,#0f172a,#2f0a0a)}
+.stats__value{font-size:1.3em;font-weight:bold}.stats__label{font-size:0.7em;color:#94a3b8}
+.timer__stats-number{font-size:2.4em;font-weight:bold;color:#facc15;text-shadow:0 0 20px rgba(250,204,21,0.3)}
+.result-highlight{display:inline-block;background:rgba(250,204,21,0.1);border:1px solid rgba(250,204,21,0.2);border-radius:8px;padding:6px 10px;margin:2px 0}
+.filter-row{display:flex;gap:8px;align-items:center;margin:10px 0;flex-wrap:wrap}
+.filter-row .select{width:auto;flex:1}
+.table-container{max-height:250px;overflow-y:auto;margin-top:8px}
+.session-table{width:100%;border-collapse:collapse;font-size:0.7em;color:#cbd5e1}
+.session-table td,.session-table th{padding:4px 4px;border-bottom:1px solid #334155;text-align:center}
+.session-table th{color:#94a3b8;position:sticky;top:0;background:#0f3460}
+.mistake-tag{display:inline-block;background:#334155;padding:2px 8px;border-radius:10px;margin:2px;font-size:0.7em}
+.toggle-group{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.toggle-btn{font-size:0.65em;padding:4px 6px;background:#334155;border-radius:8px;border:none;color:#94a3b8;cursor:pointer}
+.toggle-btn.is-active{background:#f97316;color:#fff}
+details{margin-top:12px}details summary{font-size:0.85em;color:#94a3b8;cursor:pointer}
+.srp-filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.srp-filters .select{flex:1;min-width:80px}
+.srp-table{width:100%;border-collapse:collapse;font-size:0.65em;margin-top:6px}
+.srp-table td,.srp-table th{padding:3px 4px;border-bottom:1px solid #334155;text-align:center}
+.srp-table th{background:#1e293b;color:#94a3b8}
+.subnav{display:flex;gap:4px;margin-bottom:16px;background:#0f172a;border-radius:10px;padding:3px}
+.subnav__btn{flex:1;padding:8px 4px;font-size:0.75em;font-weight:600;border:none;border-radius:8px;background:transparent;color:#94a3b8;cursor:pointer}
+.subnav__btn--active{background:#f97316;color:#fff}
+.sub-panel{display:none}.sub-panel.is-visible{display:block}
+.textarea{resize:vertical}
+.tilt-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,0.95);z-index:100;display:none;flex-direction:column;justify-content:center;align-items:center;padding:20px;text-align:center}
+.tilt-overlay.is-active{display:flex}
+.share-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,0.95);z-index:150;display:none;justify-content:center;align-items:center;padding:20px}
+.share-overlay.is-active{display:flex}
+.share-dialog{background:#1e293b;border-radius:16px;padding:24px;text-align:center;max-width:360px;width:100%}
+.share-dialog__url{background:#0f172a;border-radius:8px;padding:12px;word-break:break-all;color:#facc15;font-size:0.9em;margin:12px 0;user-select:all}
+.tilt-circle{width:100px;height:100px;border-radius:50%;background:rgba(220,38,38,0.2);border:4px solid #dc2626;margin:20px auto;animation:breathe 16s infinite}
+.tilt-instruction{font-size:1.2em;margin:10px 0;color:#fca5a5}
+.tilt-quote{font-size:1.1em;color:#facc15;margin:20px 0;line-height:1.5}
+.tilt-form{width:100%;max-width:300px;margin-top:20px}
+.odds-toolbar{display:flex;align-items:center;gap:6px}
+.odds-toolbar-btn{background:transparent;border:none;color:#94a3b8;font-size:1.1em;cursor:pointer;padding:2px 6px}
+.odds-toolbar-btn:hover{color:#f97316}
+.hidden-random-panel{display:none;margin-top:12px;padding:12px;background:#0f172a;border-radius:12px}
+.hidden-random-panel.is-visible{display:block}
+button,input,select{touch-action:manipulation}
+@keyframes breathe{0%,100%{transform:scale(1);opacity:0.6}16%,32%{transform:scale(1.4);opacity:1}48%{transform:scale(1);opacity:0.6}64%,80%{transform:scale(1.4);opacity:1}96%{transform:scale(1);opacity:0.6}}
+@media(max-width:400px){.session-table td:nth-child(2),.session-table th:nth-child(2),.session-table td:nth-child(3),.session-table th:nth-child(3),.session-table td:nth-child(6),.session-table th:nth-child(6),.session-table td:nth-child(7),.session-table th:nth-child(7){display:none}}
+</style></head><body><div class="app"><div class="app__settings"><button class="app__settings-btn" id="settingsBtn" aria-label="提醒设置">⚙️</button><div class="app__settings-menu" id="settingsMenu"><button class="app__settings-option is-active" id="soundOption">🔊 声音</button><button class="app__settings-option is-active" id="vibrateOption">📳 振动</button></div></div>
+<h1 class="app__title">♠️Underwood's table agent♥️<span class="version-tag">V5.7.3</span></h1>
+<nav class="nav"><button class="nav__btn nav__btn--active" data-tab="timer">⏱️ 计时</button><button class="nav__btn" data-tab="odds">🎯 赔率</button><button class="nav__btn" data-tab="tournament">🏆 锦标赛</button><button class="nav__btn" data-tab="review">📋 复盘</button></nav>
+<main class="main">
+ <section id="timerPanel" class="panel is-visible">
+  <div class="card"><div class="card__title">🧍 站立提醒</div><div id="phaseBdg" class="timer__phase timer__phase--work">💼 工作中</div><div id="timerDisplay" class="timer__display">25:00</div><div class="row" style="margin:10px 0"><label class="field">🔵 专注(分)<input type="number" id="workMin" class="input" value="25" min="1" max="120" step="1" required></label><label class="field">🟢 站立(分)<input type="number" id="breakMin" class="input" value="3" min="1" max="30" step="1" required></label></div>
+  <div class="timer-presets" style="display:flex;gap:6px;margin-bottom:10px"><button class="btn--mini timer-preset" data-work="25" data-break="3" style="flex:1">25+3</button><button class="btn--mini timer-preset" data-work="50" data-break="5" style="flex:1">50+5</button><button class="btn--mini timer-preset" data-work="60" data-break="5" style="flex:1">60+5</button><button class="btn--mini timer-preset" data-work="15" data-break="2" style="flex:1">15+2</button></div>
+  <details style="margin-bottom:10px" id="longBreakDetails"><summary style="font-size:0.8em;color:#94a3b8;cursor:pointer">🔄 休息 <span id="longBreakSummary"></span></summary><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;background:#0f172a;border-radius:10px;padding:8px 10px;margin-top:6px"><label style="display:flex;align-items:center;gap:4px;font-size:0.8em;color:#cbd5e1;cursor:pointer;white-space:nowrap"><input type="checkbox" id="longBreakCheck"> 🔄 长休息</label><label style="font-size:0.75em;color:#94a3b8;white-space:nowrap">每 <input type="number" id="longBreakInterval" class="input" value="4" min="1" max="10" step="1" style="width:42px;padding:2px 4px;font-size:0.95em;text-align:center;display:inline-block"> 次</label><label style="font-size:0.75em;color:#94a3b8;white-space:nowrap">休 <input type="number" id="longBreakMin" class="input" value="15" min="5" max="60" step="1" style="width:42px;padding:2px 4px;font-size:0.95em;text-align:center;display:inline-block"> 分</label><span id="cycleCount" style="font-size:0.75em;color:#64748b;margin-left:auto">0/4</span></div></details>
+	  <div class="timer__stats"><div class="timer__stats-label">🧘 今日已站立</div><div id="todayCount" class="timer__stats-number">0</div><div style="font-size:.7em;color:#94a3b8">次</div><button id="resetCountBtn" class="timer__reset-btn">↺ 重置</button></div><div class="row" style="gap:8px"><button id="startBtn" class="btn">▶ 开始</button><button id="resetTimerBtn" class="btn btn--secondary">↺ 重置</button></div><div class="text-muted">循环提醒 · 站坐交替更健康</div><div id="logToggle" class="log__toggle"><span id="logArrow">▶</span> 今日记录</div><div id="logWrap" style="display:none;max-height:200px;overflow-y:auto"><table class="log-table" id="logTbl"><thead><tr><th>#</th><th>工作开始</th><th>工作结束</th><th>站立开始</th><th>站立结束</th><th>工作</th><th>站立</th></tr></thead><tbody id="logBody"></tbody></table><button id="clearLogBtn" class="btn--mini btn--danger" style="margin-top:8px">🗑️ 清除今日记录</button></div>
+  <button id="emergencyBtn" class="btn btn--emergency" style="margin-top:16px">🆘 暂停30秒 (冷静)</button>
+ </section>
+ <section id="oddsPanel" class="panel">
+  <div class="card"><div class="card__title card__title--flex"><span>📐 底池赔率 & MDF</span><div class="odds-toolbar"><button class="odds-toolbar-btn" id="showRandomBtn" title="随机数">🎲</button></div></div>
+  <div id="hiddenRandomPanel" class="hidden-random-panel"><div class="card__title" style="font-size:0.9em">🎲 随机整数</div><div class="row"><label class="field">最小值<input type="number" id="rMin" class="input" value="1" step="1" required></label><label class="field">最大值<input type="number" id="rMax" class="input" value="100" step="1" required></label></div><button id="genRandBtn" class="btn">🎯 生成</button><div id="randResult" class="text-muted" style="display:none;font-size:2em;font-weight:bold;color:#facc15;margin-top:8px">42</div></div>
+  <div class="row"><label class="field">1️⃣行动前底池 (BB)<input type="number" id="potInput" class="input" value="10.6" step="0.5" min="0" required onfocus="this.select()"></label><label class="field">2️⃣ 下注 (BB)<input type="number" id="betInput" class="input" value="3.6" step="0.5" min="1" required onfocus="this.select()"></label></div><div class="bet-sizes"><button class="btn--mini bet-btn" data-ratio="0.25">25%</button><button class="btn--mini bet-btn" data-ratio="1/3">33%</button><button class="btn--mini bet-btn" data-ratio="0.50">50%</button><button class="btn--mini bet-btn" data-ratio="2/3">67%</button><button class="btn--mini bet-btn" data-ratio="0.75">75%</button><button class="btn--mini bet-btn" data-ratio="1">100%</button><button class="btn--mini bet-btn" data-ratio="1.5">150%</button></div><div id="betRatio" style="margin:4px 0;color:#facc15;font-weight:bold;min-height:18px;font-size:.8em"></div>
+<div class="row"><label class="field">3️⃣ 听牌 (Outs)<input type="number" id="outsInput" class="input" value="8" step="1" min="0" max="25" required onfocus="this.select()"></label><label class="field">有效筹码 (BB，用于SPR) <input type="number" id="stackInput" class="input" value="100" step="1" min="1" onfocus="this.select()"></label></div><div class="outs-grid"><button class="btn--mini outs-btn" data-outs="8">两头顺 8</button><button class="btn--mini outs-btn" data-outs="9">同花 9</button><button class="btn--mini outs-btn" data-outs="4">卡顺 4</button><button class="btn--mini outs-btn" data-outs="2">三条 2</button><button class="btn--mini outs-btn" data-outs="15">大听牌 15</button></div><div id="sprDisplay" class="text-muted" style="margin:4px 0;min-height:18px"></div>
+  <div class="radio-group"><label><input type="radio" name="street" value="one" checked> 一张牌</label><label><input type="radio" name="street" value="two"> 两张牌</label></div><label class="field" style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="comboCheck"> 考虑转牌再下注</label><div id="comboRow" style="display:none;margin-top:8px"><div class="row"><label class="field">金额 (BB)<input type="number" id="turnBetInput" class="input" value="80" step="1" min="1"></label><label class="field">占转牌底池%<input type="number" id="turnPctInput" class="input" value="50" step="1" min="1" max="200"></label></div><div class="bet-sizes"><button class="btn--mini turn-bet-btn" data-pct="25">25%</button><button class="btn--mini turn-bet-btn" data-pct="33">33%</button><button class="btn--mini turn-bet-btn" data-pct="50">50%</button><button class="btn--mini turn-bet-btn" data-pct="67">67%</button><button class="btn--mini turn-bet-btn" data-pct="75">75%</button><button class="btn--mini turn-bet-btn" data-pct="100">100%</button></div><div class="text-muted" style="text-align:left">POT = 原底池 + 当前下注×2</div><details id="impliedDetails" style="margin-top:8px"><summary style="font-size:0.85em;color:#94a3b8;cursor:pointer">💡 隐含赔率估算</summary><label class="field" style="margin-top:8px">预计听中后可额外赢取 (BB) <input type="number" id="impliedInput" class="input" value="0" step="1" min="0"></label><div id="impliedResult" class="text-muted" style="margin-top:8px">输入额外赢取以计算隐含EV</div></details>
+</div><div id="oddsResult" class="result"></div></div>
+  <div class="card"><details id="srpDetails"><summary class="card__title" style="margin-bottom:0;cursor:pointer;">📊 SB v BB SRP 翻牌策略</summary><div class="srp-filters"><select id="filterHigh" class="select"><option value="all">全部高牌</option><option value="A高">A高</option><option value="K高">K高</option><option value="Q高">Q高</option><option value="J高">J高</option><option value="低牌">低牌</option></select><select id="filterSuit" class="select"><option value="all">全部花色</option><option value="天花">天花</option><option value="听花">听花</option><option value="彩虹">彩虹</option></select><select id="filterConnect" class="select"><option value="all">全部连接</option><option value="天顺">天顺</option><option value="听顺">听顺</option><option value="无连">无连</option></select><select id="filterPair" class="select"><option value="all">是否公对面</option><option value="是">公对面</option><option value="否">非公对面</option></select></div><div style="max-height:300px;overflow-y:auto;"><table class="srp-table" id="srpTable"><thead><tr><th>翻牌</th><th>高牌</th><th>花色</th><th>连接</th><th>公对</th><th>尺度</th></tr></thead><tbody id="srpBody"></tbody></table></div></details></div>
+ </section>
+ <section id="tournamentPanel" class="panel">
+  <div class="card" style="text-align:center"><div class="card__title">🏆 锦标赛策略</div><p style="margin:20px 0;color:#cbd5e1">权威GTO范围，基于Chip EV计算</p><a href="https://www.geecegto.com/strategy/8-max-chip-ev-pre-flop" target="_blank" rel="noopener" class="btn" style="display:inline-block;width:auto;padding:12px 24px;text-decoration:none">📊 打开 GTO 范围表</a><div class="text-muted" style="margin-top:16px">点击将在新标签页中打开 geecegto.com</div></div>
+ </section>
+ <section id="reviewPanel" class="panel">
+  <nav class="subnav" id="reviewSubNav"><button class="subnav__btn subnav__btn--active" data-sub="session">Session</button><button class="subnav__btn" data-sub="hand">手局</button><button class="subnav__btn" data-sub="weekly">周级</button></nav>
+  <div id="subSession" class="sub-panel is-visible">
+   <div class="card"><div class="card__title">📋 Session 记录</div><div class="row"><label class="field">日期 <input type="date" id="sessDate" class="input"></label><label class="field">级别 <input type="text" id="sessLevel" class="input" list="levelList" placeholder="NL10"><datalist id="levelList"><option value="NL10"><option value="NL25"><option value="Live"></datalist></label></div><div class="row"><label class="field">时长(h) <input type="number" id="sessDur" class="input" step="0.1" min="0.1" placeholder="2.5" required></label><label class="field">手数 <input type="number" id="sessHands" class="input" step="1" min="1" placeholder="1000" required></label></div><div class="row"><label class="field">盈亏(BB) <input type="number" id="sessProfit" class="input" step="0.01" placeholder="+125.50" required></label><label class="field">Tilt评分(0-10) <input type="number" id="sessTilt" class="input" min="0" max="10" step="1" value="5" required></label></div>
+   <details style="margin-top:8px"><summary style="font-size:0.85em;color:#94a3b8;cursor:pointer">📋 更多选项（错误类型 · 情绪 · 备注）</summary><div class="text-muted" style="text-align:left;margin-top:6px">Tilt: 9-10完全冷静，7-8轻微波动，5-6明显情绪，3-4影响决策，0-2明显tilt</div>
+   <label class="field">错误类型 (可多选)</label>
+   <div class="toggle-group" id="sessMistakeGroup" style="flex-wrap:nowrap">
+    <button class="toggle-btn" data-mistake="翻前结构错误">翻前结构错误</button>
+    <button class="toggle-btn" data-mistake="翻后认知错误">翻后认知错误</button>
+    <button class="toggle-btn" data-mistake="下注结构错误">下注结构错误</button>
+    <button class="toggle-btn" data-mistake="Exploit偏移">Exploit偏移</button>
+    <button class="toggle-btn" data-mistake="心理错误">心理错误</button>
+   </div>
+   <label class="field"><input type="text" id="sessMistakeCustom" class="input" placeholder="其他错误类型（手动填写）"></label>
+   <div class="card" style="margin-bottom:12px;background:#0a2a4a">
+    <div class="card__title" style="margin-bottom:8px;font-size:0.9em">😤 情绪急救记录</div>
+    <div id="tiltLogList" class="text-muted" style="margin-top:4px">暂无记录</div>
+   </div>
+   </details><label class="field">备注 <input type="text" id="sessRemark" class="input" placeholder="特殊情况..."></label><div class="row" style="margin-top:12px"><button id="addSessionBtn" class="btn">💾 保存</button><button id="clearSessionBtn" class="btn btn--secondary">🧹 清空</button></div></div>
+   <div class="card"><div class="card__title card__title--flex"><span>📊 数据统计</span><div style="position:relative"><button id="migrateBtn" class="btn--mini">📦 迁徙</button><div id="migrateMenu" class="app__settings-menu" style="top:28px;right:0;width:160px">
+    <button id="exportBtn" class="app__settings-option">📤 导出文件</button>
+    <button id="importBtn" class="app__settings-option">📥 导入文件</button>
+    <input type="file" id="importFileInput" accept=".json" style="display:none">
+    <button id="shareSiteBtn" class="app__settings-option">🌐 分享网站</button>
+    <button id="clipboardExportBtn" class="app__settings-option">📋 复制备份</button>
+    <button id="clipboardImportBtn" class="app__settings-option">📲 粘贴备份</button>
+	    <button id="csvExportBtn" class="app__settings-option">📊 导出CSV</button>
+   </div></div></div><div id="statsArea"><div class="text-muted">暂无数据</div></div><canvas id="profitChart" width="600" height="300" style="display:none;width:100%;max-width:440px;height:auto;margin:10px 0;border-radius:8px;background:#0f172a"></canvas><div class="filter-row"><select id="filterLevel" class="select"><option value="all">全部级别</option></select><button id="refreshSessionsBtn" class="btn--mini">刷新</button></div><div class="table-container"><table class="session-table" id="sessionTbl"><thead><tr><th>日期</th><th>级别</th><th>时长</th><th>手数</th><th>盈亏</th><th>Tilt</th><th>错误</th><th>操作</th></tr></thead><tbody id="sessionBody"></tbody></table></div></div>
+   <div class="card"><div class="card__title">⚠️ 错误追踪</div><div id="mistakeStats" class="text-muted">暂无数据</div></div>
+   <div class="card">
+    <details><summary class="card__title" style="margin-bottom:0;cursor:pointer;">🎲 现场数据分析 (Live)</summary><div id="liveStats" class="text-muted" style="margin-top:8px">暂无Live数据</div></details>
+   </div>
+  </div>
+  <div id="subHand" class="sub-panel">
+   <div class="card"><div class="card__title">🃏 手局级复盘</div>
+   <div class="row" style="margin-bottom:8px">
+    <label class="field">底池类型<select id="handPotType" class="select"><option value="">--</option><option value="limp">Limp Pot</option><option value="SIA">SIA (SRP IP Aggressive)</option><option value="SID">SID (SRP IP Defend)</option><option value="SOA">SOA (SRP OOP Aggressive)</option><option value="SOD">SOD (SRP OOP Defend)</option><option value="3IA">3IA (3-Bet IP Aggressive)</option><option value="3ID">3ID (3-Bet IP Defend)</option><option value="3OA">3OA (3-Bet OOP Aggressive)</option><option value="3OD">3OD (3-Bet OOP Defend)</option><option value="4IA">4IA (4-Bet IP Aggressive)</option><option value="4ID">4ID (4-Bet IP Defend)</option><option value="4OA">4OA (4-Bet OOP Aggressive)</option><option value="4OD">4OD (4-Bet OOP Defend)</option><option value="其他">其他</option></select></label>
+    <label class="field">牌面结构<select id="handBoard" class="select"><option value="">--</option><option value="R">R (彩虹)</option><option value="TT">TT (双色面)</option><option value="M">M (天花)</option></select></label>
+   </div>
+   <label class="field">关联Session (可选)<select id="handSessionSelect" class="select"><option value="">-- 不关联 --</option></select></label>
+   <label class="field">Hands Note：<textarea id="handDesc" class="textarea" rows="4">preflop 行动：
+OTF翻牌 牌面：    行动：
+OTT转牌 牌面：    行动：
+OTR河牌 牌面：    行动：</textarea></label>
+   <div class="text-muted" style="margin-top:2px"><b>S</b>pade <b>H</b>eart <b>C</b>lub <b>D</b>iamond | <b>X</b>check <b>F</b>old <b>C</b>all <b>R</b>aise <b>B</b>et</div>
+   <label class="field">决策描述：<textarea id="handDecision" class="textarea" rows="3" placeholder="当时的决策逻辑"></textarea></label>
+   <details><summary style="font-size:0.85em;color:#94a3b8;cursor:pointer">🧠 思考模板</summary>
+   <div class="text-muted" style="margin-top:8px;line-height:1.4">
+    <b>我的范围审查：</b><br>• 双方到达River的范围如何？<br>• 我的范围想要做什么？<br>• 最薄的价值牌、最好的诈唬、纯放弃的牌各是什么？<br><br>
+    <b>对手画像：</b><br>• 跟注过多还是弃牌太多？<br>• 面对过牌是激进还是被动？<br>• 小注被加注的频率？（决定是否可以更多thin value）<br>• 面对下注时：我能赢价值还是只能抓诈唬？他有能力诈唬吗？我给了他操作空间吗？这个下注尺寸代表什么？他有多少缺乏SDV的牌？
+   </div></details>
+   <label class="field">错误类型 (可多选)</label>
+   <div class="toggle-group" id="handMistakeGroup">
+    <button class="toggle-btn" data-mistake="open过宽">open过宽</button>
+    <button class="toggle-btn" data-mistake="OOP defend过宽">OOP defend过宽</button>
+    <button class="toggle-btn" data-mistake="4bet逻辑混乱">4bet逻辑混乱</button>
+    <button class="toggle-btn" data-mistake="情绪型raise">情绪型raise</button>
+    <button class="toggle-btn" data-mistake="错误CB">错误CB</button>
+    <button class="toggle-btn" data-mistake="过多double barrel">过多double barrel</button>
+    <button class="toggle-btn" data-mistake="river过度call/bluff">river过度call/bluff</button>
+    <button class="toggle-btn" data-mistake="下注尺寸过大">下注尺寸过大</button>
+    <button class="toggle-btn" data-mistake="下注尺寸过小">下注尺寸过小</button>
+    <button class="toggle-btn" data-mistake="没计划三条街">没计划三条街</button>
+    <button class="toggle-btn" data-mistake="对松弱bluff过多">对松弱bluff过多</button>
+    <button class="toggle-btn" data-mistake="对激进不够trap">对激进不够trap</button>
+    <button class="toggle-btn" data-mistake="未识别玩家类型">未识别玩家类型</button>
+    <button class="toggle-btn" data-mistake="忽略HUD">忽略HUD</button>
+    <button class="toggle-btn" data-mistake="情绪主导决策">情绪主导决策</button>
+    <button class="toggle-btn" data-mistake="不愿弃牌">不愿弃牌</button>
+    <button class="toggle-btn" data-mistake="想证明自己">想证明自己</button>
+    <button class="toggle-btn" data-mistake="追回损失">追回损失</button>
+   </div>
+   <label class="field"><input type="text" id="handMistakeCustom" class="input" placeholder="其他错误类型（手动填写）"></label>
+   <label class="field">结果与反思：<textarea id="handReflection" class="textarea" rows="2" placeholder="手牌结果和下一次改进思路"></textarea></label>
+   <button id="saveHandBtn" class="btn">💾 保存手局</button></div>
+   <div class="card"><div class="card__title">📜 历史手局</div><div class="table-container" style="max-height:300px;"><table class="session-table" id="handTable"><thead><tr><th>类型</th><th>Session</th><th>手牌</th><th>错误</th><th>操作</th></tr></thead><tbody id="handBody"></tbody></table></div></div>
+   <div class="card"><details id="actionLineDetails"><summary class="card__title" style="margin-bottom:0;cursor:pointer;">📊 行动线速查表</summary><div class="table-container" style="max-height:300px;"><table class="srp-table" id="actionLineTable"><thead><tr><th>行动线</th><th>诈唬不足</th><th>行动线</th><th>诈唬过度/延伸</th></tr></thead><tbody id="actionLineBody"></tbody></table></div></details></div>
+  </div>
+  <div id="subWeekly" class="sub-panel">
+   <div class="card"><div class="card__title">📆 本周自动统计</div><div id="weeklyAutoStats"></div><div id="weeklySummary" class="text-muted" style="margin-top:10px;padding:10px;background:#0f172a;border-radius:10px;line-height:1.4;text-align:left"></div></div>
+   <div class="card"><div class="card__title">✍️ 周级复盘</div><label class="field">结构薄弱环节：<textarea id="weeklyWeakness" class="textarea" rows="2" placeholder="例如：OOP单挑、3bet pot、翻前范围问题等"></textarea></label><label class="field">改进计划：<textarea id="weeklyPlan" class="textarea" rows="3" placeholder="下一周针对性改进措施"></textarea></label><button id="saveWeeklyBtn" class="btn">💾 保存本周复盘</button></div>
+   <div class="card"><div class="card__title">📜 历史周复盘</div><div class="table-container"><table class="session-table" id="weeklyTable"><thead><tr><th>周</th><th>薄弱环节</th><th>改进计划</th><th>操作</th></tr></thead><tbody id="weeklyBody"></tbody></table></div></div>
+  </div>
+ </section>
+</main></div>
+<div class="tilt-overlay" id="tiltOverlay"><div class="tilt-circle" id="tiltCircle"></div><div class="tilt-instruction" id="tiltInstruction">吸气…憋气…呼气… (30秒)</div><div class="tilt-quote" id="tiltQuote" style="display:none"></div><div class="tilt-form" id="tiltForm" style="display:none"><select id="tiltTrigger" class="select" style="margin-bottom:10px"><option value="Bad Beat">Bad Beat</option><option value="连输几手">连输几手</option><option value="对手挑衅">对手挑衅</option><option value="自己失误">自己失误</option><option value="其他">其他</option></select><label class="field">情绪强度 (0-10) <input type="number" id="tiltIntensity" class="input" min="0" max="10" step="1" value="5"></label>
+<div class="text-muted" style="margin:4px 0;line-height:1.4">9-10完全冷静，7-8轻微波动，5-6明显情绪，3-4影响决策，0-2明显tilt</div>
+<input type="text" id="tiltNote" class="input" placeholder="备注 (可选)"><button id="saveTiltLog" class="btn" style="margin-top:10px">保存记录 & 关闭</button></div></div>
+<div class="share-overlay" id="shareOverlay"><div class="share-dialog"><div style="font-size:1.1em;color:#f97316;font-weight:bold">🌐 分享网站</div><div class="share-dialog__url" id="shareUrlDisplay">https://mxpoker.netlify.app/</div><div class="row" style="gap:8px"><button id="shareCopyBtn" class="btn">📋 复制链接</button><button id="shareCloseBtn" class="btn btn--secondary">关闭</button></div></div></div>
+<script id="mainScript">
+(function() {
+  'use strict';
+
+  /* ==================== 核心配置 ==================== */
+  const CONSTANTS = {
+  STORAGE_PREFIX: 'pa_',
+  VERSION: '5.7.3',
+  SITE_URL: 'https://mxpoker.netlify.app/',
+  DEFAULT_WORK_MIN: 25,
+  DEFAULT_BREAK_MIN: 3,
+  STATE_EXPIRE_MS: 2 * 60 * 1000,
+  TILT_RESCUE_DURATION: 30,
+  INPUT_DEBOUNCE_MS: 300,
+};
+// 注意：CACHE_NAME 在 Service Worker 注册处实时拼接，无需放入 CONSTANTS
+
+  /* ==================== 工具函数 ==================== */
+  const Utils = {
+    debounce(fn, delay = 300) { let t; return function(...a) { clearTimeout(t); t = setTimeout(() => fn.apply(this, a), delay); }; },
+initDropdown(toggleBtn, menuEl) {
+  toggleBtn.addEventListener('click', function(e) { e.stopPropagation(); menuEl.classList.toggle('is-visible'); });
+  document.addEventListener('click', function(e) {
+    if (!toggleBtn.contains(e.target) && !menuEl.contains(e.target)) menuEl.classList.remove('is-visible');
+  });
+},
+initToggleGroup(containerId) { document.getElementById(containerId).addEventListener('click', function(e) { var btn = e.target.closest('.toggle-btn'); if (btn) btn.classList.toggle('is-active'); }); },
+sortByDateKey: function(arr, key) {
+  key = key || 'id';
+  return arr.sort(function(a, b) { return b[key].localeCompare(a[key]); });
+},
+formatTime(date) {
+  if (!date) return '';
+  if (date instanceof Date) return isNaN(date.getTime()) ? '' : date.toTimeString().split(' ')[0];
+  var d = new Date(date);
+  return isNaN(d.getTime()) ? '' : d.toTimeString().split(' ')[0];
+},
+    escapeHtml(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = String(s); return d.innerHTML; },
+    getLocalDate() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); },
+    generateUUID() { return crypto.randomUUID?.() || Date.now().toString(36) + Math.random().toString(36).slice(2); },
+    safeFixed(num, digits = 1) { return (isNaN(num) || !isFinite(num)) ? '--' : num.toFixed(digits); },
+    encodeBase64(obj) { const json = JSON.stringify(obj); const encoder = new TextEncoder(); const data = encoder.encode(json); let binary = ''; data.forEach(b => { binary += String.fromCharCode(b); }); return btoa(binary); },
+    decodeBase64(str) { const binary = atob(str); const bytes = new Uint8Array(binary.length); for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i); return JSON.parse(new TextDecoder().decode(bytes)); },
+    validateBackupData(data) { return data && data.sessions !== undefined && Array.isArray(data.sessions); }
+  };
+
+  /* ==================== 分层存储 ==================== */
+  const Store = {
+    _prefix: CONSTANTS.STORAGE_PREFIX,
+    _getRaw(key) { try { const raw = localStorage.getItem(this._prefix + key); return raw ? JSON.parse(raw) : null; } catch (e) { return null; } },
+    _setRaw(key, value) { try { localStorage.setItem(this._prefix + key, JSON.stringify(value)); } catch (e) {} },
+    timer: { get() { return Store._getRaw('timerState') || { endTime: null, phase: 'work', workStart: null, breakStart: null, longBreak: { enabled: false, interval: 4, minutes: 15 }, cycleCount: 0 }; }, save(state) { Store._setRaw('timerState', state); } },
+    standup: { get() { return Store._getRaw('standup') || { date: Utils.getLocalDate(), count: 0 }; }, save(data) { Store._setRaw('standup', data); } },
+    logs: { get(dateStr) { return Store._getRaw('log_' + dateStr) || []; }, save(dateStr, logs) { Store._setRaw('log_' + dateStr, logs); } },
+    sessions: { get() { return Store._getRaw('sessions') || []; }, save(data) { Store._setRaw('sessions', data); } },
+    handReviews: { get() { return Store._getRaw('handReviews') || []; }, save(data) { Store._setRaw('handReviews', data); } },
+    weeklyReviews: { get() { return Store._getRaw('weeklyReviews') || []; }, save(data) { Store._setRaw('weeklyReviews', data); } },
+    tiltLogs: { get() { return Store._getRaw('tiltLogs') || []; }, save(data) { Store._setRaw('tiltLogs', data); } },
+    exportAll() { return { timerState: Store.timer.get(), standup: Store.standup.get(), logs: this._collectLogs(), sessions: Store.sessions.get(), handReviews: Store.handReviews.get(), weeklyReviews: Store.weeklyReviews.get(), tiltLogs: Store.tiltLogs.get() }; },
+    importAll(data) { if (data.timerState) Store.timer.save(data.timerState); if (data.standup) Store.standup.save(data.standup); if (data.logs) { Object.keys(data.logs).forEach(d => Store.logs.save(d, data.logs[d])); } if (data.sessions) Store.sessions.save(data.sessions); if (data.handReviews) Store.handReviews.save(data.handReviews); if (data.weeklyReviews) Store.weeklyReviews.save(data.weeklyReviews); if (data.tiltLogs) Store.tiltLogs.save(data.tiltLogs); },
+    _collectLogs() { const logs = {}; for (let i = 0; i < localStorage.length; i++) { const key = localStorage.key(i); if (key && key.startsWith(this._prefix + 'log_')) { const ds = key.replace(this._prefix + 'log_', ''); try { logs[ds] = JSON.parse(localStorage.getItem(key)); } catch (e) {} } } return logs; }
+  };
+
+  (function migrateOldData() { const oldKey = 'pokerAssistantData'; const oldRaw = localStorage.getItem(oldKey); if (oldRaw) { try { const old = JSON.parse(oldRaw); if (old.timerState) Store.timer.save(old.timerState); if (old.standup) Store.standup.save(old.standup); if (old.logs) Object.keys(old.logs).forEach(k => Store.logs.save(k, old.logs[k])); if (old.sessions) Store.sessions.save(old.sessions); if (old.handReviews) Store.handReviews.save(old.handReviews); if (old.weeklyReviews) Store.weeklyReviews.save(old.weeklyReviews); if (old.tiltLogs) Store.tiltLogs.save(old.tiltLogs); localStorage.removeItem(oldKey); } catch (e) {} } })();
+
+  /* ==================== 主应用 ==================== */
+  const App = {
+    sound: true, vibrateOn: true, reviewRendered: false,
+confirmDelete: function(itemsGetter, itemsSaver, renderFn, idKey, id) {
+    if (!confirm('确认删除？')) return;
+    var items = itemsGetter().filter(function(item) { return item[idKey] !== id; });
+    itemsSaver(items);
+    renderFn();
+},
+    init() {
+      window.addEventListener('error', e => console.error('JS错误:', e.error));
+      window.addEventListener('unhandledrejection', e => { console.warn('Promise拒绝:', e.reason); e.preventDefault(); });
+      this.bindSettings(); this.bindNav(); this.bindSubNav();
+      this.Timer.init(); this.Odds.init(); this.Tournament.init();
+      this.Review.init(); this.TiltRescue.init(); this.DataSync.init();
+
+      document.getElementById('showRandomBtn').addEventListener('click', () => { document.getElementById('hiddenRandomPanel').classList.toggle('is-visible'); });
+      document.getElementById('genRandBtn').addEventListener('click', () => { const min = +document.getElementById('rMin').value, max = +document.getElementById('rMax').value, el = document.getElementById('randResult'); if (isNaN(min) || isNaN(max) || min > max) { el.style.display = 'block'; el.textContent = '⚠️ 最小值 ≤ 最大值'; return; } el.textContent = Math.floor(Math.random() * (max - min + 1)) + min; el.style.display = 'block'; });
+
+      // 5.0 懒加载 SRP 表
+      const srpDetails = document.getElementById('srpDetails');
+    if (srpDetails) { srpDetails.addEventListener('toggle', function() { if (this.open && !App._srpLoaded) { App.renderSRPTable(); document.querySelectorAll('.srp-filters select').forEach(function(sel) { sel.addEventListener('change', App.renderSRPTable); }); App._srpLoaded = true; } }); }
+
+      // 5.0 懒加载 行动线表
+      const actionLineDetails = document.getElementById('actionLineDetails');
+      if (actionLineDetails) { actionLineDetails.addEventListener('toggle', function() { if (this.open && !App._actionLineLoaded) { App.renderActionLines(); App._actionLineLoaded = true; } }); }
+
+      // V5.7.1 分享网站弹窗
+      document.getElementById('shareSiteBtn').addEventListener('click', function() {
+        document.getElementById('shareUrlDisplay').textContent = CONSTANTS.SITE_URL;
+        document.getElementById('shareOverlay').classList.add('is-active');
+      });
+      document.getElementById('shareCloseBtn').addEventListener('click', function() {
+        document.getElementById('shareOverlay').classList.remove('is-active');
+      });
+      document.getElementById('shareCopyBtn').addEventListener('click', function() {
+        var url = CONSTANTS.SITE_URL;
+        var btn = document.getElementById('shareCopyBtn');
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url).then(function() {
+            btn.textContent = '✅ 已复制';
+            setTimeout(function() { btn.textContent = '📋 复制链接'; }, 2000);
+          }).catch(function() {
+            prompt('手动复制链接：', url);
+          });
+        } else {
+          prompt('手动复制链接：', url);
+        }
+      });
+      // PWA Service Worker
+      if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
+const swCode = `const CACHE_NAME='poker-v${CONSTANTS.VERSION}';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(['./index.html'])))});self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)))})`;
+const blob = new Blob([swCode], { type: 'text/javascript' }); navigator.serviceWorker.register(URL.createObjectURL(blob)); }
+    document.title = 'Underwood\'s table agent V' + CONSTANTS.VERSION;
+  document.querySelector('.version-tag').textContent = 'V' + CONSTANTS.VERSION;
+      window.addEventListener('beforeunload', () => { if (this.Timer.interval) clearInterval(this.Timer.interval); if (App.TiltRescue.countdownTimer) clearInterval(App.TiltRescue.countdownTimer); });
+    },
+    notify(t, b) { if (Notification.permission === 'granted') new Notification(t, { body: b }); },
+    beep() { if (!this.sound) return; try { const c = new (window.AudioContext || window.webkitAudioContext)(), o = c.createOscillator(), g = c.createGain(); o.connect(g); g.connect(c.destination); o.frequency.value = 880; o.type = 'sine'; g.gain.setValueAtTime(0.3, c.currentTime); o.start(c.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + 0.25); o.stop(c.currentTime + 0.25); } catch (e) {} },
+    vibrate() { if (this.vibrateOn && navigator.vibrate) navigator.vibrate([300, 100, 300]); },
+  bindSettings() {
+  const sb = document.getElementById('soundOption'), vb = document.getElementById('vibrateOption');
+  Utils.initDropdown(document.getElementById('settingsBtn'), document.getElementById('settingsMenu'));
+  sb.addEventListener('click', () => { this.sound = !this.sound; sb.classList.toggle('is-active', this.sound); });
+  vb.addEventListener('click', () => { this.vibrateOn = !this.vibrateOn; vb.classList.toggle('is-active', this.vibrateOn); });
+},
+    bindNav() { document.querySelector('.nav').addEventListener('click', e => { const b = e.target.closest('.nav__btn'); if (!b) return; document.querySelectorAll('.nav__btn').forEach(x => x.classList.remove('nav__btn--active')); b.classList.add('nav__btn--active'); document.querySelectorAll('.panel').forEach(p => p.classList.remove('is-visible')); document.getElementById(b.dataset.tab + 'Panel').classList.add('is-visible'); if (b.dataset.tab === 'odds') this.Odds.calc(); if (b.dataset.tab === 'review' && !this.reviewRendered) { this.Review.renderAll(); this.reviewRendered = true; } }); },
+    bindSubNav() { document.getElementById('reviewSubNav').addEventListener('click', e => { const b = e.target.closest('.subnav__btn'); if (!b) return; document.querySelectorAll('#reviewSubNav .subnav__btn').forEach(x => x.classList.remove('subnav__btn--active')); b.classList.add('subnav__btn--active'); document.querySelectorAll('#reviewPanel .sub-panel').forEach(p => p.classList.remove('is-visible')); document.getElementById('sub' + b.dataset.sub.charAt(0).toUpperCase() + b.dataset.sub.slice(1)).classList.add('is-visible'); if (b.dataset.sub === 'hand') { this.Review.populateHandSessionSelect(); this.Review.renderHandReviews(); } if (b.dataset.sub === 'weekly') { this.Review.generateWeeklyStats(); this.Review.renderWeeklyReviews(); } }); },
+
+    /* ==================== 计时器模块 ==================== */
+    Timer: {
+      init() {
+        this.workInput = document.getElementById('workMin'); this.breakInput = document.getElementById('breakMin'); this.startBtn = document.getElementById('startBtn');
+        this.display = document.getElementById('timerDisplay'); this.phaseBdg = document.getElementById('phaseBdg');
+        this.workInput.addEventListener('change', () => this.updateSettings()); this.breakInput.addEventListener('change', () => this.updateSettings());
+        this.startBtn.addEventListener('click', () => this.toggle()); document.getElementById('resetTimerBtn').addEventListener('click', () => this.reset());
+        document.getElementById('resetCountBtn').addEventListener('click', () => this.resetCount()); document.getElementById('logToggle').addEventListener('click', () => this.toggleLog());
+        document.getElementById('clearLogBtn').addEventListener('click', () => this.clearTodayLogs());
+        document.querySelectorAll('.timer-preset').forEach(btn => { btn.addEventListener('click', () => { this.workInput.value = btn.dataset.work; this.breakInput.value = btn.dataset.break; this.updateSettings(); }); });
+        this.longBreakCheck = document.getElementById('longBreakCheck'); this.longBreakInterval = document.getElementById('longBreakInterval'); this.longBreakMin = document.getElementById('longBreakMin'); this.cycleCountEl = document.getElementById('cycleCount');
+        this.longBreakCheck.addEventListener('change', () => this.updateLongBreakSettings());
+        this.longBreakInterval.addEventListener('change', () => this.updateLongBreakSettings());
+        this.longBreakMin.addEventListener('change', () => this.updateLongBreakSettings());
+        this.restoreState(); document.getElementById('todayCount').textContent = this.getCount();
+        document.addEventListener('visibilitychange', () => { if (!document.hidden && this.running && this.endTime) { this.updateDisplay(); const rem = Math.max(0, Math.ceil((this.endTime - Date.now()) / 1000)); if (rem <= 0 && this.running) this.switchPhase(); } });
+      },
+      restoreState() { const state = Store.timer.get(); if (state && state.longBreak) { this.longBreakCheck.checked = state.longBreak.enabled; this.longBreakInterval.value = state.longBreak.interval; this.longBreakMin.value = state.longBreak.minutes; } else { this.longBreakCheck.checked = false; this.longBreakInterval.value = 4; this.longBreakMin.value = 15; } this.cycleCount = state?.cycleCount || 0; if (this.cycleCountEl) { const interval = parseInt(this.longBreakInterval?.value) || 4; this.cycleCountEl.textContent = `${this.cycleCount}/${interval}`; } this.updateLongBreakSummary(); const now = Date.now(); if (state && state.endTime) { const expDur = (state.phase === 'work' ? parseInt(this.workInput.value) : parseInt(this.breakInput.value)) * 60000; const maxEnd = now + expDur * 2; if (state.endTime > now && state.endTime < maxEnd) { this.phase = state.phase; this.endTime = state.endTime; this.workStart = state.workStart ? new Date(state.workStart) : null; this.breakStart = state.breakStart ? new Date(state.breakStart) : null; this.interval = setInterval(() => this.tick(), 1000); this.running = true; this.startBtn.textContent = '⏸️ 暂停'; this.updateDisplay(); return; }
+if (state.endTime <= now && state.endTime > now - CONSTANTS.STATE_EXPIRE_MS)
+{ this.phase = state.phase; this.endTime = state.endTime; this.workStart = state.workStart ? new Date(state.workStart) : null; this.breakStart = state.breakStart ? new Date(state.breakStart) : null; this.running = false; this.switchPhase(); return; } } this.reset(); },
+      getCount() { const d = Store.standup.get(); const t = Utils.getLocalDate(); if (d.date === t) return d.count; d.date = t; d.count = 0; Store.standup.save(d); return 0; },
+      setCount(c) { const d = Store.standup.get(); d.date = Utils.getLocalDate(); d.count = c; Store.standup.save(d); document.getElementById('todayCount').textContent = c; },
+      incrementCount() { const d = Store.standup.get(); d.date = Utils.getLocalDate(); d.count = (d.count || 0) + 1; Store.standup.save(d); document.getElementById('todayCount').textContent = d.count; },
+      resetCount() { this.setCount(0); },
+      updateSettings() { if (!this.running) { const m = this.phase === 'work' ? parseInt(this.workInput.value) : parseInt(this.breakInput.value); this.endTime = Date.now() + m * 60000; this.updateDisplay(); this.persistState(); } },
+      persistState() { const lb = { enabled: this.longBreakCheck?.checked || false, interval: parseInt(this.longBreakInterval?.value) || 4, minutes: parseInt(this.longBreakMin?.value) || 15 }; Store.timer.save(this.running && this.endTime ? { phase: this.phase, endTime: this.endTime, workStart: this.workStart?.toISOString(), breakStart: this.breakStart?.toISOString(), longBreak: lb, cycleCount: this.cycleCount || 0 } : { endTime: null, phase: 'work', workStart: null, breakStart: null, longBreak: lb, cycleCount: this.cycleCount || 0 }); },
+      toggle() { if (this.running) { clearInterval(this.interval); this.running = false; this.startBtn.textContent = '▶ 开始'; this.persistState(); } else { if (Notification.permission === 'default') Notification.requestPermission(); if (!this.endTime || this.endTime <= Date.now()) { const m = this.phase === 'work' ? parseInt(this.workInput.value) : parseInt(this.breakInput.value); this.endTime = Date.now() + m * 60000; } if (this.phase === 'work' && !this.workStart) this.workStart = new Date(); if (this.phase === 'break' && !this.breakStart) this.breakStart = new Date(); this.interval = setInterval(() => this.tick(), 1000); this.running = true; this.startBtn.textContent = '⏸️ 暂停'; this.persistState(); } },
+      reset() { clearInterval(this.interval); this.running = false; this.phase = 'work'; this.cycleCount = 0; this.endTime = Date.now() + parseInt(this.workInput.value) * 60000; this.workStart = null; this.breakStart = null; this.startBtn.textContent = '▶ 开始'; this.persistState(); this.updateDisplay(); },
+      tick() { const n = Date.now(); const r = Math.max(0, Math.ceil((this.endTime - n) / 1000)); this.display.textContent = `${String(Math.floor(r / 60)).padStart(2, '0')}:${String(r % 60).padStart(2, '0')}`; if (r <= 0) this.switchPhase(); },
+      switchPhase() { const now = new Date(); if (this.phase === 'work') { if (this.workStart) this.addLog({ workStart: this.workStart.toISOString(), workEnd: now.toISOString(), breakStart: now.toISOString(), breakEnd: null }); this.incrementCount(); this.phase = 'break'; this.cycleCount = (this.cycleCount || 0) + 1; const longEnabled = this.longBreakCheck?.checked || false; const longInterval = parseInt(this.longBreakInterval?.value) || 4; const longMin = parseInt(this.longBreakMin?.value) || 15; if (longEnabled && this.cycleCount >= longInterval) { this.isLongBreak = true; this.endTime = Date.now() + longMin * 60000; this.cycleCount = 0; } else { this.isLongBreak = false; this.endTime = Date.now() + parseInt(this.breakInput.value) * 60000; } this.breakStart = now; this.workStart = null; } else { if (this.breakStart) this.updateLastLog({ breakEnd: now.toISOString() }); this.phase = 'work'; this.endTime = Date.now() + parseInt(this.workInput.value) * 60000; this.workStart = now; this.breakStart = null; this.isLongBreak = false; } const breakLabel = this.isLongBreak ? `长休息 ${parseInt(this.longBreakMin?.value) || 15} 分钟` : `休息 ${this.breakInput.value} 分钟`; App.beep(); App.vibrate(); App.notify(this.phase === 'work' ? '💼 继续专注' : (this.isLongBreak ? '🧘 长休息时间' : '🧘 站起来活动'), this.phase === 'work' ? '开始新的工作时段' : breakLabel); this.persistState(); this.updateDisplay(); if (document.getElementById('logWrap').style.display === 'block') this.renderLog(); },
+      addLog(e) { const t = Utils.getLocalDate(); const l = Store.logs.get(t); l.push(e); Store.logs.save(t, l); },
+      updateLastLog(u) { const t = Utils.getLocalDate(); const l = Store.logs.get(t); if (l.length) { Object.assign(l[l.length - 1], u); Store.logs.save(t, l); } },
+      clearTodayLogs() { if (confirm('确定清除今日所有站立记录吗？')) { Store.logs.save(Utils.getLocalDate(), []); this.renderLog(); } },
+      renderLog() { const logs = Store.logs.get(Utils.getLocalDate()); const tb = document.getElementById('logBody'); const rows = []; logs.forEach((l, i) => { const we = l.workEnd ? new Date(l.workEnd) : null, be = l.breakEnd ? new Date(l.breakEnd) : null; const wd = we ? Math.round((we - new Date(l.workStart)) / 1000) : 0, bd = be ? Math.round((be - new Date(l.breakStart)) / 1000) : 0; 
+const f = Utils.formatTime, g = s =>
+ `${Math.floor(s / 60)}分${s % 60}秒`; rows.push(`<tr><td>${i + 1}</td><td>${Utils.escapeHtml(f(new Date(l.workStart)))}</td><td>${Utils.escapeHtml(we ? f(we) : '--')}</td><td>${Utils.escapeHtml(f(new Date(l.breakStart)))}</td><td>${Utils.escapeHtml(be ? f(be) : '--')}</td><td>${we ? Utils.escapeHtml(g(wd)) : '进行中'}</td><td>${be ? Utils.escapeHtml(g(bd)) : '进行中'}</td></tr>`); }); tb.innerHTML = rows.join(''); },
+      toggleLog() { const w = document.getElementById('logWrap'), a = document.getElementById('logArrow'); if (w.style.display === 'none') { w.style.display = 'block'; a.textContent = '▼'; this.renderLog(); } else { w.style.display = 'none'; a.textContent = '▶'; } },
+      updateDisplay() { const r = this.endTime ? Math.max(0, Math.ceil((this.endTime - Date.now()) / 1000)) : 25 * 60; this.display.textContent = `${String(Math.floor(r / 60)).padStart(2, '0')}:${String(r % 60).padStart(2, '0')}`; if (this.phase === 'work') { this.phaseBdg.textContent = '💼 工作中'; this.phaseBdg.className = 'timer__phase timer__phase--work'; } else if (this.isLongBreak) { this.phaseBdg.textContent = '🧘 长休息'; this.phaseBdg.className = 'timer__phase timer__phase--rest'; } else { this.phaseBdg.textContent = '🧘 站立休息'; this.phaseBdg.className = 'timer__phase timer__phase--rest'; } if (this.cycleCountEl) { const interval = parseInt(this.longBreakInterval?.value) || 4; this.cycleCountEl.textContent = `${this.cycleCount || 0}/${interval}`; } },
+      updateLongBreakSettings() { const interval = parseInt(this.longBreakInterval?.value) || 4; if (this.cycleCountEl) this.cycleCountEl.textContent = `${this.cycleCount || 0}/${interval}`; this.updateLongBreakSummary(); this.persistState(); },
+      updateLongBreakSummary() { const el = document.getElementById('longBreakSummary'); if (!el) return; const enabled = this.longBreakCheck?.checked || false; const interval = parseInt(this.longBreakInterval?.value) || 4; const min = parseInt(this.longBreakMin?.value) || 15; el.textContent = enabled ? `每${interval}次 → ${min}分` : '已关闭'; },
+    },
+
+    /* ==================== 赔率模块 ==================== */
+    Odds: {
+      lastCalc: {}, _impliedTimer: null,
+      init() { this.potInput = document.getElementById('potInput'); this.betInput = document.getElementById('betInput'); this.outsInput = document.getElementById('outsInput'); this.stackInput = document.getElementById('stackInput'); const dc = Utils.debounce(() => this.calc(), CONSTANTS.INPUT_DEBOUNCE_MS); [this.potInput, this.betInput, this.outsInput, this.stackInput].forEach(el => el.addEventListener('input', dc)); document.querySelectorAll('.bet-btn').forEach(b => b.addEventListener('click', () => { const p = parseFloat(this.potInput.value); if (p > 0) { const map = { "0.25": 0.25, "1/3": 1 / 3, "0.50": 0.5, "2/3": 2 / 3, "0.75": 0.75, "1": 1, "1.5": 1.5 }; const r = map[b.dataset.ratio]; if (r) { this.betInput.value = Math.round(p * r); this.calc(); } } })); document.querySelectorAll('.outs-btn').forEach(b => b.addEventListener('click', () => { this.outsInput.value = b.dataset.outs; this.calc(); })); document.getElementById('comboCheck').addEventListener('change', function() { document.getElementById('comboRow').style.display = this.checked ? 'block' : 'none'; document.getElementById('impliedDetails').open = this.checked; App.Odds.calc(); });
+document.getElementById('turnBetInput').addEventListener('input', () => this.syncTurnAmt()); document.getElementById('turnPctInput').addEventListener('input', () => this.syncTurnPct()); document.querySelectorAll('.turn-bet-btn').forEach(b => b.addEventListener('click', () => { document.getElementById('turnPctInput').value = b.dataset.pct; this.syncTurnPct(); })); document.querySelectorAll('input[name="street"]').forEach(r => r.addEventListener('change', () => this.calc())); 
+// 为隐含赔率输入框绑定事件 (已在静态HTML中)
+var impliedInputEl = document.getElementById('impliedInput');
+if (impliedInputEl) {
+    impliedInputEl.addEventListener('input', function() {
+        if (App.Odds._impliedTimer) clearTimeout(App.Odds._impliedTimer);
+        App.Odds._impliedTimer = setTimeout(function() { App.Odds.calcImplied(); }, 200);
+    });
+}
+ this.calc(); },
+      calc() { const pot = +this.potInput.value, bet = +this.betInput.value, outs = +this.outsInput.value, stack = +this.stackInput.value || 0;
+// 提示用户参数已变更，隐含赔率估算可能需更新
+var impliedRes = document.getElementById('impliedResult');
+if (impliedRes && parseFloat(document.getElementById('impliedInput').value) > 0) {
+    impliedRes.innerHTML = '<span style="color: #facc15;">⚠️ 参数已更改，请修改隐含赔率以重新计算</span>';
+}
+ const isOne = document.querySelector('input[name="street"]:checked').value === 'one', combo = document.getElementById('comboCheck').checked, turnBet = combo ? +document.getElementById('turnBetInput').value : 0; const ratioDiv = document.getElementById('betRatio'), res = document.getElementById('oddsResult'); if (isNaN(pot) || isNaN(bet) || pot <= 0 || bet <= 0) { ratioDiv.textContent = ''; res.innerHTML = '<div class="text-muted">请输入有效的底池和下注金额</div>'; return; } ratioDiv.textContent = `📊 对手下注了底池的 ${Utils.safeFixed(bet / pot * 100, 0)}%`; if (stack > 0) { const spr = (stack / (pot + bet)).toFixed(1); document.getElementById('sprDisplay').innerHTML = !isNaN(spr) ? `💡 SPR: <span class="highlight">${spr}</span> (${stack}BB / ${pot + bet}BB)` : ''; } else { document.getElementById('sprDisplay').textContent = ''; } if (isNaN(outs) || outs < 0 || outs > 25 || (combo && (isNaN(turnBet) || turnBet <= 0))) { res.innerHTML = '<span class="text-lose">请输入有效的Outs (0-25) 及转牌下注</span>'; return; } let cost, totalPot, estWin, reqWin, ev; if (!combo) { cost = bet; totalPot = pot + bet * 2; reqWin = cost / totalPot; estWin = isOne ? Math.min(outs * 2, 100) / 100 : Math.min(outs * 4, 100) / 100; ev = estWin * totalPot - cost; } else { cost = bet + turnBet; totalPot = pot + bet * 2 + turnBet * 2; reqWin = cost / totalPot; estWin = Math.min(outs * 4, 100) / 100; ev = estWin * totalPot - cost; } this.lastCalc = { pot, bet, callAmount: cost, totalPot, estWin, reqWin, combo, turnBet }; const req1 = Math.ceil(reqWin * 100 / 2), req2 = Math.ceil(reqWin * 100 / 4), mdf = pot / (pot + bet), mdfPct = (mdf * 100).toFixed(1); let html = `<b>🧾 计算</b><br>Bet/Pot <span class="highlight">${Utils.safeFixed(bet / pot * 100, 1)}%</span><br>`; if (combo) html += `转牌下注 ${turnBet} BB，总成本 <span class="highlight">${cost} BB</span><br>`; html += `需要胜率 ≥ <span class="highlight">${Utils.safeFixed(reqWin * 100, 1)}%</span><br>`; html += `估算胜率 <span class="${estWin >= reqWin ? 'text-win' : 'text-lose'}">${Utils.safeFixed(estWin * 100, 1)}%</span> (Outs×${combo ? 4 : (isOne ? 2 : 4)})<br>`; html += `EV ≈ <span class="${ev >= 0 ? 'text-win' : 'text-lose'}">${Utils.safeFixed(ev, 2)} BB</span><br>`; html += `📌 平衡所需Outs: 一张 ≥ <span class="highlight">${req1}</span>, 两张 ≥ <span class="highlight">${req2}</span><br>`;
+html += `<br><b>🛡️ MDF</b><br>防守 <span class="highlight">${mdfPct}%</span> 的范围<br>`;
+// --- V5.2 赔率增强 ---
+// 1. 几何下注路线 + Stack Off 场景 (基于flop视角)  5.3
+if (stack > 0) {
+    const geoBets = Math.max(1, Math.min(3, Math.round(stack / (pot + bet))));
+    const geoSize = (0.5 * (Math.pow((pot + 2 * stack) / pot, 1 / geoBets) - 1)) * 100;
+    html += `<br><details style="margin-top:6px"><summary style="font-size:0.8em;color:#94a3b8;cursor:pointer">📏 几何路线与Stack Off (基于翻牌视角)</summary>`;
+    
+    // 几何路线百分比
+    html += `<p style="font-size:0.8em;color:#cbd5e1;margin:4px 0">`;
+    const streetNames = ['Flop', 'Turn', 'River'];
+    for (let i = 0; i < geoBets; i++) {
+        if (i > 0) html += ` | `;
+        html += `${streetNames[i]} 下注 <span class="highlight">${Utils.safeFixed(geoSize, 0)}%</span>`;
+    }
+    html += `</p>`;
+    
+    // Stack Off 计算
+    let currentPot = pot;
+    let currentStack = stack;
+    html += `<div style="font-size:0.8em;color:#cbd5e1;margin:6px 0;padding:6px;background:#0a1a3a;border-radius:6px">`;
+    for (let i = 0; i < geoBets; i++) {
+        const betAmount = Math.round(currentPot * geoSize / 100);
+        const newPot = currentPot + betAmount * 2;
+        const newStack = currentStack - betAmount;
+        html += `${streetNames[i]}: 下注 <span class="highlight">${betAmount} BB</span> → 底池 <span class="highlight">${newPot} BB</span> → 剩余 <span class="highlight">${newStack} BB</span><br>`;
+        currentPot = newPot;
+        currentStack = newStack;
+    }
+    html += `</div>`;
+    
+    html += `<p style="font-size:0.7em;color:#64748b">⚡ 提示：基于当前底池与筹码深度的几何下注路线。剩余下注轮数已自动识别。实战中请根据牌面结构动态调整。</p></details>`;
+}
+// 2. 连续防守概率 (基于当前MDF连乘)
+const consecutiveMDF = Math.pow(mdf, 3) * 100;
+html += `<br><details style="margin-top:6px"><summary style="font-size:0.8em;color:#94a3b8;cursor:pointer">📉 连续防守概率 (3条街)</summary>`;
+html += `<p style="font-size:0.8em;color:#cbd5e1;margin:4px 0">若对手连开三枪，最终需防守范围 ≈ <span class="highlight">${Utils.safeFixed(consecutiveMDF, 1)}%</span></p>`;
+html += `<p style="font-size:0.7em;color:#64748b">⚡ 提示：MDF³ 假设对手始终使用当前下注尺度。面对低诈唬频率对手时，可适当收缩防守范围。</p></details>`;
+// 3. Alpha 值 (诈唬所需弃牌率)
+const alpha = (bet / (pot + bet)) * 100;
+html += `<br><details style="margin-top:6px"><summary style="font-size:0.8em;color:#94a3b8;cursor:pointer">🎯 Alpha (诈唬所需弃牌率)</summary>`;
+html += `<p style="font-size:0.8em;color:#cbd5e1;margin:4px 0">对手需弃牌 <span class="highlight">${Utils.safeFixed(alpha, 0)}%</span> 方可直接盈亏平衡</p>`;
+html += `<p style="font-size:0.7em;color:#64748b">⚡ 提示：Alpha 假设纯诈唬（无摊牌胜率）。若手持半诈唬（具有听牌潜力），实际所需弃牌率将显著低于此值。</p></details><br>`;
+// --- V5.2 结束 ---
+html += estWin > reqWin ? '<span class="text-win">✅ +EV 跟注</span>' : (Math.abs(estWin - reqWin) < 0.005 ? '<span class="highlight">⚖️ 边缘决策</span>' : '<span class="text-lose">❌ -EV 弃牌</span>');
+const betRatio = bet / pot; html += `<br><details style="margin-top:10px"><summary style="font-size:0.8em;color:#94a3b8;cursor:pointer">📊 常见下注尺度速查</summary><table class="cheatsheet"><thead><tr><th>尺度</th><th>所需胜率</th><th>MDF(防守)</th><th>诈唬需弃牌率</th></tr></thead><tbody>`; [{ label: '1/4 pot', r: 0.25 }, { label: '1/3 pot', r: 1 / 3 }, { label: '1/2 pot', r: 0.5 }, { label: '2/3 pot', r: 2 / 3 }, { label: '3/4 pot', r: 0.75 }, { label: '满池', r: 1 }, { label: '1.25x', r: 1.25 }, { label: '1.5x', r: 1.5 }].forEach(s => { const req = Utils.safeFixed(s.r / (1 + 2 * s.r) * 100, 0), mdfV = Utils.safeFixed(1 / (1 + s.r) * 100, 0), blf = Utils.safeFixed(s.r / (1 + s.r) * 100, 0); html += `<tr class="${Math.abs(betRatio - s.r) < 0.01 ? 'is-current' : ''}"><td>${s.label}</td><td>${req}%</td><td>${mdfV}%</td><td>${blf}%</td></tr>`; }); html += `</tbody></table></details>`; 
+ res.innerHTML = html; this.calcImplied(); },
+      calcImplied() {
+  const implied = parseFloat(document.getElementById('impliedInput')?.value) || 0;
+  const { callAmount, totalPot, estWin } = this.lastCalc;
+  const r = document.getElementById('impliedResult');
+  if (!r) return;
+  if (implied > 0) {
+    const iev = estWin * (totalPot + implied) - callAmount;
+    const irw = callAmount / (totalPot + implied);
+    r.innerHTML = `额外赢取 <span class="highlight">${implied} BB</span><br>隐含EV ≈ <span class="${iev >= 0 ? 'text-win' : 'text-lose'}">${Utils.safeFixed(iev, 2)} BB</span><br>所需胜率 ≈ <span class="highlight">${Utils.safeFixed(irw * 100, 1)}%</span>`;
+  } else {
+    r.innerHTML = '输入额外赢取以计算隐含EV';
+  }
+},
+      syncTurnAmt() { const p = +this.potInput.value, b = +this.betInput.value, t = +document.getElementById('turnBetInput').value; if (p > 0 && b > 0 && !isNaN(t)) document.getElementById('turnPctInput').value = Math.round(t / (p + b * 2) * 100); this.calc(); },
+      syncTurnPct() { const p = +this.potInput.value, b = +this.betInput.value, pct = +document.getElementById('turnPctInput').value; if (p > 0 && b > 0 && !isNaN(pct)) document.getElementById('turnBetInput').value = Math.round((p + b * 2) * pct / 100); this.calc(); }
+    },
+
+    Tournament: { init() {} },
+
+    /* ==================== 情绪急救模块 ==================== */
+    TiltRescue: {
+      countdownTimer: null, locked: false,
+      quotes: ["被Bad Beat是因为你把对手的手牌带入了摊牌。这是长期盈利的标志。","你无法控制发牌，唯一能控制的是下一手牌的决策。","不要试图'赢回损失'，你在打下一手牌，不是上一手。","你的Tilt评分如果低于3分，应该直接站起离开牌桌。","愤怒是拿别人的错误惩罚自己，在牌桌上尤其如此。","每一次情绪失控，都是对手获利的机会。"],
+      init() { document.getElementById('emergencyBtn').addEventListener('click', () => this.start()); document.getElementById('saveTiltLog').addEventListener('click', () => this.saveAndClose()); },
+      start() { if (this.locked) return; this.locked = true; const overlay = document.getElementById('tiltOverlay'); overlay.classList.add('is-active'); document.getElementById('tiltCircle').style.display = 'block'; const instr = document.getElementById('tiltInstruction'); instr.style.display = 'block'; document.getElementById('tiltQuote').style.display = 'none'; document.getElementById('tiltForm').style.display = 'none'; if (this.countdownTimer) clearInterval(this.countdownTimer); let remaining = CONSTANTS.TILT_RESCUE_DURATION; instr.textContent = `吸气…憋气…呼气… (${remaining}秒)`; this.countdownTimer = setInterval(() => { remaining--; if (remaining > 0) { instr.textContent = `吸气…憋气…呼气… (${remaining}秒)`; } else { clearInterval(this.countdownTimer); this.countdownTimer = null; document.getElementById('tiltCircle').style.display = 'none'; instr.style.display = 'none'; document.getElementById('tiltQuote').style.display = 'block'; document.getElementById('tiltQuote').textContent = this.quotes[Math.floor(Math.random() * this.quotes.length)]; document.getElementById('tiltForm').style.display = 'block'; } }, 1000); },
+      saveAndClose() { try { const trigger = document.getElementById('tiltTrigger').value; const intensity = parseInt(document.getElementById('tiltIntensity').value) || 5; const note = document.getElementById('tiltNote').value.trim(); const log = { date: Utils.getLocalDate(), time: new Date().toISOString(), trigger, intensity, note }; const logs = Store.tiltLogs.get(); logs.push(log); Store.tiltLogs.save(logs); document.getElementById('tiltOverlay').classList.remove('is-active'); document.getElementById('tiltIntensity').value = '5'; document.getElementById('tiltNote').value = ''; if (this.countdownTimer) { clearInterval(this.countdownTimer); this.countdownTimer = null; } this.locked = false; if (typeof App.Review.renderTiltLogs === 'function') App.Review.renderTiltLogs(); } catch (e) { alert('保存失败'); this.locked = false; } }
+    },
+
+    /* ==================== 数据同步模块 ==================== */
+    DataSync: {
+      init() { document.getElementById('clipboardExportBtn').addEventListener('click', () => this.copyToClipboard()); document.getElementById('clipboardImportBtn').addEventListener('click', () => this.importFromClipboard()); document.getElementById('csvExportBtn').addEventListener('click', () => this.exportCSV()); },
+      async copyToClipboard() { try { const data = Store.exportAll(); const compressed = Utils.encodeBase64(data); await navigator.clipboard.writeText(compressed); alert('已复制到剪贴板！'); } catch (e) { alert('无法写入剪贴板'); } },
+      async importFromClipboard() { try { const text = await navigator.clipboard.readText(); if (!text) { alert('剪贴板为空'); return; } const data = Utils.decodeBase64(text); if (Utils.validateBackupData(data)) { if (confirm('将覆盖当前所有数据，确定导入？')) { Store.importAll(data); alert('导入成功！页面将刷新'); location.reload(); } } else { alert('剪贴板数据格式不正确'); } } catch (e) { alert('导入失败'); } },
+      exportCSV() { const sessions = Utils.sortByDateKey(Store.sessions.get()); if (!sessions.length) { alert('暂无Session数据可导出'); return; } const header = '﻿日期,级别,时长(h),手数,盈亏(BB),Tilt评分,错误类型,备注'; const rows = sessions.map(function(s) { return [s.date, s.level, s.duration, s.hands, Utils.safeFixed(s.profit, 1), s.tilt, '"' + (s.mistake || '').replace(/"/g, '""') + '"', '"' + (s.remark || '').replace(/"/g, '""') + '"' ].join(','); }); const csv = header + '\n' + rows.join('\n'); const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'poker_sessions_' + Utils.getLocalDate() + '.csv'; a.click(); URL.revokeObjectURL(url); }
+    }
+  };
+
+  /* ==================== SBB SRP 数据 ==================== */
+  const srpData = [
+    {flop:"A♠️ Q♥️ 8♠️",high:"A高",suit:"听花",connect:"无连",pair:"否",size:"75%"},{flop:"A♠️ J♠️ 9♥️",high:"A高",suit:"听花",connect:"听顺",pair:"否",size:"67%"},{flop:"A♠️ T♠️ 9♥️",high:"A高",suit:"听花",connect:"听顺",pair:"否",size:"67%"},{flop:"A♠️ K♥️ T♥️",high:"A高",suit:"听花",connect:"听顺",pair:"否",size:"67%"},{flop:"A♠️ J♥️ T♦️",high:"A高",suit:"彩虹",connect:"听顺",pair:"否",size:"40%"},{flop:"A♠️ 7♥️ 4♦️",high:"A高",suit:"彩虹",connect:"无连",pair:"否",size:"40%"},{flop:"A♠️ Q♥️ T♠️",high:"A高",suit:"听花",connect:"听顺",pair:"否",size:"40%"},{flop:"A♠️ Q♥️ 3♦️",high:"A高",suit:"彩虹",connect:"无连",pair:"否",size:"25%"},{flop:"A♠️ Q♠️ 4♥️",high:"A高",suit:"听花",connect:"无连",pair:"否",size:"25%"},{flop:"A♠️ J♥️ 4♠️",high:"A高",suit:"听花",connect:"无连",pair:"否",size:"25%"},{flop:"A♠️ K♥️ 5♦️",high:"A高",suit:"彩虹",connect:"无连",pair:"否",size:"25%"},{flop:"A♠️ K♠️ 7♥️",high:"A高",suit:"听花",connect:"无连",pair:"否",size:"25%"},{flop:"A♠️ K♥️ 9♦️",high:"A高",suit:"彩虹",connect:"无连",pair:"否",size:"25%"},{flop:"A♠️ 6♥️ 3♠️",high:"A高",suit:"听花",connect:"听顺",pair:"否",size:"25%"},{flop:"A♠️ T♥️ 2♦️",high:"A高",suit:"彩虹",connect:"无连",pair:"否",size:"25%"},{flop:"A♠️ 9♥️ 2♠️",high:"A高",suit:"听花",connect:"无连",pair:"否",size:"25%"},{flop:"A♠️ 8♥️ 5♠️",high:"A高",suit:"听花",connect:"听顺",pair:"否",size:"25%"},{flop:"A♠️ 4♠️ 3♥️",high:"A高",suit:"听花",connect:"听顺",pair:"否",size:"25%"},{flop:"A♠️ 3♥️ 2♦️",high:"A高",suit:"彩虹",connect:"听顺",pair:"否",size:"25%"},{flop:"A♠️ 8♥️ 7♦️",high:"A高",suit:"彩虹",connect:"听顺",pair:"否",size:"25%"},{flop:"A♠️ 7♠️ 3♠️",high:"A高",suit:"天花",connect:"无连",pair:"否",size:"25%"},{flop:"A♠️ 9♥️ 7♦️",high:"A高",suit:"彩虹",connect:"听顺",pair:"否",size:"25%"},{flop:"A♠️ 8♥️ 5♦️",high:"A高",suit:"彩虹",connect:"听顺",pair:"否",size:"25%"},{flop:"K♠️ 8♥️ 7♦️",high:"K高",suit:"彩虹",connect:"听顺",pair:"否",size:"67%"},{flop:"K♠️ J♠️ T♥️",high:"K高",suit:"听花",connect:"天顺",pair:"否",size:"67%"},{flop:"K♠️ 5♥️ 2♦️",high:"K高",suit:"彩虹",connect:"无连",pair:"否",size:"40%"},{flop:"K♠️ Q♥️ 3♥️",high:"K高",suit:"听花",connect:"无连",pair:"否",size:"25%"},{flop:"K♠️ Q♥️ 8♠️",high:"K高",suit:"听花",connect:"无连",pair:"否",size:"25%"},{flop:"K♠️ J♥️ 3♠️",high:"K高",suit:"听花",connect:"无连",pair:"否",size:"25%"},{flop:"K♠️ T♥️ 3♥️",high:"K高",suit:"听花",connect:"无连",pair:"否",size:"25%"},{flop:"K♠️ J♥️ 8♥️",high:"K高",suit:"听花",connect:"听顺",pair:"否",size:"25%"},{flop:"K♠️ 9♥️ 4♦️",high:"K高",suit:"彩虹",connect:"无连",pair:"否",size:"25%"},{flop:"K♠️ 7♥️ 2♥️",high:"K高",suit:"听花",connect:"无连",pair:"否",size:"25%"},{flop:"K♠️ J♥️ 9♦️",high:"K高",suit:"彩虹",connect:"听顺",pair:"否",size:"25%"},{flop:"K♠️ T♠️ T♥️",high:"K高",suit:"听花",connect:"无连",pair:"是",size:"25%"},{flop:"K♠️ 6♥️ 2♠️",high:"K高",suit:"听花",connect:"无连",pair:"否",size:"25%"},{flop:"K♠️ 6♠️ 5♠️",high:"K高",suit:"天花",connect:"听顺",pair:"否",size:"25%"},{flop:"K♠️ 6♥️ 4♠️",high:"K高",suit:"听花",connect:"听顺",pair:"否",size:"25%"},{flop:"K♠️ 6♥️ 4♦️",high:"K高",suit:"彩虹",connect:"听顺",pair:"否",size:"25%"},{flop:"K♠️ K♥️ 5♦️",high:"K高",suit:"彩虹",connect:"无连",pair:"是",size:"25%"},{flop:"K♠️ 3♥️ 2♥️",high:"K高",suit:"听花",connect:"听顺",pair:"否",size:"25%"},{flop:"Q♠️ 8♥️ 4♠️",high:"Q高",suit:"听花",connect:"无连",pair:"否",size:"67%"},{flop:"Q♠️ 5♠️ 3♥️",high:"Q高",suit:"听花",connect:"听顺",pair:"否",size:"40%"},{flop:"Q♠️ 6♠️ 3♥️",high:"Q高",suit:"听花",connect:"无连",pair:"否",size:"40%"},{flop:"Q♠️ 6♥️ 4♥️",high:"Q高",suit:"听花",connect:"听顺",pair:"否",size:"40%"},{flop:"Q♠️ Q♥️ T♠️",high:"Q高",suit:"听花",connect:"无连",pair:"是",size:"25%"},{flop:"Q♠️ 9♥️ 6♦️",high:"Q高",suit:"彩虹",connect:"听顺",pair:"否",size:"25%"},{flop:"Q♠️ 7♠️ 5♥️",high:"Q高",suit:"听花",connect:"听顺",pair:"否",size:"25%"},{flop:"Q♠️ 8♠️ 2♠️",high:"Q高",suit:"天花",connect:"无连",pair:"否",size:"25%"},{flop:"Q♠️ T♥️ 2♦️",high:"Q高",suit:"彩虹",connect:"无连",pair:"否",size:"25%"},{flop:"Q♠️ J♥️ J♦️",high:"Q高",suit:"彩虹",connect:"无连",pair:"是",size:"25%"},{flop:"Q♠️ 9♥️ 7♦️",high:"Q高",suit:"彩虹",connect:"听顺",pair:"否",size:"25%"},{flop:"Q♠️ J♥️ 2♦️",high:"Q高",suit:"彩虹",connect:"无连",pair:"否",size:"25%"},{flop:"Q♠️ J♥️ 6♦️",high:"Q高",suit:"彩虹",connect:"听顺",pair:"否",size:"25%"},{flop:"Q♠️ 8♥️ 6♦️",high:"Q高",suit:"彩虹",connect:"听顺",pair:"否",size:"25%"},{flop:"J♠️ 8♥️ 7♦️",high:"J高",suit:"彩虹",connect:"听顺",pair:"否",size:"67%"},{flop:"J♠️ 7♥️ 5♠️",high:"J高",suit:"听花",connect:"听顺",pair:"否",size:"67%"},{flop:"J♠️ 7♠️ 6♥️",high:"J高",suit:"听花",connect:"听顺",pair:"否",size:"67%"},{flop:"J♠️ 4♥️ 2♦️",high:"J高",suit:"彩虹",connect:"无连",pair:"否",size:"40%"},{flop:"J♠️ 6♥️ 5♦️",high:"J高",suit:"彩虹",connect:"听顺",pair:"否",size:"40%"},{flop:"J♠️ 7♥️ 2♦️",high:"J高",suit:"彩虹",connect:"无连",pair:"否",size:"40%"},{flop:"J♠️ T♥️ 6♥️",high:"J高",suit:"听花",connect:"听顺",pair:"否",size:"25%"},{flop:"J♠️ 9♥️ 9♦️",high:"J高",suit:"彩虹",connect:"无连",pair:"是",size:"25%"},{flop:"J♠️ 3♥️ 2♥️",high:"J高",suit:"听花",connect:"听顺",pair:"否",size:"25%"},{flop:"J♠️ 9♠️ 4♠️",high:"J高",suit:"天花",connect:"听顺",pair:"否",size:"25%"},{flop:"J♠️ J♥️ 7♠️",high:"J高",suit:"听花",connect:"无连",pair:"是",size:"25%"},{flop:"J♠️ T♠️ 2♠️",high:"J高",suit:"天花",connect:"听顺",pair:"否",size:"25%"},{flop:"9♠️ 5♥️ 3♦️",high:"低牌",suit:"彩虹",connect:"无连",pair:"否",size:"75%"},{flop:"7♠️ 4♥️ 2♦️",high:"低牌",suit:"彩虹",connect:"听顺",pair:"否",size:"33%"},{flop:"9♠️ 6♥️ 3♦️",high:"低牌",suit:"彩虹",connect:"听顺",pair:"否",size:"33%"},{flop:"T♠️ 8♠️ 5♥️",high:"低牌",suit:"听花",connect:"听顺",pair:"否",size:"33%"},{flop:"9♠️ 8♥️ 3♥️",high:"低牌",suit:"听花",connect:"听顺",pair:"否",size:"75%"},{flop:"8♠️ 6♠️ 2♥️",high:"低牌",suit:"听花",connect:"听顺",pair:"否",size:"75%"},{flop:"7♠️ 7♥️ 4♠️",high:"低牌",suit:"听花",connect:"无连",pair:"是",size:"75%"},{flop:"9♠️ 5♥️ 3♠️",high:"低牌",suit:"听花",connect:"无连",pair:"否",size:"75%"},{flop:"6♠️ 5♥️ 4♦️",high:"低牌",suit:"彩虹",connect:"天顺",pair:"否",size:"75%"},{flop:"7♠️ 4♥️ 3♥️",high:"低牌",suit:"听花",connect:"听顺",pair:"否",size:"75%"},{flop:"5♠️ 4♥️ 2♠️",high:"低牌",suit:"听花",connect:"听顺",pair:"否",size:"75%"},{flop:"9♠️ 8♥️ 2♠️",high:"低牌",suit:"听花",connect:"听顺",pair:"否",size:"67%"},{flop:"T♠️ 8♥️ 4♦️",high:"低牌",suit:"彩虹",connect:"听顺",pair:"否",size:"67%"},{flop:"T♠️ 7♥️ 6♦️",high:"低牌",suit:"彩虹",connect:"听顺",pair:"否",size:"67%"},{flop:"8♠️ 6♥️ 3♥️",high:"低牌",suit:"听花",connect:"听顺",pair:"否",size:"67%"},{flop:"7♠️ 6♥️ 5♦️",high:"低牌",suit:"彩虹",connect:"天顺",pair:"否",size:"67%"},{flop:"T♠️ 8♥️ 3♦️",high:"低牌",suit:"彩虹",connect:"听顺",pair:"否",size:"40%"},{flop:"T♠️ 4♥️ 3♦️",high:"低牌",suit:"彩虹",connect:"听顺",pair:"否",size:"40%"},{flop:"7♠️ 3♥️ 3♦️",high:"低牌",suit:"彩虹",connect:"无连",pair:"是",size:"40%"},{flop:"T♠️ 6♥️ 5♥️",high:"低牌",suit:"听花",connect:"听顺",pair:"否",size:"40%"},{flop:"9♠️ 7♥️ 6♥️",high:"低牌",suit:"听花",connect:"听顺",pair:"否",size:"40%"},{flop:"9♠️ 5♠️ 4♥️",high:"低牌",suit:"听花",connect:"听顺",pair:"否",size:"40%"},{flop:"9♠️ 6♠️ 4♠️",high:"低牌",suit:"天花",connect:"听顺",pair:"否",size:"40%"},{flop:"6♠️ 4♥️ 2♥️",high:"低牌",suit:"听花",connect:"听顺",pair:"否",size:"40%"},{flop:"T♠️ 9♥️ 7♦️",high:"低牌",suit:"彩虹",connect:"听顺",pair:"否",size:"25%"},{flop:"T♠️ 9♠️ 2♥️",high:"低牌",suit:"听花",connect:"听顺",pair:"否",size:"25%"},{flop:"8♠️ 5♠️ 5♥️",high:"低牌",suit:"听花",connect:"无连",pair:"是",size:"25%"},{flop:"9♠️ 4♥️ 4♦️",high:"低牌",suit:"彩虹",connect:"无连",pair:"是",size:"25%"},{flop:"6♠️ 6♥️ 5♦️",high:"低牌",suit:"彩虹",connect:"听顺",pair:"是",size:"25%"},{flop:"T♠️ 7♠️ 5♠️",high:"低牌",suit:"天花",connect:"听顺",pair:"否",size:"25%"},{flop:"5♠️ 2♠️ 2♥️",high:"低牌",suit:"听花",connect:"无连",pair:"是",size:"25%"},{flop:"T♠️ T♥️ 5♦️",high:"低牌",suit:"彩虹",connect:"无连",pair:"是",size:"25%"},{flop:"8♠️ 8♥️ 2♦️",high:"低牌",suit:"彩虹",connect:"无连",pair:"是",size:"25%"},{flop:"5♠️ 4♥️ 3♥️",high:"低牌",suit:"听花",connect:"天顺",pair:"否",size:"25%"},{flop:"7♠️ 4♥️ 2♦️",high:"低牌",suit:"彩虹",connect:"听顺",pair:"否",size:"25%"}
+  ];
+App.renderSRPTable = function() { const h = document.getElementById('filterHigh').value, s = document.getElementById('filterSuit').value, c = document.getElementById('filterConnect').value, p = document.getElementById('filterPair').value; const tb = document.getElementById('srpBody'); if (!tb) return; const rows = []; srpData.filter(r => (h === 'all' || r.high === h) && (s === 'all' || r.suit === s) && (c === 'all' || r.connect === c) && (p === 'all' || r.pair === p)).forEach(r => { rows.push(`<tr><td>${r.flop}</td><td>${r.high}</td><td>${r.suit}</td><td>${r.connect}</td><td>${r.pair}</td><td>${r.size}</td></tr>`); }); tb.innerHTML = rows.join('');  };
+
+  /* ==================== 行动线速查表 ==================== */
+  const underBluff = [
+    {line:"3IA-XX-R-", text:"静态flop XX（控池），转牌后raise（追池）。flop和turn互相矛盾，尊重后者的真实意图。"},
+    {line:"SIA-Bm-Bb-Bs", text:"有利位置连开三枪。flop 0.5pot、turn 0.75极化、河牌 0.33pot 薄价值下注。河牌 0.66+ 一般是价值下注。"},
+    {line:"SIA-B-B-B", text:"有利位置有A的牌面连开三枪，诈唬不足。（有A的牌面河牌对手AK/AQ都会下注，诈唬不足）"},
+    {line:"SIA-Bb-", text:"有利位置进攻方flop就极化下注 0.75-1pot，可能对手转牌会X，但我们依旧不应过度防守。"},
+    {line:"SOD-XX-CX-DBb", text:"河牌坚果发生改变（听牌都到了），对手DBb较大尺度，诈唬不足。"},
+    {line:"SOD-XX-CR / -XR", text:"翻牌XC，转牌或河牌面对不对顶的大尺度下注仍然做XR。这里一般诈唬不足（我们可以弃AA单对的牌力）。"},
+    {line:"多人池的前位DB", text:"多人池领先下注意味着要么是强牌担心X损失价值，要么是鱼钓强牌提前寻求打光。"},
+    {line:"3OD-DB(不见AK)", text:"不利位置冷call 3B，flop没有A或K的DB，一般是超对（KK/QQ/JJ）。TT/99/88会过牌。"},
+    {line:"多人池的河牌才下注", text:"flop XX - turn XX - 河牌DB。河牌下注更像是薄价值下注。我们抓诈的阈值要更高。"},
+    {line:"多人池前位/中位 BC-DBb-DBb", text:"多人池中位，flop BC，转牌或河牌抽花/抽顺已到，turn DBb河牌继续DBb，诈唬不足。"}
+  ];
+  const overBluff = [
+    {line:"SOD-DBs-m", text:"单挑底池的DB一般是弱成牌居多。策略：flop float，转牌价值降频打，诈唬raise。"},
+    {line:"SOD-XX-probes", text:"不利位置防守方，flop双方XX，转牌对手小尺度试探下注，诈唬过度。策略：turn call，river摊不赢的raise诈唬。"},
+    {line:"3OD-XC-XX-DBs", text:"宽范围。XC-XX弱范围-DBs消化很多诈唬。如果是DBb应该是价值。"},
+    {line:"SIAe-B-", text:"有利位置宽范围，持续下注频率过高。我们抵抗策略可以是高频XR，对手会过度弃牌。"},
+    {line:"SIA-B-(掉A)", text:"有利位置进攻方，flop下注后掉A。此场景诈唬过度。河牌对手继续下注肯定是诈唬不足。"},
+    {line:"SID-stab", text:"有利位置防守方，在我们过牌后对手stab下注过度。策略：我们应在不利位置全范围过牌找对手马脚。"},
+    {line:"SID-XX-B", text:"有利位置防守方，我们连续过牌。对手如果是强牌flop需要下注，转牌会下注很多空气诈唬牌。"},
+    {line:"对手是进攻方flop下注尺度较小", text:"如果SPR较深，对手flop下注小尺度，更可能是中等牌而非强牌。策略：flop float，turn能摊赢的call，不能的为效率小尺度raise诈唬。"},
+    {line:"3OA-Bs-XX-Bs-m", text:"这条行动线目前尚不明确是否是诈唬过度。"}
+  ];
+App.renderActionLines = function() { const tb = document.getElementById('actionLineBody'); if (!tb) return; const rows = []; const maxLen = Math.max(underBluff.length, overBluff.length); for (let i = 0; i < maxLen; i++) { const u = underBluff[i] || { line: '', text: '' }; const o = overBluff[i] || { line: '', text: '' }; rows.push(`<tr><td>${u.line}</td><td>${u.text || '--'}</td><td>${o.line}</td><td>${o.text || '--'}</td></tr>`); } tb.innerHTML = rows.join(''); };
+
+  /* ==================== 复盘模块 ==================== */
+  App.Review = {
+    init() {
+      document.getElementById('addSessionBtn').addEventListener('click', () => this.addSession());
+      document.getElementById('clearSessionBtn').addEventListener('click', () => this.clearSessionForm());
+      document.getElementById('refreshSessionsBtn').addEventListener('click', () => this.renderSessions());
+      document.getElementById('filterLevel').addEventListener('change', () => this.renderSessions());
+      document.getElementById('exportBtn').addEventListener('click', () => this.exportData());
+      document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFileInput').click());
+      document.getElementById('importFileInput').addEventListener('change', e => this.importData(e));
+      document.getElementById('saveHandBtn').addEventListener('click', () => this.saveHandReview());
+      document.getElementById('saveWeeklyBtn').addEventListener('click', () => this.saveWeeklyReview());
+      Utils.initDropdown(document.getElementById('migrateBtn'), document.getElementById('migrateMenu'));
+      document.getElementById('sessDate').value = Utils.getLocalDate();
+      Utils.initToggleGroup('sessMistakeGroup');
+      Utils.initToggleGroup('handMistakeGroup');
+      document.getElementById('sessionBody').addEventListener('click', e => { const delBtn = e.target.closest('[data-delete-id]'); if (delBtn) this.deleteSession(delBtn.dataset.deleteId); const editBtn = e.target.closest('[data-edit-id]'); if (editBtn) this.editSession(editBtn.dataset.editId); });
+      document.getElementById('handBody').addEventListener('click', e => { const btn = e.target.closest('[data-hand-delete]'); if (btn) this.deleteHandReview(btn.dataset.handDelete); });
+      document.getElementById('weeklyBody').addEventListener('click', e => { const btn = e.target.closest('[data-week-delete]'); if (btn) this.deleteWeeklyReview(btn.dataset.weekDelete); });
+    },
+    renderAll() { this.renderSessions(); this.updateStats(); this.populateHandSessionSelect(); this.renderHandReviews(); this.renderWeeklyReviews(); this.generateWeeklyStats(); this.renderTiltLogs(); },
+    getSessions() { return Store.sessions.get(); },
+    saveSessions(s) { Store.sessions.save(s); },
+    addSession() { const date = document.getElementById('sessDate').value || Utils.getLocalDate(), level = document.getElementById('sessLevel').value.trim() || 'NL10', dur = parseFloat(document.getElementById('sessDur').value), hands = parseInt(document.getElementById('sessHands').value), profit = parseFloat(document.getElementById('sessProfit').value), tilt = parseInt(document.getElementById('sessTilt').value) || 5, remark = document.getElementById('sessRemark').value.trim(); const btns = document.querySelectorAll('#sessMistakeGroup .toggle-btn.is-active'); const mistakes = Array.from(btns).map(b => b.dataset.mistake); const custom = document.getElementById('sessMistakeCustom').value.trim(); if (custom) mistakes.push(custom); const mistakeStr = mistakes.join(', ') || '无'; if (isNaN(dur) || isNaN(hands) || isNaN(profit) || dur <= 0 || hands <= 0) { alert('请填写有效的时长、手数和盈亏'); return; } const s = { date, level, duration: dur, hands, profit, tilt, mistake: mistakeStr, remark }; const sessions = this.getSessions(); if (this.editingId) { const idx = sessions.findIndex(function(x) { return x.id === this.editingId; }.bind(this)); if (idx !== -1) { s.id = this.editingId; sessions[idx] = s; } this.editingId = null; document.getElementById('addSessionBtn').textContent = '💾 保存'; document.getElementById('clearSessionBtn').textContent = '🧹 清空'; document.getElementById('addSessionBtn').style.background = ''; } else { s.id = Utils.generateUUID(); sessions.push(s); } this.saveSessions(sessions); this.clearSessionForm(); this.renderAll(); },
+    clearSessionForm() { ['sessDate', 'sessLevel', 'sessDur', 'sessHands', 'sessProfit', 'sessRemark', 'sessMistakeCustom'].forEach(id => document.getElementById(id).value = ''); document.getElementById('sessTilt').value = '5'; document.querySelectorAll('#sessMistakeGroup .toggle-btn').forEach(b => b.classList.remove('is-active')); this.editingId = null; document.getElementById('addSessionBtn').textContent = '💾 保存'; document.getElementById('clearSessionBtn').textContent = '🧹 清空'; document.getElementById('addSessionBtn').style.background = ''; },
+    editSession(id) { const sessions = this.getSessions(); const s = sessions.find(function(x) { return x.id === id; }); if (!s) return; this.editingId = id; document.getElementById('sessDate').value = s.date || ''; document.getElementById('sessLevel').value = s.level || ''; document.getElementById('sessDur').value = s.duration || ''; document.getElementById('sessHands').value = s.hands || ''; document.getElementById('sessProfit').value = s.profit || ''; document.getElementById('sessTilt').value = s.tilt || 5; document.getElementById('sessRemark').value = s.remark || ''; document.querySelectorAll('#sessMistakeGroup .toggle-btn').forEach(function(b) { b.classList.remove('is-active'); }); if (s.mistake && s.mistake !== '无') { const parts = s.mistake.split(', '); document.querySelectorAll('#sessMistakeGroup .toggle-btn').forEach(function(b) { if (parts.indexOf(b.dataset.mistake) !== -1) b.classList.add('is-active'); }); const predefined = ['翻前结构错误','翻后认知错误','下注结构错误','Exploit偏移','心理错误']; const customParts = parts.filter(function(p) { return predefined.indexOf(p) === -1; }); document.getElementById('sessMistakeCustom').value = customParts.join(', '); } document.getElementById('addSessionBtn').textContent = '💾 更新'; document.getElementById('clearSessionBtn').textContent = '❌ 取消编辑'; document.getElementById('addSessionBtn').style.background = '#0ea5e9'; window.scrollTo({ top: document.getElementById('addSessionBtn').offsetTop - 100, behavior: 'smooth' }); },
+    deleteSession(id) { App.confirmDelete(() => this.getSessions(), (d) => this.saveSessions(d), () => this.renderAll(), 'id', id); },
+    renderSessions() { const filter = document.getElementById('filterLevel').value; let sessions = Utils.sortByDateKey(this.getSessions());const levels = [...new Set(sessions.map(s => s.level))], sel = document.getElementById('filterLevel'); sel.innerHTML = '<option value="all">全部级别</option>'; levels.forEach(l => sel.innerHTML += `<option value="${Utils.escapeHtml(l)}">${Utils.escapeHtml(l)}</option>`); sel.value = filter; if (filter !== 'all') sessions = sessions.filter(s => s.level === filter); const rows = []; sessions.forEach(s => {const profitStr = Utils.escapeHtml(Utils.safeFixed(s.profit, 1)); rows.push(`<tr><td>${Utils.escapeHtml(s.date)}</td><td>${Utils.escapeHtml(s.level)}</td><td>${s.duration}h</td><td>${s.hands}</td><td style="color:${s.profit >= 0 ? '#4ade80' : '#f87171'}">${s.profit >= 0 ? '+' + profitStr : profitStr}</td><td>${s.tilt}</td><td>${Utils.escapeHtml(s.mistake)}</td><td><button class="btn--mini" data-edit-id="${s.id}">✎</button> <button class="btn--mini btn--danger" data-delete-id="${s.id}">✕</button></td></tr>`); }); document.getElementById('sessionBody').innerHTML = rows.join(''); },
+    updateStats() {
+      const sessions = this.getSessions(), live = sessions.filter(s => s.level.toLowerCase() === 'live');
+      let tp = 0, th = 0, td = 0, tt = 0; sessions.forEach(s => { tp += s.profit; th += s.hands; td += s.duration; tt += s.tilt; });
+      const c = sessions.length, avgTilt = c ? Utils.safeFixed(tt / c, 1) : 'N/A', bb100 = th ? Utils.safeFixed(tp / th * 100, 1) : 'N/A', hr = td ? Utils.safeFixed(tp / td, 2) : 'N/A';
+      document.getElementById('statsArea').innerHTML = `<div class="stats"><div class="stats__item"><div class="stats__label">总场次</div><div class="stats__value">${c}</div></div><div class="stats__item ${tp >= 0 ? 'stats__item--win' : 'stats__item--lose'}"><div class="stats__label">总盈亏</div><div class="stats__value ${tp >= 0 ? 'text-win' : 'text-lose'}">${tp >= 0 ? '+' + Utils.safeFixed(tp, 1) : Utils.safeFixed(tp, 1)} BB</div></div><div class="stats__item"><div class="stats__label">总手数</div><div class="stats__value">${th}</div></div><div class="stats__item ${parseFloat(bb100) >= 0 ? 'stats__item--win' : 'stats__item--lose'}"><div class="stats__label">bb/100</div><div class="stats__value ${parseFloat(bb100) >= 0 ? 'text-win' : 'text-lose'}">${bb100}</div></div><div class="stats__item ${parseFloat(hr) >= 0 ? 'stats__item--win' : 'stats__item--lose'}"><div class="stats__label">时薪</div><div class="stats__value ${parseFloat(hr) >= 0 ? 'text-win' : 'text-lose'}">${hr} BB/h</div></div><div class="stats__item"><div class="stats__label">平均Tilt</div><div class="stats__value">${avgTilt}</div></div></div>`;
+      const mistakeMap = new Map(); const mistakeProfitMap = new Map();
+      sessions.forEach(s => { if (s.mistake !== '无') { s.mistake.split(', ').forEach(m => { const t = m.trim(); if (t) { mistakeMap.set(t, (mistakeMap.get(t) || 0) + 1); mistakeProfitMap.set(t, (mistakeProfitMap.get(t) || 0) + s.profit); } }); } });
+      let mh = ''; if (mistakeMap.size) { const sorted = [...mistakeMap.entries()].map(([k, v]) => ({ name: k, count: v, avgProfit: Utils.safeFixed(mistakeProfitMap.get(k) / v, 1) })).sort((a, b) => parseFloat(a.avgProfit) - parseFloat(b.avgProfit)); sorted.forEach(item => { mh += `<span class="mistake-tag">${Utils.escapeHtml(item.name)} x${item.count} <span class="${parseFloat(item.avgProfit) >= 0 ? 'text-win' : 'text-lose'}" style="font-size:0.85em">${parseFloat(item.avgProfit) >= 0 ? '+' : ''}${item.avgProfit} BB</span></span> `; }); } else { mh = '暂无错误记录'; } document.getElementById('mistakeStats').innerHTML = mh;
+      let lh = ''; if (live.length) { let lp = 0, lhI = 0, ld = 0, lt = 0; live.forEach(s => { lp += s.profit; lhI += s.hands; ld += s.duration; lt += s.tilt; }); lh = `场次: ${live.length} | 总手: ${lhI} | 盈亏: ${Utils.safeFixed(lp, 1)} BB | 平均Tilt: ${Utils.safeFixed(lt / live.length, 1)} | 时薪: ${Utils.safeFixed(ld ? lp / ld : 0, 2)} BB/h`; } else lh = '暂无Live数据'; document.getElementById('liveStats').innerHTML = lh; this.renderChart();
+    },
+    renderChart() { const sessions = Utils.sortByDateKey(this.getSessions()).reverse().slice(0, 15).reverse(); const canvas = document.getElementById('profitChart'); if (!canvas || sessions.length < 2) { if (canvas) canvas.style.display = 'none'; return; } canvas.style.display = 'block'; const dpr = window.devicePixelRatio || 1; const W = canvas.parentElement.clientWidth - 32; const H = 200; canvas.width = W * dpr; canvas.height = H * dpr; canvas.style.width = W + 'px'; canvas.style.height = H + 'px'; const ctx = canvas.getContext('2d'); ctx.scale(dpr, dpr); const pad = { top: 20, right: 16, bottom: 40, left: 48 }; const pw = W - pad.left - pad.right; const ph = H - pad.top - pad.bottom; const profits = sessions.map(function(s) { return s.profit; }); const maxP = Math.max(Math.abs(Math.max.apply(null, profits)), Math.abs(Math.min.apply(null, profits)), 10); ctx.clearRect(0, 0, W, H); ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.roundRect(0, 0, W, H, 8); ctx.fill(); // Y axis
+    ctx.strokeStyle = '#334155'; ctx.lineWidth = 0.5; ctx.fillStyle = '#64748b'; ctx.font = '9px -apple-system,sans-serif'; ctx.textAlign = 'right'; const ySteps = 4; for (let i = 0; i <= ySteps; i++) { const y = pad.top + (ph / ySteps) * i; const val = maxP * (1 - i / ySteps * 2); ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke(); // Zero line thicker
+    if (i === 2) { ctx.strokeStyle = '#475569'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke(); ctx.strokeStyle = '#334155'; ctx.lineWidth = 0.5; } ctx.fillText(Math.round(val) + '', pad.left - 6, y + 3); } // Bars
+    const barW = Math.max(6, Math.min(22, (pw / sessions.length) * 0.7)); const gap = pw / sessions.length; sessions.forEach(function(s, i) { const x = pad.left + gap * i + (gap - barW) / 2; const h = Math.abs(s.profit) / maxP * (ph / 2); const y = s.profit >= 0 ? pad.top + ph / 2 - h : pad.top + ph / 2; ctx.fillStyle = s.profit >= 0 ? '#4ade80' : '#f87171'; ctx.beginPath(); ctx.roundRect(x, y, barW, Math.max(1, h), 3); ctx.fill(); // Date label every 3rd bar
+    if (i % 3 === 0 || i === sessions.length - 1) { ctx.fillStyle = '#94a3b8'; ctx.font = '8px -apple-system,sans-serif'; ctx.textAlign = 'center'; ctx.fillText(s.date.slice(5) || s.date, x + barW / 2, pad.top + ph + 16); } }); // Moving average line (3-session)
+    if (sessions.length >= 3) { ctx.strokeStyle = '#facc15'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]); ctx.beginPath(); for (let i = 1; i < sessions.length - 1; i++) { const avg = (sessions[i - 1].profit + sessions[i].profit + sessions[i + 1].profit) / 3; const x = pad.left + gap * i + gap / 2; const y = pad.top + ph / 2 - (avg / maxP) * (ph / 2); if (i === 1) ctx.moveTo(x, y); else ctx.lineTo(x, y); } ctx.stroke(); ctx.setLineDash([]); // Legend
+    ctx.fillStyle = '#facc15'; ctx.font = '8px -apple-system,sans-serif'; ctx.textAlign = 'left'; ctx.fillText('━ 3场滑动平均', pad.left, pad.top + 10); } // X axis
+    ctx.strokeStyle = '#334155'; ctx.lineWidth = 0.5; ctx.beginPath(); ctx.moveTo(pad.left, pad.top + ph); ctx.lineTo(W - pad.right, pad.top + ph); ctx.stroke(); },
+
+    renderTiltLogs() { const logs = Store.tiltLogs.get(); const container = document.getElementById('tiltLogList'); if (!container) return; if (logs.length === 0) { container.innerHTML = '暂无记录'; return; } const recent = logs.slice(-5).reverse(); 
+container.innerHTML = recent.map(function(l) {
+  const timeStr = Utils.formatTime(l.time);
+  return '<div style="margin-bottom:4px;background:#0f172a;padding:6px 10px;border-radius:8px"><span style="color:#f87171">' + Utils.escapeHtml(l.trigger) + '</span> | 强度:' + l.intensity + ' | ' + Utils.escapeHtml(l.note || '') + ' <span style="font-size:0.7em;color:#64748b">' + l.date + ' ' + timeStr + '</span></div>';
+}).join('');
+},
+    getHandReviews() { return Store.handReviews.get(); },
+    saveHandReviews(r) { Store.handReviews.save(r); },
+    populateHandSessionSelect() { const sessions = Utils.sortByDateKey(this.getSessions()), sel = document.getElementById('handSessionSelect'); sel.innerHTML = '<option value="">-- 不关联 --</option>'; sessions.forEach(s => { sel.innerHTML += `<option value="${s.id}">${Utils.escapeHtml(s.date)} ${Utils.escapeHtml(s.level)} (${s.profit >= 0 ? '+' + Utils.safeFixed(s.profit, 1) : Utils.safeFixed(s.profit, 1)}BB)</option>`; }); },
+    saveHandReview() { const sid = document.getElementById('handSessionSelect').value || null, desc = document.getElementById('handDesc').value.trim(), decision = document.getElementById('handDecision').value.trim(), reflection = document.getElementById('handReflection').value.trim(); const potType = document.getElementById('handPotType').value, board = document.getElementById('handBoard').value; const btns = document.querySelectorAll('#handMistakeGroup .toggle-btn.is-active'); const mistakes = Array.from(btns).map(b => b.dataset.mistake); const custom = document.getElementById('handMistakeCustom').value.trim(); if (custom) mistakes.push(custom); const mistakeStr = mistakes.join(', ') || ''; if (!desc && !decision && !reflection) { alert('请至少填写一项内容'); return; } const r = { id: Utils.generateUUID(), sessionId: sid || null, date: Utils.getLocalDate(), potType, board, desc, decision, mistake: mistakeStr, reflection }; const reviews = this.getHandReviews(); reviews.push(r); this.saveHandReviews(reviews); document.getElementById('handDesc').value = 'OTF（翻牌）: 牌面：    行动：\nOTT（转牌）: 牌面：    行动：\nOTR（河牌）: 牌面：    行动：'; document.getElementById('handDecision').value = ''; document.getElementById('handReflection').value = ''; document.querySelectorAll('#handMistakeGroup .toggle-btn').forEach(b => b.classList.remove('is-active')); document.getElementById('handMistakeCustom').value = ''; this.renderHandReviews(); },
+    deleteHandReview(id) { App.confirmDelete(() => this.getHandReviews(), (d) => this.saveHandReviews(d), () => this.renderHandReviews(), 'id', id); },
+    renderHandReviews() { const reviews = Utils.sortByDateKey(this.getHandReviews()), sessions = this.getSessions(); const rows = []; reviews.forEach(r => {const s = sessions.find(x => x.id === r.sessionId); const sessionLabel = s ? `${Utils.escapeHtml(s.date)} ${Utils.escapeHtml(s.level)}` : '无'; const profit = s ? Utils.safeFixed(s.profit, 1) : '--'; const typeLabel = r.potType ? `${r.potType}${r.board ? ' ' + r.board : ''}` : '--'; rows.push(`<tr><td>${Utils.escapeHtml(typeLabel)}</td><td>${sessionLabel} (${s ? '±' + profit : ''})</td><td>${Utils.escapeHtml(r.desc.substring(0, 20))}…</td><td>${Utils.escapeHtml(r.mistake || '--')}</td><td><button class="btn--mini btn--danger" data-hand-delete="${r.id}">✕</button></td></tr>`); }); document.getElementById('handBody').innerHTML = rows.join(''); },
+    getWeekStr(d = new Date()) { const day = d.getDay(), diff = d.getDate() - day + (day === 0 ? -6 : 1); d.setDate(diff); const m = new Date(d); const y = m.getFullYear(), w = Math.ceil(((m - new Date(y, 0, 1)) / 86400000 + 1) / 7); return `${y}-W${String(w).padStart(2, '0')}`; },
+    generateWeeklyStats() {
+      const now = new Date(), day = now.getDay(), diff = now.getDate() - day + (day === 0 ? -6 : 1); now.setDate(diff); now.setHours(0, 0, 0, 0); const m = new Date(now), s = new Date(m); s.setDate(m.getDate() + 6); s.setHours(23, 59, 59, 999);
+      const sessions = Utils.sortByDateKey(this.getSessions().filter(x => { const d = new Date(x.date); return d >= m && d <= s; })), hrs = this.getHandReviews().filter(x => { const d = new Date(x.date); return d >= m && d <= s; });
+      let tp = 0, th = 0, tt = 0; sessions.forEach(x => { tp += x.profit; th += x.hands; tt += x.tilt; });
+      const mm = new Map(); sessions.forEach(x => { if (x.mistake !== '无') x.mistake.split(', ').forEach(m => { const t = m.trim(); if (t) mm.set(t, (mm.get(t) || 0) + 1); }); }); hrs.forEach(x => { if (x.mistake) x.mistake.split(', ').forEach(m => { const t = m.trim(); if (t) mm.set(t, (mm.get(t) || 0) + 1); }); });
+      const topMistakes = [...mm.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(e => `${e[0]}(${e[1]}次)`).join(', ') || '无';
+      const autoSummary = this.generateWeeklySummary(sessions, tp, tt, topMistakes);
+      const wBb100 = th ? Utils.safeFixed(tp / th * 100, 1) : 'N/A'; document.getElementById('weeklyAutoStats').innerHTML = `<div class="stats"><div class="stats__item"><div class="stats__label">本周场次</div><div class="stats__value">${sessions.length}</div></div><div class="stats__item ${tp >= 0 ? 'stats__item--win' : 'stats__item--lose'}"><div class="stats__label">本周盈亏</div><div class="stats__value ${tp >= 0 ? 'text-win' : 'text-lose'}">${tp >= 0 ? '+' + Utils.safeFixed(tp, 1) : Utils.safeFixed(tp, 1)} BB</div></div><div class="stats__item"><div class="stats__label">总手数</div><div class="stats__value">${th}</div></div><div class="stats__item ${parseFloat(wBb100) >= 0 ? 'stats__item--win' : 'stats__item--lose'}"><div class="stats__label">bb/100</div><div class="stats__value ${parseFloat(wBb100) >= 0 ? 'text-win' : 'text-lose'}">${wBb100}</div></div><div class="stats__item"><div class="stats__label">平均Tilt</div><div class="stats__value">${sessions.length ? Utils.safeFixed(tt / sessions.length, 1) : 'N/A'}</div></div><div class="stats__item"><div class="stats__label">主要错误</div><div class="stats__value" style="font-size:0.8em">${Utils.escapeHtml(topMistakes)}</div></div></div>`;
+      document.getElementById('weeklySummary').innerHTML = autoSummary ? `<b>🧠 本周总结</b><br>${autoSummary}` : '';
+    },
+    generateWeeklySummary(sessions, tp, tt, topMistakes) {
+      if (sessions.length === 0) return '';
+      const avgTilt = tt / sessions.length;
+      let summary = `本周共 ${sessions.length} 场，总盈亏 ${tp >= 0 ? '+' + Utils.safeFixed(tp, 1) : Utils.safeFixed(tp, 1)} BB。`;
+      if (avgTilt >= 7) summary += ' 平均情绪评分 ≥ 7，说明本周心态非常冷静，决策质量较高。保持住这个节奏。';
+      else if (avgTilt >= 5) summary += ' 平均情绪评分中等，有一些小波动但没有严重失控。注意识别让你情绪波动的具体场景。';
+      else summary += ' 平均情绪评分偏低，可能出现了一些情绪失控的瞬间。建议下周重点做情绪急救练习。';
+      if (topMistakes !== '无') summary += ` 主要错误集中在「${topMistakes}」，建议在下周的实战中刻意关注这些场景。`;
+      else summary += ' 你还没有记录具体的错误类型。尝试在每场Session后填写错误类型，几周后就能看到自己的主要漏洞了。';
+      return summary;
+    },
+    getWeeklyReviews() { return Store.weeklyReviews.get(); },
+    saveWeeklyReviews(r) { Store.weeklyReviews.save(r); },
+    saveWeeklyReview() { const week = this.getWeekStr(), weakness = document.getElementById('weeklyWeakness').value.trim(), plan = document.getElementById('weeklyPlan').value.trim(); if (!weakness && !plan) { alert('请至少填写一项'); return; } const reviews = this.getWeeklyReviews(), exist = reviews.find(r => r.week === week); if (exist) { exist.weakness = weakness || exist.weakness; exist.plan = plan || exist.plan; } else reviews.push({ week, weakness, plan }); this.saveWeeklyReviews(reviews); document.getElementById('weeklyWeakness').value = ''; document.getElementById('weeklyPlan').value = ''; this.renderWeeklyReviews(); },
+    deleteWeeklyReview(week) { App.confirmDelete(() => this.getWeeklyReviews(), (d) => this.saveWeeklyReviews(d), () => this.renderWeeklyReviews(), 'week', week); },
+    renderWeeklyReviews() { const reviews = Utils.sortByDateKey(this.getWeeklyReviews(), 'week'); const rows = []; reviews.forEach(r => {rows.push(`<tr><td>${Utils.escapeHtml(r.week)}</td><td>${Utils.escapeHtml(r.weakness || '--')}</td><td>${Utils.escapeHtml(r.plan || '--')}</td><td><button class="btn--mini btn--danger" data-week-delete="${r.week}">✕</button></td></tr>`); }); document.getElementById('weeklyBody').innerHTML = rows.join(''); },
+    exportData() { const data = Store.exportAll(); const json = JSON.stringify(data); const blob = new Blob([json], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `poker_backup_${Utils.getLocalDate()}.json`; a.click(); URL.revokeObjectURL(url); },
+    importData(e) { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { try { const imp = JSON.parse(reader.result); if (imp.sessions !== undefined) { if (confirm('导入数据将覆盖当前所有记录，确定继续？')) { Store.importAll(imp); alert('导入成功！页面将刷新。'); location.reload(); } } else alert('文件格式不正确'); } catch (ex) { alert('解析失败'); } }; reader.readAsText(file); }
+  };
+
+  App.init();
+})();
+</script>
+</body></html>

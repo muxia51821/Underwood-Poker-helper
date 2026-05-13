@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>木下的牌桌助手</title>
+<style>
+/* 全局样式 */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #e2e8f0; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 16px; }
+.app { max-width: 480px; width: 100%; background: #1e293b; border-radius: 24px; padding: 20px 16px; box-shadow: 0 12px 40px rgba(0,0,0,.5); margin: 10px 0; }
+
+/* 设置按钮区域 */
+.app__settings { position: relative; display: flex; justify-content: flex-end; margin-bottom: 14px; }
+.app__settings-btn { background: #334155; border: none; width: 36px; height: 36px; border-radius: 50%; color: #94a3b8; font-size: 1.2em; cursor: pointer; }
+.app__settings-menu { position: absolute; top: 44px; right: 0; background: #1e293b; border: 1px solid #475569; border-radius: 12px; padding: 10px; display: none; flex-direction: column; gap: 8px; z-index: 10; }
+.app__settings-menu.is-visible { display: flex; }
+.app__settings-option { background: #334155; border: none; padding: 8px 14px; border-radius: 20px; font-size: 0.8em; color: #94a3b8; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+.app__settings-option.is-active { background: #0f3460; color: #4ade80; }
+
+/* 标题与导航 */
+.app__title { text-align: center; font-size: 1.5em; margin-bottom: 16px; color: #f97316; }
+.nav { display: flex; gap: 4px; margin-bottom: 18px; background: #0f172a; border-radius: 14px; padding: 4px; }
+.nav__btn { flex: 1; padding: 10px 4px; font-size: 0.8em; font-weight: 600; border: none; border-radius: 10px; background: transparent; color: #94a3b8; cursor: pointer; white-space: nowrap; }
+.nav__btn--active { background: #f97316; color: #fff; }
+.main { display: block; }
+.panel { display: none; }
+.panel.is-visible { display: block; }
+
+/* 卡片 */
+.card { background: #0f3460; border-radius: 16px; padding: 16px 14px; margin-bottom: 14px; }
+.card__title { font-size: 1.05em; font-weight: bold; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+.card__title--flex { justify-content: space-between; }
+
+/* 表单元素 */
+.field { display: block; font-size: 0.9em; margin: 10px 0 4px; color: #cbd5e1; }
+.field__label { font-weight: normal; }
+.input, .select, .textarea { width: 100%; padding: 10px 12px; background: #1e293b; border: 1px solid #475569; border-radius: 8px; color: #f1f5f9; font-size: 1em; font-family: inherit; }
+.input:focus, .select:focus, .textarea:focus { outline: none; border-color: #f97316; }
+.row { display: flex; gap: 10px; }
+.row > * { flex: 1; }
+
+/* 按钮体系 */
+.btn { background: #f97316; color: #fff; border: none; font-size: 0.95em; font-weight: bold; padding: 12px; border-radius: 12px; cursor: pointer; width: 100%; margin-top: 12px; }
+.btn:hover { background: #ea580c; }
+.btn:active { transform: scale(0.98); }
+.btn--secondary { background: #334155; }
+.btn--secondary:hover { background: #475569; }
+.btn--mini { font-size: 0.75em; padding: 6px 10px; background: #334155; border-radius: 8px; border: none; color: #e2e8f0; cursor: pointer; margin-top: 4px; width: auto; }
+.btn--mini:hover { background: #475569; }
+.btn--danger { background: #991b1b; }
+.btn--danger:hover { background: #7f1d1d; }
+
+/* 结果文本 */
+.result { background: #0f172a; border-radius: 12px; padding: 14px; margin-top: 14px; font-size: 0.9em; line-height: 1.6; color: #cbd5e1; }
+.highlight { color: #facc15; font-weight: bold; }
+.text-win { color: #4ade80; font-weight: bold; }
+.text-lose { color: #f87171; font-weight: bold; }
+.text-muted { font-size: 0.7em; color: #64748b; text-align: center; margin-top: 6px; }
+
+/* 计时器 */
+.timer__display { font-size: 3em; font-weight: bold; text-align: center; margin: 10px 0; letter-spacing: 2px; }
+.timer__phase { display: inline-block; padding: 4px 14px; border-radius: 20px; font-size: 0.8em; font-weight: 600; margin-bottom: 6px; }
+.timer__phase--work { background: #166534; color: #4ade80; }
+.timer__phase--rest { background: #991b1b; color: #fca5a5; }
+.timer__stats { text-align: center; margin: 12px 0; }
+.timer__stats-number { font-size: 2em; font-weight: bold; color: #facc15; }
+.timer__stats-label { font-size: 0.75em; color: #94a3b8; margin-bottom: 4px; }
+.timer__reset-btn { background: #475569; padding: 4px 12px; font-size: 0.7em; border-radius: 8px; cursor: pointer; }
+
+/* 表格 */
+.log-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 0.7em; color: #cbd5e1; }
+.log-table th, .log-table td { padding: 4px 6px; border-bottom: 1px solid #334155; text-align: center; }
+.log-table th { color: #94a3b8; font-weight: 500; }
+.log__toggle { font-size: 0.8em; color: #94a3b8; cursor: pointer; text-align: center; margin-top: 8px; }
+
+/* 随机数 */
+.random__number { font-size: 3em; font-weight: bold; color: #facc15; text-align: center; margin: 16px 0; }
+
+/* 赔率区域 */
+.radio-group { display: flex; gap: 12px; margin: 8px 0; }
+.radio-group label { background: #1e293b; padding: 6px 12px; border-radius: 12px; display: flex; align-items: center; gap: 6px; font-size: 0.9em; cursor: pointer; }
+.radio-group input[type=radio] { width: auto; margin: 0; }
+.outs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 6px 0 10px; }
+.bet-sizes { display: flex; flex-wrap: wrap; gap: 5px; margin: 6px 0 10px; }
+.bet-sizes .btn--mini { background: #1e293b; border: 1px solid #475569; }
+.cheatsheet { width: 100%; border-collapse: collapse; font-size: 0.7em; margin-top: 4px; }
+.cheatsheet th, .cheatsheet td { padding: 4px 6px; border-bottom: 1px solid #334155; text-align: center; }
+.cheatsheet th { background: #1e293b; }
+.cheatsheet tr.is-current { background: #f97316; color: #fff; }
+
+/* 复盘统计 */
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }
+.stats__item { background: #0f172a; border-radius: 10px; padding: 10px; text-align: center; }
+.stats__value { font-size: 1.2em; font-weight: bold; }
+.stats__label { font-size: 0.7em; color: #94a3b8; }
+.filter-row { display: flex; gap: 8px; align-items: center; margin: 10px 0; flex-wrap: wrap; }
+.filter-row .select { width: auto; flex: 1; }
+.table-container { max-height: 250px; overflow-y: auto; margin-top: 8px; }
+.session-table { width: 100%; border-collapse: collapse; font-size: 0.7em; color: #cbd5e1; }
+.session-table th, .session-table td { padding: 4px; border-bottom: 1px solid #334155; text-align: center; }
+.session-table th { color: #94a3b8; position: sticky; top: 0; background: #0f3460; }
+.mistake-tag { display: inline-block; background: #334155; padding: 2px 8px; border-radius: 10px; margin: 2px; font-size: 0.7em; }
+
+/* 细节折叠 */
+details { margin-top: 12px; }
+details summary { font-size: 0.85em; color: #94a3b8; cursor: pointer; }
+
+/* SRP表 */
+.srp-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.srp-filters .select { flex: 1; min-width: 80px; }
+.srp-table { width: 100%; border-collapse: collapse; font-size: 0.65em; margin-top: 6px; }
+.srp-table th, .srp-table td { padding: 3px 4px; border-bottom: 1px solid #334155; text-align: center; }
+.srp-table th { background: #1e293b; color: #94a3b8; }
+
+/* 复盘子导航 */
+.subnav { display: flex; gap: 4px; margin-bottom: 16px; background: #0f172a; border-radius: 10px; padding: 3px; }
+.subnav__btn { flex: 1; padding: 8px 4px; font-size: 0.75em; font-weight: 600; border: none; border-radius: 8px; background: transparent; color: #94a3b8; cursor: pointer; }
+.subnav__btn--active { background: #f97316; color: #fff; }
+.sub-panel { display: none; }
+.sub-panel.is-visible { display: block; }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- 设置菜单 -->
+  <div class="app__settings">
+    <button class="app__settings-btn" id="settingsBtn" aria-label="提醒设置">⚙️</button>
+    <div class="app__settings-menu" id="settingsMenu">
+      <button class="app__settings-option is-active" id="soundOption">🔊 声音</button>
+      <button class="app__settings-option is-active" id="vibrateOption">📳 振动</button>
+    </div>
+  </div>
+
+  <h1 class="app__title">♠️木下的牌桌助手</h1>
+
+  <!-- 主导航 -->
+  <nav class="nav">
+    <button class="nav__btn nav__btn--active" data-tab="timer">⏱️ 计时</button>
+    <button class="nav__btn" data-tab="odds">🎯 赔率</button>
+    <button class="nav__btn" data-tab="random">🎲 随机</button>
+    <button class="nav__btn" data-tab="review">📋 复盘</button>
+  </nav>
+
+  <main class="main">
+    <!-- 计时器面板 -->
+    <section id="timerPanel" class="panel is-visible">
+      <div class="card">
+        <h2 class="card__title">🧍 站立提醒</h2>
+        <div id="phaseBdg" class="timer__phase timer__phase--work">💼 工作中</div>
+        <div id="timerDisplay" class="timer__display">25:00</div>
+        <div class="row" style="margin:10px 0">
+          <label class="field"><span class="field__label">🔵 专注(分)</span><input type="number" id="workMin" class="input" value="25" min="1" max="120" step="1" required></label>
+          <label class="field"><span class="field__label">🟢 站立(分)</span><input type="number" id="breakMin" class="input" value="3" min="1" max="30" step="1" required></label>
+        </div>
+        <div class="timer__stats">
+          <div class="timer__stats-label">🧘 今日已站立</div>
+          <div id="todayCount" class="timer__stats-number">0</div>
+          <div style="font-size:0.7em;color:#94a3b8">次</div>
+          <button id="resetCountBtn" class="timer__reset-btn">↺ 重置</button>
+        </div>
+        <div class="row" style="gap:8px">
+          <button id="startBtn" class="btn">▶ 开始</button>
+          <button id="resetTimerBtn" class="btn btn--secondary">↺ 重置</button>
+        </div>
+        <div class="text-muted">循环提醒 · 站坐交替更健康</div>
+        <div id="logToggle" class="log__toggle"><span id="logArrow">▶</span> 今日记录</div>
+        <div id="logWrap" style="display:none;max-height:200px;overflow-y:auto">
+          <table class="log-table" id="logTable">
+            <thead><tr><th>#</th><th>工作开始</th><th>工作结束</th><th>站立开始</th><th>站立结束</th><th>工作</th><th>站立</th></tr></thead>
+            <tbody id="logBody"></tbody>
+          </table>
+          <button id="clearLogBtn" class="btn--mini btn--danger" style="margin-top:8px">🗑️ 清除今日记录</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 赔率面板 -->
+    <section id="oddsPanel" class="panel">
+      <div class="card">
+        <h2 class="card__title">📐 底池赔率 & MDF</h2>
+        <label class="field">1️⃣ 对手行动前底池 (BB)<input type="number" id="potInput" class="input" value="120" step="1" min="0" required></label>
+        <label class="field">2️⃣ 对手下注 (BB)<input type="number" id="betInput" class="input" value="40" step="1" min="1" required></label>
+        <div class="bet-sizes">
+          <button class="btn--mini" data-bet="1/3">1/3</button>
+          <button class="btn--mini" data-bet="1/2">1/2</button>
+          <button class="btn--mini" data-bet="2/3">2/3</button>
+          <button class="btn--mini" data-bet="1">满池</button>
+          <button class="btn--mini" data-bet="1.5">1.5x</button>
+        </div>
+        <div id="betRatio" style="margin:4px 0;color:#facc15;font-weight:bold;min-height:18px;font-size:0.8em"></div>
+        <label class="field">3️⃣ 听牌数 (Outs)<input type="number" id="outsInput" class="input" value="8" step="1" min="0" max="25" required></label>
+        <div class="outs-grid">
+          <button class="btn--mini" data-outs="8">两头顺 8</button>
+          <button class="btn--mini" data-outs="9">同花 9</button>
+          <button class="btn--mini" data-outs="4">卡顺 4</button>
+          <button class="btn--mini" data-outs="2">三条 2</button>
+          <button class="btn--mini" data-outs="15" style="grid-column:span 2">大听牌 15</button>
+        </div>
+        <div class="radio-group">
+          <label><input type="radio" name="street" value="one" checked> 一张牌</label>
+          <label><input type="radio" name="street" value="two"> 两张牌</label>
+        </div>
+        <label class="field" style="display:flex;align-items:center;gap:8px">
+          <input type="checkbox" id="comboCheck"> 考虑转牌再下注
+        </label>
+        <div id="comboRow" style="display:none;margin-top:8px">
+          <div class="row">
+            <label class="field">金额 (BB)<input type="number" id="turnBetInput" class="input" value="80" step="1" min="1"></label>
+            <label class="field">占转牌底池%<input type="number" id="turnPctInput" class="input" value="50" step="1" min="1" max="200"></label>
+          </div>
+          <div class="text-muted" style="text-align:left">转牌圈底池 = 原底池 + 当前下注×2</div>
+        </div>
+        <div id="oddsResult" class="result"></div>
+      </div>
+      <div class="card">
+        <details>
+          <summary class="card__title" style="margin-bottom:0;cursor:pointer;">📊 SB v BB SRP 翻牌策略</summary>
+          <div class="srp-filters">
+            <select id="filterHigh" class="select"><option value="all">全部高牌</option><option value="A高">A高</option><option value="K高">K高</option><option value="Q高">Q高</option><option value="J高">J高</option><option value="低牌">低牌</option></select>
+            <select id="filterSuit" class="select"><option value="all">全部花色</option><option value="天花">天花</option><option value="听花">听花</option><option value="彩虹">彩虹</option></select>
+            <select id="filterConnect" class="select"><option value="all">全部连接</option><option value="天顺">天顺</option><option value="听顺">听顺</option><option value="无连">无连</option></select>
+            <select id="filterPair" class="select"><option value="all">是否公对面</option><option value="是">公对面</option><option value="否">非公对面</option></select>
+          </div>
+          <div style="max-height:300px;overflow-y:auto;">
+            <table class="srp-table" id="srpTable">
+              <thead><tr><th>翻牌</th><th>高牌</th><th>花色</th><th>连接</th><th>公对</th><th>尺度</th></tr></thead>
+              <tbody id="srpBody"></tbody>
+            </table>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- 随机数面板 -->
+    <section id="randomPanel" class="panel">
+      <div class="card">
+        <h2 class="card__title">🎲 随机整数</h2>
+        <div class="row">
+          <label class="field">最小值<input type="number" id="rMin" class="input" value="1" step="1" required></label>
+          <label class="field">最大值<input type="number" id="rMax" class="input" value="100" step="1" required></label>
+        </div>
+        <button id="genRandBtn" class="btn">🎯 生成</button>
+        <div id="randResult" class="random__number" style="display:none">42</div>
+        <div class="text-muted">设1-52可模拟抽牌</div>
+      </div>
+    </section>
+
+    <!-- 复盘面板 -->
+    <section id="reviewPanel" class="panel">
+      <nav class="subnav" id="reviewSubNav">
+        <button class="subnav__btn subnav__btn--active" data-sub="session">Session</button>
+        <button class="subnav__btn" data-sub="hand">手局</button>
+        <button class="subnav__btn" data-sub="weekly">周级</button>
+      </nav>
+      <!-- Session 子面板 -->
+      <div id="subSession" class="sub-panel is-visible">
+        <div class="card">
+          <h3 class="card__title">📋 Session 记录</h3>
+          <div class="row">
+            <label class="field">日期 <input type="date" id="sessDate" class="input"></label>
+            <label class="field">级别 <input type="text" id="sessLevel" class="input" list="levelList" placeholder="NL10"><datalist id="levelList"><option value="NL10"><option value="NL25"><option value="Live"></datalist></label>
+          </div>
+          <div class="row">
+            <label class="field">时长(h) <input type="number" id="sessDur" class="input" step="0.1" min="0" placeholder="2.5" required></label>
+            <label class="field">手数 <input type="number" id="sessHands" class="input" step="1" min="0" placeholder="1000" required></label>
+          </div>
+          <div class="row">
+            <label class="field">盈亏(BB) <input type="number" id="sessProfit" class="input" step="0.01" placeholder="+125.50" required></label>
+            <label class="field">Tilt评分(1-10) <input type="number" id="sessTilt" class="input" min="1" max="10" step="1" value="5" required></label>
+          </div>
+          <label class="field">错误类型 <input type="text" id="sessMistake" class="input" list="mistakeList" placeholder="选或写"><datalist id="mistakeList"><option value="open过宽"><option value="OOP defend过宽"><option value="4bet逻辑混乱"><option value="情绪型raise"><option value="错误CB"><option value="过多double barrel"><option value="river过度call/bluff"><option value="下注尺寸过大"><option value="下注尺寸过小"><option value="没计划三条街"><option value="对松弱bluff过多"><option value="对激进不够trap"><option value="未识别玩家类型"><option value="忽略HUD"><option value="情绪主导决策"><option value="不愿弃牌"><option value="想证明自己"><option value="追回损失"></datalist></label>
+          <label class="field">备注 <input type="text" id="sessRemark" class="input" placeholder="特殊情况..."></label>
+          <div class="row" style="margin-top:12px">
+            <button id="addSessionBtn" class="btn">💾 保存</button>
+            <button id="clearSessionBtn" class="btn btn--secondary">🧹 清空</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card__title card__title--flex">
+            <span>📊 数据统计 & 操作</span>
+            <div>
+              <button id="exportBtn" class="btn--mini">📤 导出</button>
+              <button id="importBtn" class="btn--mini">📥 导入</button>
+              <input type="file" id="importFileInput" accept=".json" style="display:none">
+            </div>
+          </div>
+          <div id="statsArea"><div class="text-muted">暂无数据</div></div>
+          <div class="filter-row">
+            <select id="filterLevel" class="select"><option value="all">全部级别</option></select>
+            <button id="refreshSessionsBtn" class="btn--mini">刷新</button>
+          </div>
+          <div class="table-container">
+            <table class="session-table" id="sessionTable">
+              <thead><tr><th>日期</th><th>级别</th><th>时长</th><th>手数</th><th>盈亏</th><th>Tilt</th><th>错误</th><th>操作</th></tr></thead>
+              <tbody id="sessionBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card"><h3 class="card__title">⚠️ 错误追踪</h3><div id="mistakeStats" class="text-muted">暂无数据</div></div>
+        <div class="card"><h3 class="card__title">🎲 现场数据分析</h3><div id="liveStats" class="text-muted">暂无Live数据</div></div>
+      </div>
+
+      <!-- 手局复盘子面板 -->
+      <div id="subHand" class="sub-panel">
+        <div class="card">
+          <h3 class="card__title">🃏 手局级复盘</h3>
+          <label class="field">关联Session (可选)<select id="handSessionSelect" class="select"><option value="">-- 不关联 --</option></select></label>
+          <label class="field">手牌描述：<textarea id="handDesc" class="textarea" rows="3" placeholder="描述该手牌起手、位置、对手行为"></textarea></label>
+          <label class="field">决策描述：<textarea id="handDecision" class="textarea" rows="3" placeholder="你当时的决策逻辑"></textarea></label>
+          <label class="field">错误类型：<select id="handMistake" class="select"><option value="">-- 选择 --</option><option value="翻前错误">翻前错误</option><option value="翻后错误">翻后错误</option><option value="下注结构错误">下注结构错误</option><option value="Exploit错误">Exploit错误</option><option value="情绪错误">情绪错误</option></select></label>
+          <label class="field">结果与反思：<textarea id="handReflection" class="textarea" rows="2" placeholder="手牌结果和下一次改进思路"></textarea></label>
+          <button id="saveHandBtn" class="btn">💾 保存手局</button>
+        </div>
+        <div class="card">
+          <h3 class="card__title">📜 历史手局</h3>
+          <div class="table-container" style="max-height:300px;">
+            <table class="session-table" id="handTable">
+              <thead><tr><th>关联Session</th><th>手牌</th><th>错误</th><th>反思</th><th>操作</th></tr></thead>
+              <tbody id="handBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 周级复盘子面板 -->
+      <div id="subWeekly" class="sub-panel">
+        <div class="card">
+          <h3 class="card__title">📆 本周自动统计</h3>
+          <div id="weeklyAutoStats"></div>
+        </div>
+        <div class="card">
+          <h3 class="card__title">✍️ 周级复盘</h3>
+          <label class="field">结构薄弱环节：<textarea id="weeklyWeakness" class="textarea" rows="2" placeholder="例如：OOP单挑、3bet pot、翻前范围问题等"></textarea></label>
+          <label class="field">改进计划：<textarea id="weeklyPlan" class="textarea" rows="3" placeholder="下一周针对性改进措施"></textarea></label>
+          <button id="saveWeeklyBtn" class="btn">💾 保存本周复盘</button>
+        </div>
+        <div class="card">
+          <h3 class="card__title">📜 历史周复盘</h3>
+          <div class="table-container">
+            <table class="session-table" id="weeklyTable">
+              <thead><tr><th>周</th><th>薄弱环节</th><th>改进计划</th><th>操作</th></tr></thead>
+              <tbody id="weeklyBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ========== 工具函数 ==========
+  const Utils = {
+    debounce(fn, delay = 300) {
+      let timer;
+      return function(...args) {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn.apply(this, args), delay);
+      };
+    },
+    escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    },
+    getLocalDate() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+  };
+
+  // ========== 存储模块 ==========
+  const Storage = {
+    KEY: 'pokerAssistantData',
+    load() {
+      try {
+        const raw = localStorage.getItem(this.KEY);
+        return raw ? JSON.parse(raw) : { standup: { date: '', count: 0 }, logs: {}, sessions: [], handReviews: [], weeklyReviews: [] };
+      } catch (e) {
+        return { standup: { date: '', count: 0 }, logs: {}, sessions: [], handReviews: [], weeklyReviews: [] };
+      }
+    },
+    save(data) {
+      try { localStorage.setItem(this.KEY, JSON.stringify(data)); } catch (e) { /* ignore */ }
+    }
+  };
+
+  // 初始化存储，迁移旧数据
+  (function initStorage() {
+    let data = Storage.load();
+    let dirty = false;
+    if (!data.standup.date) {
+      const oldDate = localStorage.getItem('standup_date');
+      const oldCount = localStorage.getItem('standup_count');
+      if (oldDate && oldCount) {
+        data.standup = { date: oldDate, count: parseInt(oldCount) || 0 };
+        localStorage.removeItem('standup_date');
+        localStorage.removeItem('standup_count');
+        dirty = true;
+      }
+    }
+    if (!data.logs || Object.keys(data.logs).length === 0) {
+      const logs = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith('logs_')) {
+          const dateStr = key.replace('logs_', '');
+          try { logs[dateStr] = JSON.parse(localStorage.getItem(key)); } catch (e) { logs[dateStr] = []; }
+          localStorage.removeItem(key);
+          dirty = true;
+        }
+      }
+      if (Object.keys(logs).length > 0) data.logs = logs;
+    }
+    if (!data.sessions) data.sessions = [];
+    if (!data.handReviews) data.handReviews = [];
+    if (!data.weeklyReviews) data.weeklyReviews = [];
+    if (dirty) Storage.save(data);
+  })();
+
+  // ========== 主应用 ==========
+  const App = {
+    sound: true,
+    vibrateOn: true,
+    timer: { interval: null, running: false, phase: 'work', endTime: null, workStart: null, breakStart: null },
+    debouncedCalc: null,
+
+    // 初始化
+    init() {
+      this.bindSettings();
+      this.bindNavigation();
+      this.bindSubNavigation();
+      this.Timer.init();
+      this.Odds.init();
+      this.Random.init();
+      this.Review.init();
+    },
+
+    // 设置菜单
+    bindSettings() {
+      const btn = document.getElementById('settingsBtn');
+      const menu = document.getElementById('settingsMenu');
+      const soundBtn = document.getElementById('soundOption');
+      const vibrateBtn = document.getElementById('vibrateOption');
+
+      btn.addEventListener('click', () => menu.classList.toggle('is-visible'));
+      document.addEventListener('click', (e) => {
+        if (!btn.contains(e.target) && !menu.contains(e.target)) menu.classList.remove('is-visible');
+      });
+
+      soundBtn.addEventListener('click', () => {
+        this.sound = !this.sound;
+        soundBtn.classList.toggle('is-active', this.sound);
+      });
+      vibrateBtn.addEventListener('click', () => {
+        this.vibrateOn = !this.vibrateOn;
+        vibrateBtn.classList.toggle('is-active', this.vibrateOn);
+      });
+    },
+
+    // 主导航
+    bindNavigation() {
+      const nav = document.querySelector('.nav');
+      nav.addEventListener('click', (e) => {
+        const btn = e.target.closest('.nav__btn');
+        if (!btn) return;
+        nav.querySelectorAll('.nav__btn').forEach(b => b.classList.remove('nav__btn--active'));
+        btn.classList.add('nav__btn--active');
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('is-visible'));
+        const panelId = btn.dataset.tab + 'Panel';
+        document.getElementById(panelId).classList.add('is-visible');
+
+        if (btn.dataset.tab === 'odds') this.Odds.calc();
+        if (btn.dataset.tab === 'review') {
+          this.Review.renderSessions();
+          this.Review.updateStats();
+          this.Review.populateHandSessionSelect();
+          this.Review.renderHandReviews();
+          this.Review.renderWeeklyReviews();
+          this.Review.generateWeeklyStats();
+        }
+      });
+    },
+
+    // 复盘子导航
+    bindSubNavigation() {
+      const nav = document.getElementById('reviewSubNav');
+      nav.addEventListener('click', (e) => {
+        const btn = e.target.closest('.subnav__btn');
+        if (!btn) return;
+        nav.querySelectorAll('.subnav__btn').forEach(b => b.classList.remove('subnav__btn--active'));
+        btn.classList.add('subnav__btn--active');
+        document.querySelectorAll('#reviewPanel .sub-panel').forEach(p => p.classList.remove('is-visible'));
+        document.getElementById('sub' + btn.dataset.sub.charAt(0).toUpperCase() + btn.dataset.sub.slice(1)).classList.add('is-visible');
+
+        if (btn.dataset.sub === 'hand') { this.Review.populateHandSessionSelect(); this.Review.renderHandReviews(); }
+        if (btn.dataset.sub === 'weekly') { this.Review.generateWeeklyStats(); this.Review.renderWeeklyReviews(); }
+      });
+    },
+
+    // 通知辅助
+    notify(title, body) {
+      if (Notification.permission === 'granted') new Notification(title, { body });
+    },
+    beep() {
+      if (!this.sound) return;
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator(), gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.value = 880; osc.type = 'sine';
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        osc.start(ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.25);
+        osc.stop(ctx.currentTime + 0.25);
+      } catch (e) {}
+    },
+    vibrate() {
+      if (this.vibrateOn && navigator.vibrate) navigator.vibrate([300, 100, 300]);
+    }
+  };
+
+  // ========== 计时器模块 ==========
+  App.Timer = {
+    init() {
+      document.getElementById('workMin').addEventListener('change', () => this.updateSettings());
+      document.getElementById('breakMin').addEventListener('change', () => this.updateSettings());
+      document.getElementById('startBtn').addEventListener('click', () => this.toggle());
+      document.getElementById('resetTimerBtn').addEventListener('click', () => this.reset());
+      document.getElementById('resetCountBtn').addEventListener('click', () => this.resetCount());
+      document.getElementById('logToggle').addEventListener('click', () => this.toggleLog());
+      document.getElementById('clearLogBtn').addEventListener('click', () => this.clearTodayLogs());
+      this.updateDisplay();
+      document.getElementById('todayCount').textContent = this.getCount();
+    },
+
+    getCount() {
+      const data = Storage.load();
+      const today = Utils.getLocalDate();
+      if (data.standup.date === today) return data.standup.count;
+      data.standup.date = today; data.standup.count = 0; Storage.save(data);
+      return 0;
+    },
+    setCount(count) {
+      const data = Storage.load();
+      data.standup.date = Utils.getLocalDate(); data.standup.count = count;
+      Storage.save(data);
+      document.getElementById('todayCount').textContent = count;
+    },
+    incrementCount() {
+      const data = Storage.load();
+      data.standup.date = Utils.getLocalDate(); data.standup.count = (data.standup.count || 0) + 1;
+      Storage.save(data);
+      document.getElementById('todayCount').textContent = data.standup.count;
+    },
+    resetCount() { this.setCount(0); },
+
+    getLogs(date) {
+      const data = Storage.load();
+      return data.logs[date] || [];
+    },
+    saveLogs(date, logs) {
+      const data = Storage.load();
+      data.logs[date] = logs;
+      Storage.save(data);
+    },
+
+    updateSettings() {
+      if (!App.timer.running && App.timer.phase === 'work') {
+        App.timer.endTime = Date.now() + parseInt(document.getElementById('workMin').value) * 60000;
+        this.updateDisplay();
+      } else if (!App.timer.running && App.timer.phase === 'break') {
+        App.timer.endTime = Date.now() + parseInt(document.getElementById('breakMin').value) * 60000;
+        this.updateDisplay();
+      }
+    },
+
+    toggle() {
+      if (App.timer.running) {
+        clearInterval(App.timer.interval);
+        App.timer.running = false;
+        document.getElementById('startBtn').textContent = '▶ 开始';
+      } else {
+        if (Notification.permission === 'default') Notification.requestPermission();
+        if (!App.timer.endTime) {
+          const mins = App.timer.phase === 'work' ? parseInt(document.getElementById('workMin').value) : parseInt(document.getElementById('breakMin').value);
+          App.timer.endTime = Date.now() + mins * 60000;
+        }
+        if (App.timer.phase === 'work' && !App.timer.workStart) App.timer.workStart = new Date();
+        if (App.timer.phase === 'break' && !App.timer.breakStart) App.timer.breakStart = new Date();
+        App.timer.interval = setInterval(() => this.tick(), 200);
+        App.timer.running = true;
+        document.getElementById('startBtn').textContent = '⏸️ 暂停';
+      }
+    },
+
+    reset() {
+      clearInterval(App.timer.interval);
+      App.timer.running = false;
+      App.timer.phase = 'work';
+      App.timer.endTime = Date.now() + parseInt(document.getElementById('workMin').value) * 60000;
+      App.timer.workStart = null; App.timer.breakStart = null;
+      document.getElementById('startBtn').textContent = '▶ 开始';
+      this.updateDisplay();
+    },
+
+    tick() {
+      const now = Date.now();
+      const remaining = Math.max(0, Math.ceil((App.timer.endTime - now) / 1000));
+      const mins = Math.floor(remaining / 60), secs = remaining % 60;
+      document.getElementById('timerDisplay').textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      document.getElementById('phaseBdg').textContent = App.timer.phase === 'work' ? '💼 工作中' : '🧘 站立休息';
+      document.getElementById('phaseBdg').className = `timer__phase ${App.timer.phase === 'work' ? 'timer__phase--work' : 'timer__phase--rest'}`;
+
+      if (remaining <= 0) this.switchPhase();
+    },
+
+    switchPhase() {
+      const now = new Date();
+      if (App.timer.phase === 'work') {
+        if (App.timer.workStart) {
+          this.addLog({
+            workStart: App.timer.workStart.toISOString(),
+            workEnd: now.toISOString(),
+            breakStart: now.toISOString(),
+            breakEnd: null
+          });
+        }
+        this.incrementCount();
+        App.timer.phase = 'break';
+        App.timer.endTime = Date.now() + parseInt(document.getElementById('breakMin').value) * 60000;
+        App.timer.breakStart = now; App.timer.workStart = null;
+      } else {
+        if (App.timer.breakStart) this.updateLastLog({ breakEnd: now.toISOString() });
+        App.timer.phase = 'work';
+        App.timer.endTime = Date.now() + parseInt(document.getElementById('workMin').value) * 60000;
+        App.timer.workStart = now; App.timer.breakStart = null;
+      }
+      App.beep(); App.vibrate();
+      App.notify(App.timer.phase === 'work' ? '💼 继续专注' : '🧘 站起来活动',
+        App.timer.phase === 'work' ? '开始新的工作时段' : `休息 ${document.getElementById('breakMin').value} 分钟`);
+      this.updateDisplay();
+      if (document.getElementById('logWrap').style.display === 'block') this.renderLog();
+    },
+
+    addLog(entry) {
+      const today = Utils.getLocalDate();
+      const logs = this.getLogs(today);
+      logs.push(entry);
+      this.saveLogs(today, logs);
+    },
+    updateLastLog(updates) {
+      const today = Utils.getLocalDate();
+      const logs = this.getLogs(today);
+      if (logs.length) { Object.assign(logs[logs.length - 1], updates); this.saveLogs(today, logs); }
+    },
+    clearTodayLogs() {
+      if (confirm('确定清除今日所有站立记录吗？')) {
+        this.saveLogs(Utils.getLocalDate(), []);
+        this.renderLog();
+      }
+    },
+    renderLog() {
+      const logs = this.getLogs(Utils.getLocalDate());
+      const tbody = document.getElementById('logBody');
+      tbody.innerHTML = '';
+      logs.forEach((l, i) => {
+        const we = l.workEnd ? new Date(l.workEnd) : null;
+        const be = l.breakEnd ? new Date(l.breakEnd) : null;
+        const wd = we ? Math.round((we - new Date(l.workStart)) / 1000) : 0;
+        const bd = be ? Math.round((be - new Date(l.breakStart)) / 1000) : 0;
+        const fmTime = d => d ? d.toTimeString().split(' ')[0] : '';
+        const fmDur = s => `${Math.floor(s/60)}分${s%60}秒`;
+        tbody.innerHTML += `<tr>
+          <td>${i+1}</td><td>${fmTime(new Date(l.workStart))}</td><td>${we?fmTime(we):'--'}</td>
+          <td>${fmTime(new Date(l.breakStart))}</td><td>${be?fmTime(be):'--'}</td>
+          <td>${we?fmDur(wd):'进行中'}</td><td>${be?fmDur(bd):'进行中'}</td></tr>`;
+      });
+    },
+    toggleLog() {
+      const wrap = document.getElementById('logWrap');
+      const arrow = document.getElementById('logArrow');
+      if (wrap.style.display === 'none') {
+        wrap.style.display = 'block';
+        arrow.textContent = '▼';
+        this.renderLog();
+      } else {
+        wrap.style.display = 'none';
+        arrow.textContent = '▶';
+      }
+    },
+    updateDisplay() {
+      const remaining = App.timer.endTime ? Math.max(0, Math.ceil((App.timer.endTime - Date.now()) / 1000)) : 25*60;
+      const mins = Math.floor(remaining / 60), secs = remaining % 60;
+      document.getElementById('timerDisplay').textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+  };
+
+  // ========== 赔率模块 ==========
+  App.Odds = {
+    init() {
+      this.debouncedCalc = Utils.debounce(() => this.calc(), 300);
+      ['potInput', 'betInput', 'outsInput'].forEach(id => {
+        document.getElementById(id).addEventListener('input', () => this.debouncedCalc());
+      });
+      document.querySelectorAll('.bet-sizes .btn--mini').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const ratio = btn.dataset.bet;
+          const pot = parseFloat(document.getElementById('potInput').value);
+          if (pot > 0) {
+            document.getElementById('betInput').value = Math.round(pot * eval(ratio));
+            this.calc();
+          }
+        });
+      });
+      document.querySelectorAll('.outs-grid .btn--mini').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.getElementById('outsInput').value = btn.dataset.outs;
+          this.calc();
+        });
+      });
+      document.querySelector('input[name="street"]:checked').addEventListener('change', () => this.calc());
+      document.getElementById('comboCheck').addEventListener('change', function() {
+        document.getElementById('comboRow').style.display = this.checked ? 'block' : 'none';
+        App.Odds.calc();
+      });
+      document.getElementById('turnBetInput').addEventListener('input', () => this.syncTurnAmt());
+      document.getElementById('turnPctInput').addEventListener('input', () => this.syncTurnPct());
+      this.calc();
+    },
+
+    calc() {
+      const pot = parseFloat(document.getElementById('potInput').value);
+      const bet = parseFloat(document.getElementById('betInput').value);
+      const outs = parseInt(document.getElementById('outsInput').value);
+      const isOne = document.querySelector('input[name="street"]:checked').value === 'one';
+      const combo = document.getElementById('comboCheck').checked;
+      const turnBet = combo ? parseFloat(document.getElementById('turnBetInput').value) : 0;
+      const ratioDiv = document.getElementById('betRatio');
+      const res = document.getElementById('oddsResult');
+
+      if (isNaN(pot) || isNaN(bet) || pot <= 0 || bet <= 0) {
+        ratioDiv.textContent = ''; res.innerHTML = ''; return;
+      }
+      ratioDiv.textContent = `📊 对手下注了底池的 ${Math.round(bet / pot * 100)}%`;
+
+      if (isNaN(outs) || outs < 0 || outs > 25 || (combo && (isNaN(turnBet) || turnBet <= 0))) {
+        res.innerHTML = '<span class="text-lose">请输入有效的Outs (0-25) 及转牌下注</span>';
+        return;
+      }
+
+      let cost, totalPot, estWin, reqWin, ev;
+      if (!combo) {
+        cost = bet; totalPot = pot + bet * 2;
+        reqWin = cost / totalPot;
+        estWin = isOne ? Math.min(outs * 2, 100) / 100 : Math.min(outs * 4, 100) / 100;
+        ev = estWin * totalPot - cost;
+      } else {
+        cost = bet + turnBet; totalPot = pot + bet * 2 + turnBet * 2;
+        reqWin = cost / totalPot;
+        estWin = Math.min(outs * 4, 100) / 100;
+        ev = estWin * totalPot - cost;
+      }
+
+      const req1 = Math.ceil(reqWin * 100 / 2), req2 = Math.ceil(reqWin * 100 / 4);
+      const mdf = pot / (pot + bet), mdfPct = (mdf * 100).toFixed(1);
+
+      let html = `<b>🧾 计算</b><br>下注占底池 <span class="highlight">${(bet/pot*100).toFixed(1)}%</span><br>`;
+      if (combo) html += `转牌下注 ${turnBet} BB，总成本 <span class="highlight">${cost} BB</span><br>`;
+      html += `需要胜率 ≥ <span class="highlight">${(reqWin*100).toFixed(1)}%</span><br>`;
+      html += `估算胜率 <span class="${estWin>=reqWin?'text-win':'text-lose'}">${(estWin*100).toFixed(1)}%</span> (Outs × ${combo?4:(isOne?2:4)})<br>`;
+      html += `EV ≈ <span class="${ev>=0?'text-win':'text-lose'}">${ev.toFixed(2)} BB</span><br>`;
+      html += `📌 所需Outs: 一张 ≥ <span class="highlight">${req1}</span>, 两张 ≥ <span class="highlight">${req2}</span><br>`;
+      html += `<br><b>🛡️ MDF</b><br>防守 <span class="highlight">${mdfPct}%</span> 的范围<br><br>`;
+      html += estWin > reqWin ? '<span class="text-win">✅ +EV 跟注</span>' : (Math.abs(estWin-reqWin)<0.005 ? '<span class="highlight">⚖️ 边缘决策</span>' : '<span class="text-lose">❌ -EV 弃牌</span>');
+
+      // 速查表
+      const betRatio = bet / pot;
+      html += `<br><details style="margin-top:10px"><summary style="font-size:0.8em;color:#94a3b8;cursor:pointer">📊 常见下注尺度速查</summary>`;
+      html += `<table class="cheatsheet"><thead><tr><th>尺度</th><th>所需胜率</th><th>MDF(防守)</th><th>诈唬需弃牌率</th></tr></thead><tbody>`;
+      const sizes = [{label:'1/4 pot',r:0.25},{label:'1/3 pot',r:1/3},{label:'1/2 pot',r:0.5},{label:'2/3 pot',r:2/3},{label:'3/4 pot',r:0.75},{label:'满池',r:1},{label:'1.25x',r:1.25},{label:'1.5x',r:1.5}];
+      sizes.forEach(s => {
+        const required = (s.r/(1+2*s.r)*100).toFixed(0);
+        const mdfVal = (1/(1+s.r)*100).toFixed(0);
+        const bluffFold = (s.r/(1+s.r)*100).toFixed(0);
+        const cls = Math.abs(betRatio - s.r) < 0.01 ? ' class="is-current"' : '';
+        html += `<tr${cls}><td>${s.label}</td><td>${required}%</td><td>${mdfVal}%</td><td>${bluffFold}%</td></tr>`;
+      });
+      html += `</tbody></table></details>`;
+      res.innerHTML = html;
+    },
+
+    syncTurnAmt() {
+      const pot = parseFloat(document.getElementById('potInput').value);
+      const bet = parseFloat(document.getElementById('betInput').value);
+      const turn = parseFloat(document.getElementById('turnBetInput').value);
+      if (pot > 0 && bet > 0 && !isNaN(turn)) {
+        document.getElementById('turnPctInput').value = Math.round(turn / (pot + bet * 2) * 100);
+      }
+      this.calc();
+    },
+    syncTurnPct() {
+      const pot = parseFloat(document.getElementById('potInput').value);
+      const bet = parseFloat(document.getElementById('betInput').value);
+      const pct = parseFloat(document.getElementById('turnPctInput').value);
+      if (pot > 0 && bet > 0 && !isNaN(pct)) {
+        document.getElementById('turnBetInput').value = Math.round((pot + bet * 2) * pct / 100);
+      }
+      this.calc();
+    }
+  };
+
+  // 随机数模块
+  App.Random = {
+    init() {
+      document.getElementById('genRandBtn').addEventListener('click', () => this.generate());
+    },
+    generate() {
+      const min = parseInt(document.getElementById('rMin').value);
+      const max = parseInt(document.getElementById('rMax').value);
+      const el = document.getElementById('randResult');
+      if (isNaN(min) || isNaN(max) || min > max) {
+        el.style.display = 'block';
+        el.textContent = '⚠️ 最小值 ≤ 最大值';
+        return;
+      }
+      el.textContent = Math.floor(Math.random() * (max - min + 1)) + min;
+      el.style.display = 'block';
+    }
+  };
+
+  // 复盘模块
+  App.Review = {
+    init() {
+      document.getElementById('addSessionBtn').addEventListener('click', () => this.addSession());
+      document.getElementById('clearSessionBtn').addEventListener('click', () => this.clearForm());
+      document.getElementById('refreshSessionsBtn').addEventListener('click', () => this.renderSessions());
+      document.getElementById('filterLevel').addEventListener('change', () => this.renderSessions());
+      document.getElementById('exportBtn').addEventListener('click', () => this.exportData());
+      document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFileInput').click());
+      document.getElementById('importFileInput').addEventListener('change', (e) => this.importData(e));
+      document.getElementById('saveHandBtn').addEventListener('click', () => this.saveHandReview());
+      document.getElementById('saveWeeklyBtn').addEventListener('click', () => this.saveWeeklyReview());
+
+      document.getElementById('sessDate').value = Utils.getLocalDate();
+      this.renderSessions();
+      this.updateStats();
+    },
+
+    getSessions() { return Storage.load().sessions; },
+    saveSessions(s) { const d = Storage.load(); d.sessions = s; Storage.save(d); },
+
+    addSession() {
+      const date = document.getElementById('sessDate').value || Utils.getLocalDate();
+      const level = document.getElementById('sessLevel').value.trim() || 'NL10';
+      const dur = parseFloat(document.getElementById('sessDur').value);
+      const hands = parseInt(document.getElementById('sessHands').value);
+      const profit = parseFloat(document.getElementById('sessProfit').value);
+      const tilt = parseInt(document.getElementById('sessTilt').value) || 5;
+      const mistake = document.getElementById('sessMistake').value.trim();
+      const remark = document.getElementById('sessRemark').value.trim();
+
+      if (isNaN(dur) || isNaN(hands) || isNaN(profit) || dur <= 0 || hands <= 0) {
+        alert('请填写有效的时长、手数和盈亏');
+        return;
+      }
+      const session = {
+        id: crypto.randomUUID(),
+        date, level, duration: dur, hands, profit, tilt,
+        mistake: mistake || '无', remark
+      };
+      const sessions = this.getSessions();
+      sessions.push(session);
+      this.saveSessions(sessions);
+      this.clearForm();
+      this.renderSessions();
+      this.updateStats();
+      this.populateHandSessionSelect();
+    },
+
+    clearForm() {
+      ['sessDate', 'sessLevel', 'sessDur', 'sessHands', 'sessProfit', 'sessMistake', 'sessRemark'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
+      document.getElementById('sessTilt').value = '5';
+    },
+
+    deleteSession(id) {
+      if (!confirm('确认删除？')) return;
+      const sessions = this.getSessions().filter(s => s.id !== id);
+      this.saveSessions(sessions);
+      this.renderSessions();
+      this.updateStats();
+      this.populateHandSessionSelect();
+    },
+
+    renderSessions() {
+      const filter = document.getElementById('filterLevel').value;
+      let sessions = this.getSessions();
+      const levels = [...new Set(sessions.map(s => s.level))];
+      const sel = document.getElementById('filterLevel');
+      sel.innerHTML = '<option value="all">全部级别</option>';
+      levels.forEach(l => sel.innerHTML += `<option value="${Utils.escapeHtml(l)}">${Utils.escapeHtml(l)}</option>`);
+      sel.value = filter;
+      if (filter !== 'all') sessions = sessions.filter(s => s.level === filter);
+
+      const tbody = document.getElementById('sessionBody');
+      tbody.innerHTML = '';
+      sessions.sort((a, b) => b.id.localeCompare(a.id)).forEach(s => {
+        tbody.innerHTML += `<tr>
+          <td>${Utils.escapeHtml(s.date)}</td><td>${Utils.escapeHtml(s.level)}</td><td>${s.duration}h</td><td>${s.hands}</td>
+          <td style="color:${s.profit>=0?'#4ade80':'#f87171'}">${s.profit>=0?'+'+s.profit.toFixed(1):s.profit.toFixed(1)}</td>
+          <td>${s.tilt}</td><td>${Utils.escapeHtml(s.mistake)}</td>
+          <td><button class="btn--mini btn--danger" data-delete-id="${s.id}">✕</button></td></tr>`;
+      });
+      // 重新绑定删除事件
+      tbody.querySelectorAll('[data-delete-id]').forEach(btn => {
+        btn.addEventListener('click', () => this.deleteSession(btn.dataset.deleteId));
+      });
+    },
+
+    updateStats() {
+      const sessions = this.getSessions();
+      const liveSessions = sessions.filter(s => s.level.toLowerCase() === 'live');
+      let tp = 0, th = 0, td = 0, tt = 0;
+      sessions.forEach(s => { tp += s.profit; th += s.hands; td += s.duration; tt += s.tilt; });
+      const count = sessions.length;
+      document.getElementById('statsArea').innerHTML = `
+        <div class="stats">
+          <div class="stats__item"><div class="stats__label">总场次</div><div class="stats__value">${count}</div></div>
+          <div class="stats__item"><div class="stats__label">总盈亏</div><div class="stats__value ${tp>=0?'text-win':'text-lose'}">${tp>=0?'+'+tp.toFixed(1):tp.toFixed(1)} BB</div></div>
+          <div class="stats__item"><div class="stats__label">总手数</div><div class="stats__value">${th}</div></div>
+          <div class="stats__item"><div class="stats__label">bb/100</div><div class="stats__value">${th?(tp/th*100).toFixed(1):'N/A'}</div></div>
+          <div class="stats__item"><div class="stats__label">时薪</div><div class="stats__value">${td?(tp/td).toFixed(2):'N/A'} BB/h</div></div>
+          <div class="stats__item"><div class="stats__label">平均Tilt</div><div class="stats__value">${count?(tt/count).toFixed(1):'N/A'}</div></div>
+        </div>`;
+      // 错误追踪
+      const mistakeMap = new Map();
+      sessions.forEach(s => { if (s.mistake !== '无') mistakeMap.set(s.mistake, (mistakeMap.get(s.mistake)||0)+1); });
+      let mHtml = '';
+      if (mistakeMap.size) {
+        [...mistakeMap.entries()].sort((a,b) => b[1]-a[1]).forEach(([k,v]) => mHtml += `<span class="mistake-tag">${Utils.escapeHtml(k)} x${v}</span> `);
+      } else mHtml = '暂无错误记录';
+      document.getElementById('mistakeStats').innerHTML = mHtml;
+      // Live统计
+      let liveHtml = '';
+      if (liveSessions.length) {
+        let lp = 0, lh = 0, ld = 0, lt = 0;
+        liveSessions.forEach(s => { lp += s.profit; lh += s.hands; ld += s.duration; lt += s.tilt; });
+        liveHtml = `场次: ${liveSessions.length} | 总手: ${lh} | 盈亏: ${lp.toFixed(1)} BB | 平均Tilt: ${(lt/liveSessions.length).toFixed(1)} | 时薪: ${(ld?lp/ld:0).toFixed(2)} BB/h`;
+      } else liveHtml = '暂无Live数据';
+      document.getElementById('liveStats').innerHTML = liveHtml;
+    },
+
+    // 手局复盘
+    getHandReviews() { return Storage.load().handReviews; },
+    saveHandReviews(r) { const d = Storage.load(); d.handReviews = r; Storage.save(d); },
+    populateHandSessionSelect() {
+      const sessions = this.getSessions();
+      const sel = document.getElementById('handSessionSelect');
+      sel.innerHTML = '<option value="">-- 不关联 --</option>';
+      sessions.sort((a,b) => b.id.localeCompare(a.id)).forEach(s => {
+        sel.innerHTML += `<option value="${s.id}">${Utils.escapeHtml(s.date)} ${Utils.escapeHtml(s.level)} (${s.profit>=0?'+'+s.profit.toFixed(1):s.profit.toFixed(1)}BB)</option>`;
+      });
+    },
+    saveHandReview() {
+      const sessionId = document.getElementById('handSessionSelect').value || null;
+      const desc = document.getElementById('handDesc').value.trim();
+      const decision = document.getElementById('handDecision').value.trim();
+      const mistake = document.getElementById('handMistake').value;
+      const reflection = document.getElementById('handReflection').value.trim();
+      if (!desc && !decision && !reflection) { alert('请至少填写一项内容'); return; }
+      const review = {
+        id: crypto.randomUUID(),
+        sessionId: sessionId || null,
+        date: Utils.getLocalDate(),
+        desc, decision, mistake, reflection
+      };
+      const reviews = this.getHandReviews(); reviews.push(review); this.saveHandReviews(reviews);
+      document.getElementById('handDesc').value = ''; document.getElementById('handDecision').value = '';
+      document.getElementById('handMistake').value = ''; document.getElementById('handReflection').value = '';
+      this.renderHandReviews();
+    },
+    deleteHandReview(id) {
+      if (!confirm('确认删除？')) return;
+      const reviews = this.getHandReviews().filter(r => r.id !== id);
+      this.saveHandReviews(reviews); this.renderHandReviews();
+    },
+    renderHandReviews() {
+      const reviews = this.getHandReviews();
+      const sessions = this.getSessions();
+      const tbody = document.getElementById('handBody'); tbody.innerHTML = '';
+      reviews.sort((a,b) => b.id.localeCompare(a.id)).forEach(r => {
+        const session = sessions.find(s => s.id === r.sessionId);
+        const label = session ? `${Utils.escapeHtml(session.date)} ${Utils.escapeHtml(session.level)}` : '无';
+        tbody.innerHTML += `<tr>
+          <td>${label}</td><td>${Utils.escapeHtml(r.desc.substring(0,20))}…</td>
+          <td>${Utils.escapeHtml(r.mistake||'--')}</td><td>${Utils.escapeHtml(r.reflection.substring(0,20))}…</td>
+          <td><button class="btn--mini btn--danger" data-hand-delete="${r.id}">✕</button></td></tr>`;
+      });
+      tbody.querySelectorAll('[data-hand-delete]').forEach(btn => {
+        btn.addEventListener('click', () => this.deleteHandReview(btn.dataset.handDelete));
+      });
+    },
+
+    // 周级复盘
+    getWeekStr(d = new Date()) {
+      const day = d.getDay();
+      const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+      const monday = new Date(d.setDate(diff));
+      const y = monday.getFullYear();
+      const w = Math.ceil(((monday - new Date(y,0,1)) / 86400000 + 1) / 7);
+      return `${y}-W${String(w).padStart(2,'0')}`;
+    },
+    generateWeeklyStats() {
+      const now = new Date();
+      const day = now.getDay();
+      const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+      const monday = new Date(now.setDate(diff)); monday.setHours(0,0,0,0);
+      const sunday = new Date(monday); sunday.setDate(monday.getDate()+6); sunday.setHours(23,59,59,999);
+      const sessions = this.getSessions().filter(s => { const d = new Date(s.date); return d >= monday && d <= sunday; });
+      const handReviews = this.getHandReviews().filter(r => { const d = new Date(r.date); return d >= monday && d <= sunday; });
+      let tp = 0, th = 0, tt = 0;
+      sessions.forEach(s => { tp += s.profit; th += s.hands; tt += s.tilt; });
+      const mistakeMap = new Map();
+      sessions.forEach(s => { if (s.mistake!=='无') mistakeMap.set(s.mistake, (mistakeMap.get(s.mistake)||0)+1); });
+      handReviews.forEach(r => { if (r.mistake) mistakeMap.set(r.mistake, (mistakeMap.get(r.mistake)||0)+1); });
+      const top = [...mistakeMap.entries()].sort((a,b)=>b[1]-a[1]).slice(0,3).map(e=>`${e[0]}(${e[1]})`).join(', ')||'无';
+      document.getElementById('weeklyAutoStats').innerHTML = `
+        <div class="stats">
+          <div class="stats__item"><div class="stats__label">本周场次</div><div class="stats__value">${sessions.length}</div></div>
+          <div class="stats__item"><div class="stats__label">本周盈亏</div><div class="stats__value ${tp>=0?'text-win':'text-lose'}">${tp>=0?'+'+tp.toFixed(1):tp.toFixed(1)} BB</div></div>
+          <div class="stats__item"><div class="stats__label">总手数</div><div class="stats__value">${th}</div></div>
+          <div class="stats__item"><div class="stats__label">bb/100</div><div class="stats__value">${th?(tp/th*100).toFixed(1):'N/A'}</div></div>
+          <div class="stats__item"><div class="stats__label">平均Tilt</div><div class="stats__value">${sessions.length?(tt/sessions.length).toFixed(1):'N/A'}</div></div>
+          <div class="stats__item"><div class="stats__label">主要错误</div><div class="stats__value" style="font-size:0.8em">${Utils.escapeHtml(top)}</div></div>
+        </div>`;
+    },
+    getWeeklyReviews() { return Storage.load().weeklyReviews; },
+    saveWeeklyReviews(r) { const d = Storage.load(); d.weeklyReviews = r; Storage.save(d); },
+    saveWeeklyReview() {
+      const week = this.getWeekStr();
+      const weakness = document.getElementById('weeklyWeakness').value.trim();
+      const plan = document.getElementById('weeklyPlan').value.trim();
+      if (!weakness && !plan) { alert('请至少填写一项'); return; }
+      const reviews = this.getWeeklyReviews();
+      const exist = reviews.find(r => r.week === week);
+      if (exist) { exist.weakness = weakness || exist.weakness; exist.plan = plan || exist.plan; }
+      else reviews.push({ week, weakness, plan });
+      this.saveWeeklyReviews(reviews);
+      document.getElementById('weeklyWeakness').value = ''; document.getElementById('weeklyPlan').value = '';
+      this.renderWeeklyReviews();
+    },
+    deleteWeeklyReview(week) {
+      if (!confirm('确认删除？')) return;
+      const reviews = this.getWeeklyReviews().filter(r => r.week !== week);
+      this.saveWeeklyReviews(reviews); this.renderWeeklyReviews();
+    },
+    renderWeeklyReviews() {
+      const reviews = this.getWeeklyReviews();
+      const tbody = document.getElementById('weeklyBody'); tbody.innerHTML = '';
+      reviews.sort((a,b) => b.week.localeCompare(a.week)).forEach(r => {
+        tbody.innerHTML += `<tr>
+          <td>${Utils.escapeHtml(r.week)}</td><td>${Utils.escapeHtml(r.weakness||'--')}</td>
+          <td>${Utils.escapeHtml(r.plan||'--')}</td>
+          <td><button class="btn--mini btn--danger" data-week-delete="${r.week}">✕</button></td></tr>`;
+      });
+      tbody.querySelectorAll('[data-week-delete]').forEach(btn => {
+        btn.addEventListener('click', () => this.deleteWeeklyReview(btn.dataset.weekDelete));
+      });
+    },
+
+    // 导出导入
+    exportData() {
+      const data = Storage.load();
+      const json = JSON.stringify(data);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `poker_backup_${Utils.getLocalDate()}.json`;
+      a.click(); URL.revokeObjectURL(url);
+    },
+    importData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (imported.standup && imported.logs && imported.sessions) {
+            if (confirm('导入数据将覆盖当前所有记录，确定继续？')) {
+              Storage.save(imported);
+              alert('导入成功！页面将刷新。');
+              location.reload();
+            }
+          } else alert('文件格式不正确');
+        } catch (ex) { alert('解析失败'); }
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  // SRP 数据及渲染
+  const srpData = [{flop:"A♠️ Q♥️ 8♠️",high:"A高",suit:"听花",connect:"无连",pair:"否",size:"75%"},{flop:"A♠️ J♠️ 9♥️",high:"A高",suit:"听花",connect:"听顺",pair:"否",size:"67%"},{flop:"A♠️ T♠️ 9♥️",high:"A高",suit:"听花",connect:"听顺",pair:"否",size:"67%"},{flop:"A♠️ K♥️ T♥️",high:"A高",suit:"听花",connect:"听顺",pair:"否",size:"67%"},{flop:"A♠️ J♥️ T♦️",high:"A高",suit:"彩虹",connect:"听顺",pair:"否",size:"40%"},{flop:"A♠️ 7♥️ 4♦️",high:"A高",suit:"彩虹",connect:"无连",pair:"否",size:"40%"},{flop:"A♠️ Q♥️ T♠️",high:"A高",suit:"听花",connect:"听顺",pair:"否",size:"40%"},{flop:"A♠️ Q♥️ 3♦️",high:"A高",suit:"彩虹",connect:"无连",pair:"否",size:"25%"},{flop:"A♠️ Q♠️ 4♥️",high:"A高",suit:"听花",connect:"无连",pair:"否",size:"25%"},{flop:"A♠️ J♥️ 4♠️",high:"A高",suit:"听花",connect:"无连",pair:"否",size:"25%"},{flop:"A♠️ K♥️ 5♦️",high:"A高",suit:"彩虹",connect:"无连",pair:"否",size:"25%"},{flop:"A♠️ K♠️ 7♥️",high:"A高",suit:"听花",connect:"无连",pair:"否",size:"25%"},{flop:"A♠️ K♥️ 9♦️",high:"A高",suit:"彩虹",connect:"无连",pair:"否",size:"25%"},{flop:"A♠️ 6♥️ 3♠️",high:"A高",suit:"听花",connect:"听顺",pair:"否",size:"25%"},{flop:"A♠️ T♥️ 2♦️",high:"A高",suit:"彩虹",connect:"无连",pair:"否",size:"25%"},{flop:"A♠️ 9♥️ 2♠️",high:"A高",suit:"听花",connect:"无连",pair:"否",size:"25%"},{flop:"A♠️ 8♥️ 5♠️",high:"A高",suit:"听花",connect:"听顺",pair:"否",size:"25%"},{flop:"A♠️ 4♠️ 3♥️",high:"A高",suit:"听花",connect:"听顺",pair:"否",size:"25%"},{flop:"A♠️ 3♥️ 2♦️",high:"A高",suit:"彩虹",connect:"听顺",pair:"否",size:"25%"},{flop:"A♠️ 8♥️ 7♦️",high:"A高",suit:"彩虹",connect:"听顺",pair:"否",size:"25%"},{flop:"A♠️ 7♠️ 3♠️",high:"A高",suit:"天花",connect:"无连",pair:"否",size:"25%"},{flop:"A♠️ 9♥️ 7♦️",high:"A高",suit:"彩虹",connect:"听顺",pair:"否",size:"25%"},{flop:"A♠️ 8♥️ 5♦️",high:"A高",suit:"彩虹",connect:"听顺",pair:"否",size:"25%"},{flop:"K♠️ 8♥️ 7♦️",high:"K高",suit:"彩虹",connect:"听顺",pair:"否",size:"67%"},{flop:"K♠️ J♠️ T♥️",high:"K高",suit:"听花",connect:"天顺",pair:"否",size:"67%"},{flop:"K♠️ 5♥️ 2♦️",high:"K高",suit:"彩虹",connect:"无连",pair:"否",size:"40%"},{flop:"K♠️ Q♥️ 3♥️",high:"K高",suit:"听花",connect:"无连",pair:"否",size:"25%"},{flop:"K♠️ Q♥️ 8♠️",high:"K高",suit:"听花",connect:"无连",pair:"否",size:"25%"},{flop:"K♠️ J♥️ 3♠️",high:"K高",suit:"听花",connect:"无连",pair:"否",size:"25%"},{flop:"K♠️ T♥️ 3♥️",high:"K高",suit:"听花",connect:"无连",pair:"否",size:"25%"},{flop:"K♠️ J♥️ 8♥️",high:"K高",suit:"听花",connect:"听顺",pair:"否",size:"25%"},{flop:"K♠️ 9♥️ 4♦️",high:"K高",suit:"彩虹",connect:"无连",pair:"否",size:"25%"},{flop:"K♠️ 7♥️ 2♥️",high:"K高",suit:"听花",connect:"无连",pair:"否",size:"25%"},{flop:"K♠️ J♥️ 9♦️",high:"K高",suit:"彩虹",connect:"听顺",pair:"否",size:"25%"},{flop:"K♠️ T♠️ T♥️",high:"K高",suit:"听花",connect:"无连",pair:"是",size:"25%"},{flop:"K♠️ 6♥️ 2♠️",high:"K高",suit:"听花",connect:"无连",pair:"否",size:"25%"},{flop:"K♠️ 6♠️ 5♠️",high:"K高",suit:"天花",connect:"听顺",pair:"否",size:"25%"},{flop:"K♠️ 6♥️ 4♠️",high:"K高",suit:"听花",connect:"听顺",pair:"否",size:"25%"},{flop:"K♠️ 6♥️ 4♦️",high:"K高",suit:"彩虹",connect:"听顺",pair:"否",size:"25%"},{flop:"K♠️ K♥️ 5♦️",high:"K高",suit:"彩虹",connect:"无连",pair:"是",size:"25%"},{flop:"K♠️ 3♥️ 2♥️",high:"K高",suit:"听花",connect:"听顺",pair:"否",size:"25%"},{flop:"Q♠️ 8♥️ 4♠️",high:"Q高",suit:"听花",connect:"无连",pair:"否",size:"67%"},{flop:"Q♠️ 5♠️ 3♥️",high:"Q高",suit:"听花",connect:"听顺",pair:"否",size:"40%"},{flop:"Q♠️ 6♠️ 3♥️",high:"Q高",suit:"听花",connect:"无连",pair:"否",size:"40%"},{flop:"Q♠️ 6♥️ 4♥️",high:"Q高",suit:"听花",connect:"听顺",pair:"否",size:"40%"},{flop:"Q♠️ Q♥️ T♠️",high:"Q高",suit:"听花",connect:"无连",pair:"是",size:"25%"},{flop:"Q♠️ 9♥️ 6♦️",high:"Q高",suit:"彩虹",connect:"听顺",pair:"否",size:"25%"},{flop:"Q♠️ 7♠️ 5♥️",high:"Q高",suit:"听花",connect:"听顺",pair:"否",size:"25%"},{flop:"Q♠️ 8♠️ 2♠️",high:"Q高",suit:"天花",connect:"无连",pair:"否",size:"25%"},{flop:"Q♠️ T♥️ 2♦️",high:"Q高",suit:"彩虹",connect:"无连",pair:"否",size:"25%"},{flop:"Q♠️ J♥️ J♦️",high:"Q高",suit:"彩虹",connect:"无连",pair:"是",size:"25%"},{flop:"Q♠️ 9♥️ 7♦️",high:"Q高",suit:"彩虹",connect:"听顺",pair:"否",size:"25%"},{flop:"Q♠️ J♥️ 2♦️",high:"Q高",suit:"彩虹",connect:"无连",pair:"否",size:"25%"},{flop:"Q♠️ J♥️ 6♦️",high:"Q高",suit:"彩虹",connect:"听顺",pair:"否",size:"25%"},{flop:"Q♠️ 8♥️ 6♦️",high:"Q高",suit:"彩虹",connect:"听顺",pair:"否",size:"25%"},{flop:"J♠️ 8♥️ 7♦️",high:"J高",suit:"彩虹",connect:"听顺",pair:"否",size:"67%"},{flop:"J♠️ 7♥️ 5♠️",high:"J高",suit:"听花",connect:"听顺",pair:"否",size:"67%"},{flop:"J♠️ 7♠️ 6♥️",high:"J高",suit:"听花",connect:"听顺",pair:"否",size:"67%"},{flop:"J♠️ 4♥️ 2♦️",high:"J高",suit:"彩虹",connect:"无连",pair:"否",size:"40%"},{flop:"J♠️ 6♥️ 5♦️",high:"J高",suit:"彩虹",connect:"听顺",pair:"否",size:"40%"},{flop:"J♠️ 7♥️ 2♦️",high:"J高",suit:"彩虹",connect:"无连",pair:"否",size:"40%"},{flop:"J♠️ T♥️ 6♥️",high:"J高",suit:"听花",connect:"听顺",pair:"否",size:"25%"},{flop:"J♠️ 9♥️ 9♦️",high:"J高",suit:"彩虹",connect:"无连",pair:"是",size:"25%"},{flop:"J♠️ 3♥️ 2♥️",high:"J高",suit:"听花",connect:"听顺",pair:"否",size:"25%"},{flop:"J♠️ 9♠️ 4♠️",high:"J高",suit:"天花",connect:"听顺",pair:"否",size:"25%"},{flop:"J♠️ J♥️ 7♠️",high:"J高",suit:"听花",connect:"无连",pair:"是",size:"25%"},{flop:"J♠️ T♠️ 2♠️",high:"J高",suit:"天花",connect:"听顺",pair:"否",size:"25%"},{flop:"9♠️ 5♥️ 3♦️",high:"低牌",suit:"彩虹",connect:"无连",pair:"否",size:"75%"},{flop:"7♠️ 4♥️ 2♦️",high:"低牌",suit:"彩虹",connect:"听顺",pair:"否",size:"33%"},{flop:"9♠️ 6♥️ 3♦️",high:"低牌",suit:"彩虹",connect:"听顺",pair:"否",size:"33%"},{flop:"T♠️ 8♠️ 5♥️",high:"低牌",suit:"听花",connect:"听顺",pair:"否",size:"33%"},{flop:"9♠️ 8♥️ 3♥️",high:"低牌",suit:"听花",connect:"听顺",pair:"否",size:"75%"},{flop:"8♠️ 6♠️ 2♥️",high:"低牌",suit:"听花",connect:"听顺",pair:"否",size:"75%"},{flop:"7♠️ 7♥️ 4♠️",high:"低牌",suit:"听花",connect:"无连",pair:"是",size:"75%"},{flop:"9♠️ 5♥️ 3♠️",high:"低牌",suit:"听花",connect:"无连",pair:"否",size:"75%"},{flop:"6♠️ 5♥️ 4♦️",high:"低牌",suit:"彩虹",connect:"天顺",pair:"否",size:"75%"},{flop:"7♠️ 4♥️ 3♥️",high:"低牌",suit:"听花",connect:"听顺",pair:"否",size:"75%"},{flop:"5♠️ 4♥️ 2♠️",high:"低牌",suit:"听花",connect:"听顺",pair:"否",size:"75%"},{flop:"9♠️ 8♥️ 2♠️",high:"低牌",suit:"听花",connect:"听顺",pair:"否",size:"67%"},{flop:"T♠️ 8♥️ 4♦️",high:"低牌",suit:"彩虹",connect:"听顺",pair:"否",size:"67%"},{flop:"T♠️ 7♥️ 6♦️",high:"低牌",suit:"彩虹",connect:"听顺",pair:"否",size:"67%"},{flop:"8♠️ 6♥️ 3♥️",high:"低牌",suit:"听花",connect:"听顺",pair:"否",size:"67%"},{flop:"7♠️ 6♥️ 5♦️",high:"低牌",suit:"彩虹",connect:"天顺",pair:"否",size:"67%"},{flop:"T♠️ 8♥️ 3♦️",high:"低牌",suit:"彩虹",connect:"听顺",pair:"否",size:"40%"},{flop:"T♠️ 4♥️ 3♦️",high:"低牌",suit:"彩虹",connect:"听顺",pair:"否",size:"40%"},{flop:"7♠️ 3♥️ 3♦️",high:"低牌",suit:"彩虹",connect:"无连",pair:"是",size:"40%"},{flop:"T♠️ 6♥️ 5♥️",high:"低牌",suit:"听花",connect:"听顺",pair:"否",size:"40%"},{flop:"9♠️ 7♥️ 6♥️",high:"低牌",suit:"听花",connect:"听顺",pair:"否",size:"40%"},{flop:"9♠️ 5♠️ 4♥️",high:"低牌",suit:"听花",connect:"听顺",pair:"否",size:"40%"},{flop:"9♠️ 6♠️ 4♠️",high:"低牌",suit:"天花",connect:"听顺",pair:"否",size:"40%"},{flop:"6♠️ 4♥️ 2♥️",high:"低牌",suit:"听花",connect:"听顺",pair:"否",size:"40%"},{flop:"T♠️ 9♥️ 7♦️",high:"低牌",suit:"彩虹",connect:"听顺",pair:"否",size:"25%"},{flop:"T♠️ 9♠️ 2♥️",high:"低牌",suit:"听花",connect:"听顺",pair:"否",size:"25%"},{flop:"8♠️ 5♠️ 5♥️",high:"低牌",suit:"听花",connect:"无连",pair:"是",size:"25%"},{flop:"9♠️ 4♥️ 4♦️",high:"低牌",suit:"彩虹",connect:"无连",pair:"是",size:"25%"},{flop:"6♠️ 6♥️ 5♦️",high:"低牌",suit:"彩虹",connect:"听顺",pair:"是",size:"25%"},{flop:"T♠️ 7♠️ 5♠️",high:"低牌",suit:"天花",connect:"听顺",pair:"否",size:"25%"},{flop:"5♠️ 2♠️ 2♥️",high:"低牌",suit:"听花",connect:"无连",pair:"是",size:"25%"},{flop:"T♠️ T♥️ 5♦️",high:"低牌",suit:"彩虹",connect:"无连",pair:"是",size:"25%"},{flop:"8♠️ 8♥️ 2♦️",high:"低牌",suit:"彩虹",connect:"无连",pair:"是",size:"25%"},{flop:"5♠️ 4♥️ 3♥️",high:"低牌",suit:"听花",connect:"天顺",pair:"否",size:"25%"},{flop:"7♠️ 4♥️ 2♦️",high:"低牌",suit:"彩虹",connect:"听顺",pair:"否",size:"25%"}];
+  function renderSRPTable() {
+    const h = document.getElementById('filterHigh').value;
+    const s = document.getElementById('filterSuit').value;
+    const c = document.getElementById('filterConnect').value;
+    const p = document.getElementById('filterPair').value;
+    const tbody = document.getElementById('srpBody');
+    tbody.innerHTML = '';
+    srpData.filter(r => (h==='all'||r.high===h) && (s==='all'||r.suit===s) && (c==='all'||r.connect===c) && (p==='all'||r.pair===p))
+      .forEach(r => { const row = tbody.insertRow(); row.innerHTML = `<td>${r.flop}</td><td>${r.high}</td><td>${r.suit}</td><td>${r.connect}</td><td>${r.pair}</td><td>${r.size}</td>`; });
+  }
+  document.querySelectorAll('.srp-filters select').forEach(sel => sel.addEventListener('change', renderSRPTable));
+  renderSRPTable();
+
+  // 启动应用
+  App.init();
+})();
+</script>
+</body>
+</html>
