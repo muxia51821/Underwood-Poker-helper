@@ -18,25 +18,20 @@
     <!-- #region HTML -->
   </head>
   <body>
-    <div id="healthWarningBar" class="warning-bar" style="display: none"></div>
     <div class="app">
       <div class="app__settings">
         <button class="app__settings-btn" id="settingsBtn" aria-label="提醒设置">⚙️</button>
         <div class="app__settings-menu" id="settingsMenu">
           <button class="app__settings-option is-active" id="soundOption">🔊 声音</button
-          ><button class="app__settings-option is-active" id="vibrateOption">📳 振动</button
-          ><button class="app__settings-option" id="testNotifyOption">🔔 测试通知</button>
+          ><button class="app__settings-option is-active" id="vibrateOption">📳 振动</button>
         </div>
       </div>
-      <h1 class="app__title">
-        ♠️Underwood's table agent♥️<span class="version-tag"></span
-        ><span id="storageHealth" class="storage-health" title="存储状态"></span>
-      </h1>
+      <h1 class="app__title">♠️Underwood's table agent♥️<span class="version-tag"></span></h1>
       <nav class="nav">
-        <button class="nav__btn nav__btn--active" data-tab="timer">⏱️ Timer</button
-        ><button class="nav__btn" data-tab="odds">🎯 Odds</button
-        ><button class="nav__btn" data-tab="tournament">🏆 Tournament</button
-        ><button class="nav__btn" data-tab="review">📋 Review</button>
+        <button class="nav__btn nav__btn--active" data-tab="timer">⏱️ 计时</button
+        ><button class="nav__btn" data-tab="odds">🎯 赔率</button
+        ><button class="nav__btn" data-tab="tournament">🏆 锦标赛</button
+        ><button class="nav__btn" data-tab="review">📋 复盘</button>
       </nav>
       <main class="main">
         <section id="timerPanel" class="panel is-visible">
@@ -176,7 +171,7 @@
               </button>
             </div>
           </div>
-                      <button id="emergencyBtn" class="btn btn--emergency" style="margin-top: 16px">
+          <button id="emergencyBtn" class="btn btn--emergency" style="margin-top: 16px">
             🆘 暂停30秒 (冷静)
           </button>
         </section>
@@ -395,26 +390,25 @@
         <section id="tournamentPanel" class="panel">
           <div class="card" style="text-align: center">
             <div class="card__title">🏆 锦标赛策略</div>
-
+            <p style="margin: 20px 0; color: #cbd5e1">权威GTO范围，基于Chip EV计算</p>
             <a
               href="https://www.geecegto.com/strategy/8-max-chip-ev-pre-flop"
               target="_blank"
               rel="noopener"
               class="btn"
               style="display: inline-block; width: auto; padding: 12px 24px; text-decoration: none"
-              >📊  GTO 范围表</a
+              >📊 打开 GTO 范围表</a
             >
             <div class="text-muted" style="margin-top: 16px">
-              基于Chip EV计算:geecegto.com
+              点击将在新标签页中打开 geecegto.com
             </div>
           </div>
         </section>
         <section id="reviewPanel" class="panel">
           <nav class="subnav" id="reviewSubNav">
-            <button class="subnav__btn subnav__btn--active" data-sub="hand">Hand</button
+            <button class="subnav__btn subnav__btn--active" data-sub="hand">手局</button
             ><button class="subnav__btn" data-sub="session">Session</button
-            ><button class="subnav__btn" data-sub="weekly">Weekly</button
-            ><button class="subnav__btn" data-sub="opponent">Villain</button>
+            ><button class="subnav__btn" data-sub="weekly">周级</button>
           </nav>
           <div id="subHand" class="sub-panel is-visible">
             <div class="card">
@@ -454,7 +448,7 @@
                 </select></label
               >
               <label class="field"
-                >Hand Notes：
+                >Hands Note：
                 <div id="playerCardsVisual" class="player-cards" style="display: none"></div>
                 <div id="handCardVisual" class="card-visual" style="display: none"></div>
                 <textarea id="handDesc" class="textarea" rows="4">
@@ -469,11 +463,11 @@ OTR河牌 牌面：    行动：</textarea
                 <b>C</b>all <b>R</b>aise <b>B</b>et
               </div>
               <label class="field"
-                >结果与反思：<textarea
-                  id="handReflection"
+                >决策描述：<textarea
+                  id="handDecision"
                   class="textarea"
-                  rows="4"
-                  placeholder="手牌结果和决策复盘"
+                  rows="3"
+                  placeholder="当时的决策逻辑"
                 ></textarea>
               </label>
               <details>
@@ -488,14 +482,7 @@ OTR河牌 牌面：    行动：</textarea
                   面对下注时：我能赢价值还是只能抓诈唬？他有能力诈唬吗？我给了他操作空间吗？这个下注尺寸代表什么？他有多少缺乏SDV的牌？
                 </div>
               </details>
-              <details id="actionLineDetails" style="font-size:0.75em;margin-top:8px">
-                <summary style="color:#94a3b8;cursor:pointer">📊 行动线速查</summary>
-                <table class="srp-table" id="actionLineTable" style="max-height:200px;display:block;overflow-y:auto">
-                  <thead><tr><th>行动线</th><th>诈唬不足</th><th>行动线</th><th>诈唬过度</th></tr></thead>
-                  <tbody id="actionLineBody"></tbody>
-                </table>
-              </details>
-              <label class="field">错误类型 </label>
+              <label class="field">错误类型 (可多选)</label>
               <div class="toggle-group" id="handMistakeGroup">
                 <button class="toggle-btn" data-mistake="open过宽">open过宽</button>
                 <button class="toggle-btn" data-mistake="OOP defend过宽">OOP defend过宽</button>
@@ -525,65 +512,76 @@ OTR河牌 牌面：    行动：</textarea
                   type="text"
                   id="handMistakeCustom"
                   class="input"
-                  placeholder="其他错误类型"
+                  placeholder="其他错误类型（手动填写）"
               /></label>
+              <label class="field"
+                >结果与反思：<textarea
+                  id="handReflection"
+                  class="textarea"
+                  rows="2"
+                  placeholder="手牌结果和下一次改进思路"
+                ></textarea>
+              </label>
               <button id="saveHandBtn" class="btn">💾 保存手局</button>
               <button id="importGGBtn" class="btn btn--secondary" style="margin-top: 8px">
                 📥 从 GG 牌谱导入
               </button>
             </div>
             <div class="card">
-              <div class="card__title">Hand History</div>
+              <div class="card__title">📜 历史手局</div>
               <div class="table-container" style="max-height: 300px">
                 <table class="session-table" id="handTable">
                   <thead>
                     <tr>
-                      <th>Time</th>
-                      <th>Type</th>
+                      <th>
+                        <input
+                          type="checkbox"
+                          id="handSelectAll"
+                          style="width: auto; margin: 0"
+                          title="全选/取消全选"
+                        />
+                      </th>
+                      <th>日期</th>
+                      <th>类型</th>
                       <th>Session</th>
-                      <th>Hand</th>
-                      <th>Profit</th>
-                      <th>Errors</th>
-                      <th>Edit</th>
+                      <th>手牌</th>
+                      <th>盈亏(BB)</th>
+                      <th>错误</th>
+                      <th>编辑</th>
                     </tr>
                   </thead>
                   <tbody id="handBody"></tbody>
                 </table>
-                <div id="handPagination" class="pagination-bar" style="display: none"></div>
                 <div
                   id="handBatchBar"
-                  style="
-                    display: none;
-                    margin-top: 8px;
-                    gap: 8px;
-                    align-items: center;
-                    flex-wrap: wrap;
-                  "
+                  style="display: none; margin-top: 8px; gap: 8px; align-items: center"
                 >
-                  <label
-                    style="
-                      display: flex;
-                      align-items: center;
-                      gap: 4px;
-                      font-size: 0.75em;
-                      color: #94a3b8;
-                      cursor: pointer;
-                      white-space: nowrap;
-                    "
-                  >
-                    <input type="checkbox" id="handSelectAll" /> 全选
-                  </label>
-                  <span
-                    id="handBatchCount"
-                    style="font-size: 0.75em; color: #facc15; white-space: nowrap"
-                    >已选 0 项</span
-                  >
                   <button id="handBatchDelBtn" class="btn--mini btn--danger">🗑 删除选中</button
                   ><select id="handBatchSessionSelect" style="font-size: 0.75em; min-width: 140px">
                     <option value="">-- 关联到 Session --</option></select
                   ><button id="handBatchLinkBtn" class="btn--mini">🔗 关联</button>
                 </div>
               </div>
+            </div>
+            <div class="card">
+              <details id="actionLineDetails">
+                <summary class="card__title" style="margin-bottom: 0; cursor: pointer">
+                  📊 行动线速查表
+                </summary>
+                <div class="table-container" style="max-height: 300px">
+                  <table class="srp-table" id="actionLineTable">
+                    <thead>
+                      <tr>
+                        <th>行动线</th>
+                        <th>诈唬不足</th>
+                        <th>行动线</th>
+                        <th>诈唬过度</th>
+                      </tr>
+                    </thead>
+                    <tbody id="actionLineBody"></tbody>
+                  </table>
+                </div>
+              </details>
             </div>
           </div>
           <div id="subSession" class="sub-panel">
@@ -657,7 +655,7 @@ OTR河牌 牌面：    行动：</textarea
                 <div class="text-muted" style="text-align: left; margin-top: 6px">
                   Tilt: 9-10完全冷静，7-8轻微波动，5-6明显情绪，3-4影响决策，0-2明显tilt
                 </div>
-                <label class="field">错误类型 </label>
+                <label class="field">错误类型 (可多选)</label>
                 <div class="toggle-group" id="sessMistakeGroup" style="flex-wrap: nowrap">
                   <button class="toggle-btn" data-mistake="翻前结构错误">翻前结构错误</button>
                   <button class="toggle-btn" data-mistake="翻后认知错误">翻后认知错误</button>
@@ -670,7 +668,7 @@ OTR河牌 牌面：    行动：</textarea
                     type="text"
                     id="sessMistakeCustom"
                     class="input"
-                    placeholder="其他错误类型"
+                    placeholder="其他错误类型（手动填写）"
                 /></label>
                 <div class="card" style="margin-bottom: 12px; background: #0a2a4a">
                   <div class="card__title" style="margin-bottom: 8px; font-size: 0.9em">
@@ -766,21 +764,10 @@ OTR河牌 牌面：    行动：</textarea
                 </div>
                 <div style="margin-top: 12px">
                   <div style="font-size: 0.75em; color: #94a3b8; margin-bottom: 4px">
-                    👤 对手画像 —
-                    <button
-                      id="gotoOpponentBtn"
-                      style="
-                        background: none;
-                        border: none;
-                        color: #facc15;
-                        text-decoration: underline;
-                        cursor: pointer;
-                        font-size: 0.75em;
-                        padding: 0;
-                      "
-                    >
-                      前往查看 →
-                    </button>
+                    👤 对手画像 <span style="color: #64748b">（即将上线）</span>
+                  </div>
+                  <div class="text-muted" style="font-size: 0.7em">
+                    导入 GG 牌谱后自动分析对手行为模式
                   </div>
                 </div>
               </details>
@@ -836,17 +823,6 @@ OTR河牌 牌面：    行动：</textarea
                   <tbody id="weeklyBody"></tbody>
                 </table>
               </div>
-            </div>
-          </div>
-          <div id="subOpponent" class="sub-panel">
-            <div class="card">
-              <div class="card__title">👤 对手画像</div>
-              <div
-                id="opponentStatsBar"
-                class="text-muted"
-                style="margin-bottom: 10px; font-size: 0.8em"
-              ></div>
-              <div id="opponentList" style="max-height: 400px; overflow-y: auto"></div>
             </div>
           </div>
         </section>
@@ -922,56 +898,6 @@ OTR河牌 牌面：    行动：</textarea
       </div>
     </div>
     <!-- #endregion -->
-    <!-- [V6.9.1] 渲染模板 -->
-    <template id="tmpl-session-row">
-      <tr>
-        <td data-bind="date"></td>
-        <td data-bind="level"></td>
-        <td data-bind="duration"></td>
-        <td data-bind="hands"></td>
-        <td data-bind="profit"></td>
-        <td data-bind="tilt"></td>
-        <td data-bind="mistake"></td>
-        <td>
-          <button class="btn--mini" data-expand-id="">▶</button>
-          <button class="btn--mini" data-edit-id="">✎</button>
-          <button class="btn--mini btn--danger" data-delete-id="">✕</button>
-        </td>
-      </tr>
-    </template>
-    <template id="tmpl-hand-row">
-      <tr>
-        <td data-bind="date"></td>
-        <td data-bind="typeLabel"></td>
-        <td data-bind="sessionCell"></td>
-        <td data-bind="handHtml"></td>
-        <td data-bind="profitHtml"></td>
-        <td data-bind="mistake"></td>
-        <td>
-          <button class="btn--mini" data-hand-edit="">✎</button>
-          <button class="btn--mini btn--danger" data-hand-delete="">✕</button>
-          <input
-            type="checkbox"
-            class="hand-check"
-            data-hand-id=""
-            style="width: auto; margin: 0; margin-left: 6px"
-          />
-        </td>
-      </tr>
-    </template>
-    <template id="tmpl-gg-import-item">
-      <div
-        class="gg-hand-item"
-        style="margin-bottom: 8px; padding: 8px; border-radius: 8px; border: 1px solid #334155"
-      >
-        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer">
-          <input type="checkbox" class="gg-sel" data-hand-id="" />
-          <span data-bind="handId"></span>
-          <span data-bind="profitBadge"></span>
-        </label>
-        <div style="font-size: 0.7em; color: #94a3b8; margin-top: 4px" data-bind="details"></div>
-      </div>
-    </template>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
