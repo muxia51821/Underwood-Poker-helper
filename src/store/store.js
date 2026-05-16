@@ -79,6 +79,11 @@ export const Store = {
       Store._setRaw('opponentAliases', data);
     },
   },
+  // [V7.0.2] 对手合并: { canonicalHash: [oId1, oId2, ...] }
+  opponentMerges: {
+    get() { return Store._getRaw('opponentMerges') || {}; },
+    save(data) { Store._setRaw('opponentMerges', data); },
+  },
   // [V6.12.2] 对手 Live 标记: { oId: true, ... }
   opponentLiveFlags: {
     get() {
@@ -100,6 +105,7 @@ export const Store = {
       tiltLogs: TiltLogRepo.getAll(),
       opponentAliases: Store.opponentAliases.get(),
       opponentLiveFlags: Store.opponentLiveFlags.get(),
+      opponentMerges: Store.opponentMerges.get(),
     };
   },
   importAll(data) {
@@ -152,18 +158,22 @@ export const Store = {
       });
     }
     // [V6.11.0] 对手别名合并：导入覆盖本地同 key，保留本地独有
-    if (data.opponentAliases) {
-      var localAliases = Store.opponentAliases.get();
+    function _mergeDictImport(localObj, importObj) {
       var merged = {};
-      Object.keys(localAliases).forEach(function (k) { merged[k] = localAliases[k]; });
-      Object.keys(data.opponentAliases).forEach(function (k) { merged[k] = data.opponentAliases[k]; });
-      Store.opponentAliases.save(merged);
+      Object.keys(localObj).forEach(function (k) { merged[k] = localObj[k]; });
+      Object.keys(importObj).forEach(function (k) { merged[k] = importObj[k]; });
+      return merged;
+    }
+    if (data.opponentAliases) {
+      Store.opponentAliases.save(_mergeDictImport(Store.opponentAliases.get(), data.opponentAliases));
     }
     // [V6.12.2] 对手 Live 标记合并
     if (data.opponentLiveFlags) {
-      var localFlags = Store.opponentLiveFlags.get();
-      Object.keys(data.opponentLiveFlags).forEach(function (k) { localFlags[k] = data.opponentLiveFlags[k]; });
-      Store.opponentLiveFlags.save(localFlags);
+      Store.opponentLiveFlags.save(_mergeDictImport(Store.opponentLiveFlags.get(), data.opponentLiveFlags));
+    }
+    // [V7.0.2] 对手合并记录导入
+    if (data.opponentMerges) {
+      Store.opponentMerges.save(_mergeDictImport(Store.opponentMerges.get(), data.opponentMerges));
     }
   },
   _collectLogs() {
@@ -322,14 +332,34 @@ async function migrateToIndexedDB() {
     localStorage.removeItem('pa_handReviews');
     localStorage.removeItem('pa_weeklyReviews');
     localStorage.removeItem('pa_tiltLogs');
-    localStorage.setItem('pa_migrated_v1', 'true');
+    // [V7.0.3] 先 ready 再标记，避免中间崩溃造成标记为真但 repo 未 ready
     SessionRepo._dbReady = true;
     HandRepo._dbReady = true;
     WeeklyRepo._dbReady = true;
     TiltLogRepo._dbReady = true;
+    localStorage.setItem('pa_migrated_v1', 'true');
   } else {
     console.warn('Migration incomplete, localStorage data preserved for next retry');
   }
+}
+
+// [V7.0.2] 旧手牌补 oHash：扫描所有手牌，无 oHash 的基于 oId 规范化生成
+function _migrateOpponentHash() {
+  if (localStorage.getItem('pa_migrated_ohash_v1')) return;
+  var hands = HandRepo.getAll();
+  if (!hands || !hands.length) { localStorage.setItem('pa_migrated_ohash_v1', 'true'); return; }
+  var changed = false;
+  hands.forEach(function (r) {
+    if (r.oId && !r.oHash) {
+      r.oHash = Utils.normalizeOpponentName(r.oId);
+      changed = true;
+    }
+  });
+  if (changed) {
+    HandRepo.saveAll(hands);
+    HandRepo._flush();
+  }
+  localStorage.setItem('pa_migrated_ohash_v1', 'true');
 }
 
 function migrateOldData() {
@@ -496,6 +526,8 @@ export async function initStorage(opts) {
     });
   }
 
+  // [V7.0.2] 旧手牌补 oHash（基于 oId 规范化）
+  _migrateOpponentHash();
   migrateHandReviews();
   migrateOldData();
 }

@@ -71,7 +71,7 @@ export const HandPicker = {
         tdSess.setAttribute('data-sess-nav', sess.id);
         tdSess.style.cursor = 'pointer';
         tdSess.title = '点击跳转到 Session';
-        tdSess.innerHTML = '<span style="color:#f97316;text-decoration:underline;text-underline-offset:2px">' + Utils.escapeHtml(sess.date) + ' ' + Utils.escapeHtml(sess.level) + '</span>';
+        tdSess.innerHTML = '<span style="color:#5a9e8f;text-decoration:underline;text-underline-offset:2px">' + Utils.escapeHtml(sess.date) + ' ' + Utils.escapeHtml(sess.level) + '</span>';
       } else {
         tdSess.textContent = '未分类';
       }
@@ -86,7 +86,7 @@ export const HandPicker = {
       var tdProfit = document.createElement('td');
       var pbb = r.pBB != null ? r.pBB : 0;
       tdProfit.textContent = (pbb >= 0 ? '+' : '') + Utils.safeFixed(pbb, 1) + ' BB';
-      tdProfit.style.cssText = 'font-size:0.75em;font-weight:bold;color:' + (pbb >= 0 ? '#4ade80' : '#f87171');
+      tdProfit.style.cssText = 'font-size:0.75em;font-weight:bold;color:' + (pbb >= 0 ? '#6baf7e' : '#c06060');
       tr.appendChild(tdProfit);
       // 错误
       var tdMistake = document.createElement('td');
@@ -99,7 +99,7 @@ export const HandPicker = {
       unmarkBtn.className = 'btn--mini';
       unmarkBtn.setAttribute('data-pick-unmark', r.id);
       unmarkBtn.textContent = '★';
-      unmarkBtn.style.cssText = 'color:#facc15;font-size:0.85em';
+      unmarkBtn.style.cssText = 'color:#d4a853;font-size:0.85em';
       unmarkBtn.title = '取消标记';
       tdOps.appendChild(unmarkBtn);
       tr.appendChild(tdOps);
@@ -172,7 +172,7 @@ function _renderCardsHtml(r) {
   var cards = match[1].split(' ');
   var html = Utils.renderCardBadges(match[1], { style: 'margin-right:2px' });
   if (r.oCards) {
-    html += ' <span style="color:#64748b;font-size:0.7em">vs ' + Utils.escapeHtml(r.oCards) + '</span>';
+    html += ' <span style="color:#a8afba;font-size:0.7em">vs ' + Utils.escapeHtml(r.oCards) + '</span>';
   }
   return html;
 }

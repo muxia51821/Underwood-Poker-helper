@@ -1,4 +1,6 @@
-// [V6.17.0 提取] IndexedDB 封装 — 纯异步读写，零外部依赖
+import { CONSTANTS } from '../constants.js';
+
+// [V6.17.0 提取] IndexedDB 封装 — 纯异步读写
 const DB = {
   _db: null,
   _name: 'pa_store',
@@ -67,7 +69,16 @@ const DB = {
           }
         };
         tx.oncomplete = function () {
-          resolve();
+          if (CONSTANTS.DEV) {
+            self.count(storeName).then(function (actual) {
+              if (actual !== items.length) {
+                console.warn('DB.putAll count mismatch: expected ' + items.length + ' got ' + actual + ' for ' + storeName);
+              }
+              resolve();
+            }).catch(function () { resolve(); });
+          } else {
+            resolve();
+          }
         };
         tx.onerror = function () {
           reject(tx.error);

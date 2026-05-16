@@ -75,6 +75,11 @@ export const Utils = {
     if (!s) return '--';
     return s.length >= 16 ? s.substring(5, 16) : s.substring(5, 10);
   },
+  // [V7.0.2] 规范化对手名 → 去空格 + 统一小写，生成稳定标识
+  normalizeOpponentName: function (name) {
+    if (!name) return '';
+    return String(name).trim().replace(/\s+/g, ' ').toLowerCase();
+  },
   // [V6.11.0] 对手显示名：优先别名，回退 oId
   getOpponentDisplayName: function (oid, aliases) {
     if (!oid) return '??';

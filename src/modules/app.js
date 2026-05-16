@@ -3,7 +3,7 @@ import { Utils, PubSub } from '../utils.js';
 import { Store, SessionRepo, WeeklyRepo, TiltLogRepo } from '../store/store.js';
 import { srpData } from '../data/srpData.js';
 import { underBluff, overBluff } from '../data/actionLines.js';
-import { Tournament } from './tournament.js';
+
 import { DataSync } from './dataSync.js';
 import { TiltRescue } from './tiltRescue.js';
 import { Timer, _setTimerGlobals } from './timer.js';
@@ -59,7 +59,7 @@ export const App = {
             this.bindSubNav();
             Timer.init();
             Odds.init();
-            Tournament.init();
+
             Review.init();
             TiltRescue.init();
             DataSync.init();
@@ -339,6 +339,15 @@ export const App = {
               vb.classList.toggle('is-active', this.vibrateOn);
               Store.settings.save({ sound: this.sound, vibrate: this.vibrateOn });
             });
+            // [V7.3.0]
+            var csBtn = document.getElementById('colorSchemeOption');
+            var savedScheme = localStorage.getItem('pa_colorScheme') || 'v7';
+            if (savedScheme === 'v11') { document.body.classList.add('color-v11'); csBtn.textContent = '🎨 V7'; }
+            csBtn.addEventListener('click', function () {
+              var isV11 = document.body.classList.toggle('color-v11');
+              csBtn.textContent = isV11 ? '🎨 V7' : '🎨 V11';
+              localStorage.setItem('pa_colorScheme', isV11 ? 'v11' : 'v7');
+            });
           },
           bindNav() {
             document.querySelector('.nav').addEventListener('click', (e) => {
@@ -348,10 +357,19 @@ export const App = {
                 .querySelectorAll('.nav__btn')
                 .forEach((x) => x.classList.remove('nav__btn--active'));
               b.classList.add('nav__btn--active');
+              var tab = b.dataset.tab;
+              var main = document.querySelector('.main');
+              main.setAttribute('data-active-tab', tab);
               document.querySelectorAll('.panel').forEach((p) => p.classList.remove('is-visible'));
-              document.getElementById(b.dataset.tab + 'Panel').classList.add('is-visible');
-              if (b.dataset.tab === 'odds') Odds.calc();
-              if (b.dataset.tab === 'review' && !this.reviewRendered) {
+              // [V7.1.0] Timer + Odds 同屏可见（桌面端 CSS grid 双栏，移动端 CSS 隐藏非激活面板）
+              if (tab === 'timer' || tab === 'odds') {
+                document.getElementById('timerPanel').classList.add('is-visible');
+                document.getElementById('oddsPanel').classList.add('is-visible');
+                if (tab === 'odds') Odds.calc();
+              } else {
+                document.getElementById(tab + 'Panel').classList.add('is-visible');
+              }
+              if (tab === 'review' && !this.reviewRendered) {
                 Review.renderAll();
                 this.reviewRendered = true;
               }

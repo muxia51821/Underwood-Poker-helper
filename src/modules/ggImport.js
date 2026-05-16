@@ -33,26 +33,26 @@ function renderGGComparison(parsedHand) {
   ];
   var html = '';
   html +=
-    '<div style="color:#f97316;font-weight:bold;margin-bottom:8px">&#x1F50D; 手牌对比: ' +
+    '<div style="color:#5a9e8f;font-weight:bold;margin-bottom:8px">&#x1F50D; 手牌对比: ' +
     Utils.escapeHtml(parsedHand.handId) +
     '</div>';
   html +=
     '<button class="btn--mini" id="ggCompareBackBtn" style="margin-bottom:8px">&#x2190; 返回列表</button>';
   html +=
-    '<table style="width:100%;font-size:0.7em;border-collapse:collapse"><thead><tr><th style="width:25%;padding:4px;border-bottom:1px solid #475569;color:#94a3b8;text-align:left">字段</th><th style="width:37%;padding:4px;border-bottom:1px solid #475569;color:#f87171;text-align:left">旧记录 (已存在)</th><th style="width:38%;padding:4px;border-bottom:1px solid #475569;color:#4ade80;text-align:left">新数据 (GG导入)</th></tr></thead><tbody>';
+    '<table style="width:100%;font-size:0.7em;border-collapse:collapse"><thead><tr><th style="width:25%;padding:4px;border-bottom:1px solid #373b44;color:#a8afba;text-align:left">字段</th><th style="width:37%;padding:4px;border-bottom:1px solid #373b44;color:#c06060;text-align:left">旧记录 (已存在)</th><th style="width:38%;padding:4px;border-bottom:1px solid #373b44;color:#6baf7e;text-align:left">新数据 (GG导入)</th></tr></thead><tbody>';
   fields.forEach(function (f) {
     var oldStr = String(f.old);
     var newStr = String(f.new);
     var isDiff = oldStr !== newStr;
     var rowStyle = isDiff ? 'background:rgba(250,204,21,0.08)' : '';
     html += '<tr style="' + rowStyle + '">';
-    html += '<td style="padding:4px;border-bottom:1px solid #334155;color:#94a3b8">' + Utils.escapeHtml(f.label) + '</td>';
-    html += '<td style="padding:4px;border-bottom:1px solid #334155;color:#cbd5e1">' + Utils.escapeHtml(oldStr) + '</td>';
-    html += '<td style="padding:4px;border-bottom:1px solid #334155;color:#cbd5e1">' + Utils.escapeHtml(newStr) + (isDiff ? ' &#x26A0;' : '') + '</td>';
+    html += '<td style="padding:4px;border-bottom:1px solid #2a2d35;color:#a8afba">' + Utils.escapeHtml(f.label) + '</td>';
+    html += '<td style="padding:4px;border-bottom:1px solid #2a2d35;color:#cbd5e1">' + Utils.escapeHtml(oldStr) + '</td>';
+    html += '<td style="padding:4px;border-bottom:1px solid #2a2d35;color:#cbd5e1">' + Utils.escapeHtml(newStr) + (isDiff ? ' &#x26A0;' : '') + '</td>';
     html += '</tr>';
   });
   html += '</tbody></table>';
-  html += '<div style="font-size:0.65em;color:#64748b;margin-top:8px">&#x26A0; 标记项为差异字段。覆盖仅更新牌面/盈亏/对手字段，决策与错误类型保留。</div>';
+  html += '<div style="font-size:0.65em;color:#a8afba;margin-top:8px">&#x26A0; 标记项为差异字段。覆盖仅更新牌面/盈亏/对手字段，决策与错误类型保留。</div>';
   var listEl = document.getElementById('ggImportList');
   listEl.replaceChildren(document.createRange().createContextualFragment(html));
   document.getElementById('ggCompareBackBtn').addEventListener('click', function () {
@@ -263,22 +263,22 @@ export function initGGImport() {
     var failedCount = totalInText - ggParsedHands.length;
     var listHtml = '';
     listHtml +=
-      '<div style="color:#94a3b8;font-size:0.75em;padding:4px 0;margin-bottom:6px">' +
+      '<div style="color:#a8afba;font-size:0.75em;padding:4px 0;margin-bottom:6px">' +
       '文本 ' + totalInText + ' 手 → 成功解析 ' + ggParsedHands.length + ' 手' +
-      (failedCount > 0 ? '，<span style="color:#f87171">' + failedCount + ' 手失败</span>' : '') +
+      (failedCount > 0 ? '，<span style="color:#c06060">' + failedCount + ' 手失败</span>' : '') +
       '；其中 ' + dupCount + ' 手已存在</div>';
     if (newCount > 0)
       listHtml +=
         '<div style="display:flex;gap:8px;margin-bottom:8px"><button type="button" class="btn--mini gg-sel-all-btn">全选</button><button type="button" class="btn--mini gg-desel-all-btn">取消全选</button></div>';
     ggParsedHands.forEach(function (h, idx) {
-      var profitColor = h.profitBB >= 0 ? '#4ade80' : '#f87171';
+      var profitColor = h.profitBB >= 0 ? '#6baf7e' : '#c06060';
       var profitStr = (h.profitBB >= 0 ? '+' : '') + h.profitBB + ' BB';
       if (h.isDuplicate) {
-        var bg = 'background:#0f172a;border-left:3px solid #facc15';
+        var bg = 'background:#141b24;border-left:3px solid #d4a853';
         listHtml +=
           '<div style="display:flex;align-items:center;gap:8px;padding:8px;margin-bottom:4px;border-radius:8px;' + bg + '">';
         listHtml +=
-          '<span style="background:#facc15;color:#0f172a;font-size:0.65em;font-weight:bold;padding:2px 6px;border-radius:4px;white-space:nowrap">&#x26A0;&#xFE0F; 已存在</span>';
+          '<span style="background:#d4a853;color:#141b24;font-size:0.65em;font-weight:bold;padding:2px 6px;border-radius:4px;white-space:nowrap">&#x26A0;&#xFE0F; 已存在</span>';
         listHtml +=
           '<div style="flex:1;min-width:0;font-size:0.7em;color:#cbd5e1;line-height:1.3">';
         listHtml += '<span style="color:' + profitColor + ';font-weight:bold">' + Utils.escapeHtml(profitStr) + '</span> ';
@@ -290,8 +290,8 @@ export function initGGImport() {
         listHtml += '</div>';
       } else {
         var bg2 = h.isBigLoss
-          ? 'background:#2f0a0a;border-left:3px solid #f87171'
-          : 'background:#0f172a;border-left:3px solid #334155';
+          ? 'background:#2f0a0a;border-left:3px solid #c06060'
+          : 'background:#141b24;border-left:3px solid #2a2d35';
         listHtml +=
           '<label style="display:flex;align-items:center;gap:8px;padding:8px;margin-bottom:4px;border-radius:8px;' + bg2 + ';cursor:pointer">';
         listHtml +=
@@ -326,7 +326,7 @@ export function initGGImport() {
           pBB: h.profitBB != null ? h.profitBB : null,
           reflection: h.profitBB != null && h.profitBB !== 0
             ? (h.profitBB > 0 ? '盈利：+' + h.profitBB + ' BB' : '亏损：' + h.profitBB + ' BB') : '',
-          ggId: h.handId, oId: h.opponentId, oCards: h.opponentCards,
+          ggId: h.handId, oId: h.opponentId, oCards: h.opponentCards, oHash: h.oHash || Utils.normalizeOpponentName(h.opponentId),
           rake: h.rake || 0, jackpot: h.jackpot || 0,  // [V6.13.0]
         });
         Utils.showToast('已覆盖 ' + h.handId);
@@ -366,7 +366,7 @@ export function initGGImport() {
               ? (h.profitBB > 0 ? '盈利：+' + h.profitBB + ' BB' : '亏损：' + h.profitBB + ' BB')
               : '',
           pBB: h.profitBB != null ? h.profitBB : null,
-          gg: true, ggId: h.handId, oId: h.opponentId, oCards: h.opponentCards,
+          gg: true, ggId: h.handId, oId: h.opponentId, oCards: h.opponentCards, oHash: h.oHash || Utils.normalizeOpponentName(h.opponentId),
           rake: h.rake || 0, jackpot: h.jackpot || 0,
         };
         existingReviews.push(r);
@@ -389,7 +389,7 @@ export function initGGImport() {
                 ? (h.profitBB > 0 ? '盈利：+' + h.profitBB + ' BB' : '亏损：' + h.profitBB + ' BB')
                 : '',
             pBB: h.profitBB != null ? h.profitBB : null,
-            gg: true, ggId: h.handId, oId: h.opponentId, oCards: h.opponentCards,
+            gg: true, ggId: h.handId, oId: h.opponentId, oCards: h.opponentCards, oHash: h.oHash || Utils.normalizeOpponentName(h.opponentId),
             rake: h.rake || 0, jackpot: h.jackpot || 0,
           };
           existingReviews.push(r);

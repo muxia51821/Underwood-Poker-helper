@@ -20,7 +20,7 @@ function _toggleMarkHand(id, btnEl) {
       found = true;
       if (btnEl) {
         btnEl.textContent = r.marked ? '★' : '☆';
-        btnEl.style.color = r.marked ? '#facc15' : '#64748b';
+        btnEl.style.color = r.marked ? '#d4a853' : '#a8afba';
       }
     }
   });
@@ -101,7 +101,7 @@ function renderStatsPanel(opts) {
   var aggKeys = ['probeBetTurn', 'afqFlop', 'afqTurn', 'afqRiver'];
   if (showExtras) {
     var rakeHtml = '<div class="stats" style="margin-top:8px">';
-    rakeHtml += '<div class="stats__item"><div class="stats__label">Total Rake</div><div class="stats__value" style="color:#f87171">-$' + Utils.safeFixed(es.totalRake.value, 2) + '</div></div>';
+    rakeHtml += '<div class="stats__item"><div class="stats__label">Total Rake</div><div class="stats__value" style="color:#c06060">-$' + Utils.safeFixed(es.totalRake.value, 2) + '</div></div>';
     rakeHtml += '<div class="stats__item"><div class="stats__label">Total Jackpot</div><div class="stats__value">$' + Utils.safeFixed(es.totalJackpot.value, 2) + '</div></div>';
     rakeHtml += '<div class="stats__item stats__item--win"><div class="stats__label">Pre-Rake Profit</div><div class="stats__value text-win">' + (es.profitWithRake.value >= 0 ? '+' : '') + Utils.safeFixed(es.profitWithRake.value, 1) + ' BB</div></div>';
     rakeHtml += '<div class="stats__item ' + (es.bbPer100WithRake.value >= 0 ? 'stats__item--win' : 'stats__item--lose') + '"><div class="stats__label">bb/100 (Pre-Rake)</div><div class="stats__value ' + (es.bbPer100WithRake.value >= 0 ? 'text-win' : 'text-lose') + '">' + Utils.safeFixed(es.bbPer100WithRake.value, 1) + '</div></div>';
@@ -368,13 +368,13 @@ export const Review = {
     td.colSpan = 8;
     td.style.cssText = 'padding:8px 12px;background:#0a1628;font-size:0.75em;border-top:1px solid #1e3a5f';
     if (linked.length === 0) {
-      td.innerHTML = '<span style="color:#64748b">📋 暂无关联手牌</span>';
+      td.innerHTML = '<span style="color:#a8afba">📋 暂无关联手牌</span>';
     } else {
       // [V6.15.1] 筛选下拉 + 筛选逻辑
       var expandFilterId = 'sessHandFilter-' + sessionId;
       var parts = [
         '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">',
-        '<span style="color:#94a3b8">📋 关联手牌 (' + linked.length + '手):</span>',
+        '<span style="color:#a8afba">📋 关联手牌 (' + linked.length + '手):</span>',
         '<select class="select" data-sess-filter="' + sessionId + '" id="' + expandFilterId + '" style="font-size:0.7em;padding:2px 6px;width:auto">',
         '<option value="all"' + (filterVal === 'all' ? ' selected' : '') + '>全部</option>',
         '<option value="above2"' + (filterVal === 'above2' ? ' selected' : '') + '>≥ 2 BB</option>',
@@ -390,20 +390,20 @@ export const Review = {
           handHtml += Utils.renderCardBadges(heroCardsM[1], { style: 'margin-right:2px' });
           // [V6.15.2] 对手牌灰色小字标注
           if (r.oCards) {
-            handHtml += ' <span style="color:#64748b;font-size:0.7em">vs ' + Utils.escapeHtml(r.oCards) + '</span>';
+            handHtml += ' <span style="color:#a8afba;font-size:0.7em">vs ' + Utils.escapeHtml(r.oCards) + '</span>';
           }
         } else {
           handHtml = '--';
         }
         var profitStr = r.pBB != null ? Utils.formatProfitHTML(r.pBB) : '--';
         var mistakeStr = r.mistake || '--';
-        var ggMark = r.gg ? ' <span style="color:#64748b;font-size:0.85em">GG</span>' : '';
+        var ggMark = r.gg ? ' <span style="color:#a8afba;font-size:0.85em">GG</span>' : '';
         parts.push('<div style="display:flex;align-items:center;gap:6px;padding:2px 0;border-bottom:1px solid #1e293b">');
         parts.push('<span style="min-width:80px">' + handHtml + '</span>');
         var markIcon = r.marked ? '★' : '☆';
-        var markColor = r.marked ? '#facc15' : '#64748b';
+        var markColor = r.marked ? '#d4a853' : '#a8afba';
         parts.push('<span style="flex:1;color:#cbd5e1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + profitStr + ggMark + '</span>');
-        parts.push('<span style="color:#94a3b8;min-width:60px;text-align:right">' + Utils.escapeHtml(mistakeStr) + '</span>');
+        parts.push('<span style="color:#a8afba;min-width:60px;text-align:right">' + Utils.escapeHtml(mistakeStr) + '</span>');
         parts.push('<button class="btn--mini" data-hand-edit="' + r.id + '" style="font-size:0.85em">👁️</button>');
         parts.push('<button class="btn--mini hand-mark-btn" data-hand-mark="' + r.id + '" style="font-size:0.85em;color:' + markColor + '" title="标记">' + markIcon + '</button>');
         parts.push('</div>');
@@ -476,7 +476,7 @@ export const Review = {
       var profitEl = row.querySelector('[data-bind="profit"]');
       var profitStr = Utils.safeFixed(s.profit, 1);
       profitEl.textContent = (s.profit >= 0 ? '+' : '') + profitStr;
-      profitEl.style.color = s.profit >= 0 ? '#4ade80' : '#f87171';
+      profitEl.style.color = s.profit >= 0 ? '#6baf7e' : '#c06060';
       row.querySelector('[data-bind="tilt"]').textContent = s.tilt;
       row.querySelector('[data-bind="mistake"]').textContent = s.mistake;
       row.querySelector('[data-expand-id]').setAttribute('data-expand-id', s.id);
@@ -562,7 +562,7 @@ export const Review = {
     var c = 1, avgTilt = Utils.safeFixed(tt, 1),
       bb100 = th ? Utils.safeFixed((tp / th) * 100, 1) : 'N/A',
       hr = td ? Utils.safeFixed(tp / td, 2) : 'N/A';
-    var titleHtml = '<div style="font-size:0.8em;color:#f97316;margin-bottom:6px">📌 仅显示: ' + Utils.escapeHtml(target.date) + ' ' + Utils.escapeHtml(target.level) + ' <button class="btn--mini" id="resetStatsFilterBtn" style="font-size:0.75em;margin-left:8px">↺ 全部</button></div>';
+    var titleHtml = '<div style="font-size:0.8em;color:#5a9e8f;margin-bottom:6px">📌 仅显示: ' + Utils.escapeHtml(target.date) + ' ' + Utils.escapeHtml(target.level) + ' <button class="btn--mini" id="resetStatsFilterBtn" style="font-size:0.75em;margin-left:8px">↺ 全部</button></div>';
     Utils.setSafeHTML(document.getElementById('statsArea'), titleHtml + '<div class="stats"><div class="stats__item"><div class="stats__label">Session</div><div class="stats__value">' + c + '</div></div><div class="stats__item ' + (tp >= 0 ? 'stats__item--win' : 'stats__item--lose') + '"><div class="stats__label">Profit</div><div class="stats__value ' + (tp >= 0 ? 'text-win' : 'text-lose') + '">' + (tp >= 0 ? '+' + Utils.safeFixed(tp, 1) : Utils.safeFixed(tp, 1)) + ' BB</div></div><div class="stats__item"><div class="stats__label">Hands</div><div class="stats__value">' + th + '</div></div><div class="stats__item ' + (parseFloat(bb100) >= 0 ? 'stats__item--win' : 'stats__item--lose') + '"><div class="stats__label">bb/100</div><div class="stats__value ' + (parseFloat(bb100) >= 0 ? 'text-win' : 'text-lose') + '">' + bb100 + '</div></div><div class="stats__item ' + (parseFloat(hr) >= 0 ? 'stats__item--win' : 'stats__item--lose') + '"><div class="stats__label">Hourly</div><div class="stats__value ' + (parseFloat(hr) >= 0 ? 'text-win' : 'text-lose') + '">' + hr + ' BB/h</div></div><div class="stats__item"><div class="stats__label">Tilt</div><div class="stats__value">' + avgTilt + '</div></div></div>');
     // 错误统计
     var mh = target.mistake && target.mistake !== '无' ? target.mistake : '暂无错误记录';
@@ -627,9 +627,9 @@ export const Review = {
     const profits = sessions.map(function (s) { return s.profit; });
     const maxP = Math.max(Math.abs(Math.max.apply(null, profits)), Math.abs(Math.min.apply(null, profits)), 10);
     ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = '#0f172a'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#141b24'; ctx.fillRect(0, 0, W, H);
     ctx.strokeStyle = '#334155'; ctx.lineWidth = 0.5;
-    ctx.fillStyle = '#64748b'; ctx.font = '9px -apple-system,sans-serif'; ctx.textAlign = 'right';
+    ctx.fillStyle = '#a8afba'; ctx.font = '9px -apple-system,sans-serif'; ctx.textAlign = 'right';
     const ySteps = 4;
     for (let i = 0; i <= ySteps; i++) {
       const y = pad.top + (ph / ySteps) * i;
@@ -648,15 +648,15 @@ export const Review = {
       const x = pad.left + gap * i + (gap - barW) / 2;
       const h = (Math.abs(s.profit) / maxP) * (ph / 2);
       const y = s.profit >= 0 ? pad.top + ph / 2 - h : pad.top + ph / 2;
-      ctx.fillStyle = s.profit >= 0 ? '#4ade80' : '#f87171';
+      ctx.fillStyle = s.profit >= 0 ? '#6baf7e' : '#c06060';
       ctx.fillRect(x, y, barW, Math.max(1, h));
       if (i % 3 === 0 || i === sessions.length - 1) {
-        ctx.fillStyle = '#94a3b8'; ctx.font = '8px -apple-system,sans-serif'; ctx.textAlign = 'center';
+        ctx.fillStyle = '#a8afba'; ctx.font = '8px -apple-system,sans-serif'; ctx.textAlign = 'center';
         ctx.fillText(s.date.slice(5) || s.date, x + barW / 2, pad.top + ph + 16);
       }
     });
     if (sessions.length >= 3) {
-      ctx.strokeStyle = '#facc15'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
+      ctx.strokeStyle = '#d4a853'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
       ctx.beginPath();
       for (let i = 1; i < sessions.length - 1; i++) {
         const avg = (sessions[i - 1].profit + sessions[i].profit + sessions[i + 1].profit) / 3;
@@ -665,7 +665,7 @@ export const Review = {
         if (i === 1) ctx.moveTo(x, y); else ctx.lineTo(x, y);
       }
       ctx.stroke(); ctx.setLineDash([]);
-      ctx.fillStyle = '#facc15'; ctx.font = '8px -apple-system,sans-serif'; ctx.textAlign = 'left';
+      ctx.fillStyle = '#d4a853'; ctx.font = '8px -apple-system,sans-serif'; ctx.textAlign = 'left';
       ctx.fillText('━ 3场滑动平均', pad.left, pad.top + 10);
     }
     ctx.strokeStyle = '#334155'; ctx.lineWidth = 0.5;
@@ -679,7 +679,7 @@ export const Review = {
     const recent = logs.slice(-5).reverse();
     container.innerHTML = recent.map(function (l) {
       const timeStr = Utils.formatTime(l.time);
-      return '<div style="margin-bottom:4px;background:#0f172a;padding:6px 10px;border-radius:8px"><span style="color:#f87171">' + Utils.escapeHtml(l.trigger) + '</span> | 强度:' + l.intensity + ' | ' + Utils.escapeHtml(l.note || '') + ' <span style="font-size:0.7em;color:#64748b">' + l.date + ' ' + timeStr + '</span></div>';
+      return '<div style="margin-bottom:4px;background:#141b24;padding:6px 10px;border-radius:8px"><span style="color:#c06060">' + Utils.escapeHtml(l.trigger) + '</span> | 强度:' + l.intensity + ' | ' + Utils.escapeHtml(l.note || '') + ' <span style="font-size:0.7em;color:#a8afba">' + l.date + ' ' + timeStr + '</span></div>';
     }).join('');
   },
   // [V6.10.0] 对手画像：按对手名聚合统计
@@ -692,11 +692,15 @@ export const Review = {
     var hands = allHands.filter(function (r) { return r.oId; });
     var map = {};
     hands.forEach(function (r) {
+      // [V7.0.2] 用 oHash 分组（向后兼容：无 oHash 时用规范化 oId）
+      var oHash = r.oHash || Utils.normalizeOpponentName(r.oId);
       var oid = r.oId;
-      if (!map[oid]) {
-        map[oid] = { name: oid, totalHands: 0, showdowns: 0, profit: 0, wins: 0, cards: [], lastDate: '', hands: [], _handRefs: [] };
+      if (!map[oHash]) {
+        map[oHash] = { name: oid, oHash: oHash, oIds: [oid], totalHands: 0, showdowns: 0, profit: 0, wins: 0, cards: [], lastDate: '', hands: [], _handRefs: [] };
       }
-      var p = map[oid];
+      var p = map[oHash];
+      if (p.oIds.indexOf(oid) === -1) p.oIds.push(oid);
+      if (p.name.length < oid.length) p.name = oid;
       p.totalHands++;
       p.profit += r.pBB || 0;
       if (r.pBB > 0) p.wins++;
@@ -725,7 +729,7 @@ export const Review = {
     p.hands.sort(function (a, b) { return a.date > b.date ? -1 : a.date < b.date ? 1 : 0; }).forEach(function (h, hi) {
       var dateFormatted = Utils.formatHandDate(h.date);
       var hProfitStr = h.pBB != null ? ((h.pBB >= 0 ? '+' : '') + Utils.safeFixed(h.pBB, 1) + ' BB') : '--';
-      var hProfitColor = h.pBB >= 0 ? '#4ade80' : '#f87171';
+      var hProfitColor = h.pBB >= 0 ? '#6baf7e' : '#c06060';
       var heroCardsHtml = '';
       if (h.heroCards) {
         heroCardsHtml += Utils.renderCardBadges(h.heroCards, { style: 'margin-right:1px;font-size:0.85em' });
@@ -737,21 +741,21 @@ export const Review = {
       html += '<span style="min-width:85px;color:#cbd5e1">' + dateFormatted + '</span>';
       html += '<span style="min-width:70px">' + heroCardsHtml + '</span>';
       html += '<span style="min-width:65px;color:' + hProfitColor + '">' + hProfitStr + '</span>';
-      html += '<span style="flex:1;color:#94a3b8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + Utils.escapeHtml(h.mistake || '--') + '</span>';
+      html += '<span style="flex:1;color:#a8afba;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + Utils.escapeHtml(h.mistake || '--') + '</span>';
       html += '</div>';
       html += '<div class="opp-hand-detail ' + filterClass + '" id="oppHandDetail-' + oppIdx + '-' + hi + '" style="display:none;padding:6px 10px;background:#0a1628;border-radius:6px;margin-bottom:4px;font-size:0.9em">';
-      html += '<div style="color:#94a3b8">底池类型: ' + Utils.escapeHtml(h.potType || '--') + '</div>';
+      html += '<div style="color:#a8afba">底池类型: ' + Utils.escapeHtml(h.potType || '--') + '</div>';
       if (h.heroCards || h.oCards) {
         html += '<div style="color:#cbd5e1;margin-top:4px">';
-        html += '<span style="color:#4ade80">我: ' + Utils.escapeHtml(h.heroCards || '--') + '</span>';
-        html += '  <span style="color:#f87171">对手: ' + Utils.escapeHtml(h.oCards || '--') + '</span>';
+        html += '<span style="color:#6baf7e">我: ' + Utils.escapeHtml(h.heroCards || '--') + '</span>';
+        html += '  <span style="color:#c06060">对手: ' + Utils.escapeHtml(h.oCards || '--') + '</span>';
         html += '</div>';
       }
       var hSession = sessionsMap.get(h.sessionId);
       if (hSession) {
-        html += '<div style="color:#94a3b8">Session: ' + Utils.escapeHtml(hSession.date) + ' ' + Utils.escapeHtml(hSession.level) + '</div>';
+        html += '<div style="color:#a8afba">Session: ' + Utils.escapeHtml(hSession.date) + ' ' + Utils.escapeHtml(hSession.level) + '</div>';
       } else {
-        html += '<div style="color:#64748b">未关联 Session</div>';
+        html += '<div style="color:#a8afba">未关联 Session</div>';
       }
       html += '<button class="btn--mini" data-hand-edit="' + h.id + '" style="margin-top:4px;font-size:0.85em">👁️ 查看手局</button>';
       html += '</div>';
@@ -766,7 +770,6 @@ export const Review = {
     var aliases = Store.opponentAliases.get();
     var liveFlags = Store.opponentLiveFlags.get();
     var stats = this.getOpponentStats();
-    var sessions = SessionRepo.getAll();
     var bar = document.getElementById('opponentStatsBar');
     var list = document.getElementById('opponentList');
     if (!stats.length) {
@@ -806,6 +809,7 @@ export const Review = {
     var fp = stats.length + '|' + totalHands + '|' + sortBy + '|' + sortDir + '|' + (filterLive ? 1 : 0);
     if (self._villainFp === fp) return;
     self._villainFp = fp;
+    var sessions = SessionRepo.getAll();
     bar.innerHTML = '共 ' + stats.length + ' 名对手，' + totalHands + ' 次交手 &nbsp;' +
       '<button class="btn--mini sort-btn' + (sortBy === 'lastDate' ? ' is-active' : '') + '" data-sort="lastDate" style="font-size:0.7em">Recent</button> ' +
       '<button class="btn--mini sort-btn' + (sortBy === 'profit' ? ' is-active' : '') + '" data-sort="profit" style="font-size:0.7em">Net</button> ' +
@@ -820,21 +824,21 @@ export const Review = {
       var hasAlias = aliases[p.name];
       var winRate = p.totalHands > 0 ? ((p.wins / p.totalHands) * 100).toFixed(0) : 0;
       var profitStr = (p.profit >= 0 ? '+' : '') + Utils.safeFixed(p.profit, 1) + ' BB';
-      var profitColor = p.profit >= 0 ? '#4ade80' : '#f87171';
-      html += '<div class="opponent-row" style="border:1px solid #334155;border-radius:10px;padding:10px 12px;margin-bottom:8px;cursor:pointer;background:#0f172a" data-opp-idx="' + i + '">';
+      var profitColor = p.profit >= 0 ? '#6baf7e' : '#c06060';
+      html += '<div class="opponent-row" style="border:1px solid #334155;border-radius:10px;padding:10px 12px;margin-bottom:8px;cursor:pointer;background:#141b24" data-opp-idx="' + i + '">';
       html += '<div style="display:flex;justify-content:space-between;align-items:center">';
       var isLive = liveFlags[p.name];
-      html += '<div><span style="font-weight:bold;color:#facc15">' + (isLive ? '<span style="color:#dc2626;font-size:0.6em;vertical-align:middle">LIVE</span> ' : '') + Utils.escapeHtml(displayName) + '</span>' + (hasAlias ? ' <span style="font-size:0.65em;color:#64748b">' + Utils.escapeHtml(p.name) + '</span>' : '') + ' <span style="font-size:0.75em;color:#94a3b8">×' + p.totalHands + '</span></div>';
-      html += '<div style="display:flex;align-items:center;gap:8px"><span style="color:' + profitColor + ';font-weight:bold">' + profitStr + '</span> <span style="font-size:0.75em;color:#94a3b8">' + winRate + '%胜</span> <button class="btn--mini alias-edit-btn" data-oid="' + Utils.escapeHtml(p.name) + '" style="font-size:0.65em;padding:2px 6px;cursor:pointer">✎</button></div>';
+      html += '<div><span style="font-weight:bold;color:#d4a853">' + (isLive ? '<span style="color:#dc2626;font-size:0.6em;vertical-align:middle">LIVE</span> ' : '') + Utils.escapeHtml(displayName) + '</span>' + (hasAlias ? ' <span style="font-size:0.65em;color:#a8afba">' + Utils.escapeHtml(p.name) + '</span>' : '') + ' <span style="font-size:0.75em;color:#a8afba">×' + p.totalHands + '</span></div>';
+      html += '<div style="display:flex;align-items:center;gap:8px"><span style="color:' + profitColor + ';font-weight:bold">' + profitStr + '</span> <span style="font-size:0.75em;color:#a8afba">' + winRate + '%胜</span> <button class="btn--mini alias-edit-btn" data-oid="' + Utils.escapeHtml(p.name) + '" style="font-size:0.65em;padding:2px 6px;cursor:pointer">✎</button></div>';
       html += '</div>';
-      html += '<div class="opponent-detail" id="oppDetail-' + i + '" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid #334155;font-size:0.75em;color:#94a3b8">';
+      html += '<div class="opponent-detail" id="oppDetail-' + i + '" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid #334155;font-size:0.75em;color:#a8afba">';
       html += '摊牌 ' + p.showdowns + ' 次 | 最近 ' + p.lastDate.substring(0, 10);
       // [V7.0.0] 手牌列表 — 仅渲染筛选按钮和空容器，手牌行延迟到展开时构建
       if (p.hands.length) {
         var oppHandFilterId = 'oppHandFilter-' + i;
         html += '<div style="margin-top:8px;display:flex;align-items:center;gap:6px">';
-        html += '<span style="font-weight:bold;color:#94a3b8">手牌 (' + p.hands.length + '):</span>';
-        html += '<button class="btn--mini opp-filter-btn" data-opp-idx="' + i + '" data-filter="all" style="font-size:0.65em;padding:2px 6px;background:#f97316">全部</button>';
+        html += '<span style="font-weight:bold;color:#a8afba">手牌 (' + p.hands.length + '):</span>';
+        html += '<button class="btn--mini opp-filter-btn" data-opp-idx="' + i + '" data-filter="all" style="font-size:0.65em;padding:2px 6px;background:#5a9e8f">全部</button>';
         html += '<button class="btn--mini opp-filter-btn" data-opp-idx="' + i + '" data-filter="above2" style="font-size:0.65em;padding:2px 6px">≥2 BB</button>';
         html += '<button class="btn--mini opp-filter-btn" data-opp-idx="' + i + '" data-filter="above30" style="font-size:0.65em;padding:2px 6px">≥30 BB</button>';
         html += '</div>';
@@ -886,7 +890,7 @@ export const Review = {
         var container = document.getElementById('oppHandFilter-' + oppIdx);
         if (!container) return;
         container.parentElement.querySelectorAll('.opp-filter-btn').forEach(function (b) { b.style.background = ''; });
-        filterBtn.style.background = '#f97316';
+        filterBtn.style.background = '#5a9e8f';
         container.querySelectorAll('.opp-filterable').forEach(function (el) {
           if (filter === 'all') { el.style.display = ''; }
           else if (filter === 'above2') { el.style.display = el.classList.contains('above2') ? '' : 'none'; }
@@ -1025,14 +1029,14 @@ export const Review = {
     // 手牌详情
     html += '<div style="color:#cbd5e1;white-space:pre-wrap;margin-bottom:6px">' + Utils.escapeHtml(r.desc || '--') + '</div>';
     // 错误 + 反思
-    if (r.mistake) html += '<div style="margin-bottom:4px"><span style="color:#94a3b8">错误：</span><span style="color:#f87171">' + Utils.escapeHtml(r.mistake) + '</span></div>';
-    if (r.reflection) html += '<div style="margin-bottom:6px"><span style="color:#94a3b8">反思：</span><span style="color:#e2e8f0">' + Utils.escapeHtml(r.reflection) + '</span></div>';
+    if (r.mistake) html += '<div style="margin-bottom:4px"><span style="color:#a8afba">错误：</span><span style="color:#c06060">' + Utils.escapeHtml(r.mistake) + '</span></div>';
+    if (r.reflection) html += '<div style="margin-bottom:6px"><span style="color:#a8afba">反思：</span><span style="color:#c8ccd0">' + Utils.escapeHtml(r.reflection) + '</span></div>';
     // 操作按钮
     html += '<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">';
     html += '<button class="btn--mini" data-hand-edit="' + r.id + '">✎ 编辑</button>';
     html += '<button class="btn--mini btn--danger" data-hand-delete="' + r.id + '">✕ 删除</button>';
     var markIcon = r.marked ? '★' : '☆';
-    var markColor = r.marked ? '#facc15' : '#64748b';
+    var markColor = r.marked ? '#d4a853' : '#a8afba';
     html += '<button class="btn--mini hand-mark-btn" data-hand-mark="' + r.id + '" style="color:' + markColor + '">' + markIcon + ' 标记</button>';
     html += '</div>';
     td.innerHTML = html;
@@ -1141,7 +1145,7 @@ export const Review = {
       if (markBtn) {
         markBtn.setAttribute('data-hand-mark', r.id);
         markBtn.textContent = r.marked ? '★' : '☆';
-        markBtn.style.color = r.marked ? '#facc15' : '#64748b';
+        markBtn.style.color = r.marked ? '#d4a853' : '#a8afba';
       }
       frag.appendChild(row);
     });
@@ -1204,10 +1208,10 @@ export const Review = {
       [...mm.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).forEach((e) => {
         const lwCount = lwMm.get(e[0]) || 0; const diff = e[1] - lwCount;
         const arrow = diff > 0 ? '↑' : diff < 0 ? '↓' : '→';
-        const color = diff > 0 ? '#f87171' : diff < 0 ? '#4ade80' : '#94a3b8';
+        const color = diff > 0 ? '#c06060' : diff < 0 ? '#6baf7e' : '#a8afba';
         trends.push('<span style="color:' + color + '">' + Utils.escapeHtml(e[0]) + ' ' + arrow + Math.abs(diff) + '</span>');
       });
-      trendHtml = trends.length ? '<div style="margin-top:6px;font-size:0.7em;color:#94a3b8;text-align:center;line-height:1.6">📈 vs上周：' + trends.join(' · ') + '</div>' : '';
+      trendHtml = trends.length ? '<div style="margin-top:6px;font-size:0.7em;color:#a8afba;text-align:center;line-height:1.6">📈 vs上周：' + trends.join(' · ') + '</div>' : '';
     }
     const autoSummary = this.generateWeeklySummary(sessions, tp, tt, topMistakes);
     const wBb100 = th ? Utils.safeFixed((tp / th) * 100, 1) : 'N/A';

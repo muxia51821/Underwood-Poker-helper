@@ -303,7 +303,6 @@ export const STAT_DEFINITIONS = {
     },
   },
   // ===== 摊牌指标 =====
-  // ===== 摊牌指标 =====
   wtsd: {
     name: 'WTSD（进摊牌率）', type: 'percent',
     init: () => ({ opportunities: 0, actions: 0 }),
@@ -479,11 +478,11 @@ function _parseFlop(h) {
   if (!flopMatch) return null;
   var actionsStr = flopMatch[1].trim();
   var actionTokens = actionsStr.split(/\s+/);
+  // [V7.0.3] 对齐 Turn/River 的 i%2===0 遍历模式
   var heroActions = [];
   var firstNonHeroAction = '';
-  if (actionTokens.length >= 1) {
-    heroActions.push(actionTokens[0]);
-    if (actionTokens.length >= 3) heroActions.push(actionTokens[2]);
+  for (var i = 0; i < actionTokens.length; i++) {
+    if (i % 2 === 0) heroActions.push(actionTokens[i]);
   }
   if (actionTokens.length >= 2) {
     firstNonHeroAction = actionTokens[1];
@@ -672,21 +671,23 @@ export const STAT_RANGES = {
   vpip:         { good: [20, 25],  acceptable: [18, 28],  warn: [15, 32] },
   pfr:          { good: [15, 23],  acceptable: [13, 26],  warn: [10, 30] },
   threeBet:     { good: [8, 13],   acceptable: [6, 15],   warn: [3, 17] },
-  squeeze:      { good: [8, 13],   acceptable: [6],       warn: [4] },
+  squeeze:      { good: [10, 16],  acceptable: [8, 18],   warn: [5, 20] },
   limp:         { good: [0, 3.5],  acceptable: [3.5, 5.5], warn: [5.5, 10] },
   coldCall:     { good: [0, 9],    acceptable: [9, 13],   warn: [13, 15] },
-  fourBet:      { good: [8, 13],   acceptable: [6],       warn: [4] },
-  stealAttempt: { good: [40],      acceptable: [35],      warn: [30] },
+  fourBet:      { good: [4, 8],    acceptable: [3, 10],   warn: [2, 12] },
+  stealAttempt: { good: [45],      acceptable: [38],      warn: [30] },
   foldTo3bet:   { good: [35, 55],  acceptable: [30, 60],  warn: [25, 65] },
   foldToSteal:  { good: [60, 75],  acceptable: [50, 80],  warn: [45, 85] },
   // 翻后
-  cbetFlop:     { good: [50, 75],  acceptable: [40, 80],  warn: [30, 85] },
-  cbetTurn:     { good: [50, 75],  acceptable: [40, 80],  warn: [30, 85] },
-  cbetRiver:    { good: [50, 75],  acceptable: [40, 80],  warn: [30, 85] },
+  cbetFlop:     { good: [55, 75],  acceptable: [45, 80],  warn: [35, 85] },
+  cbetTurn:     { good: [45, 65],  acceptable: [35, 70],  warn: [25, 75] },
+  cbetRiver:    { good: [35, 55],  acceptable: [25, 60],  warn: [20, 65] },
   foldToCbet:   { good: [35, 55],  acceptable: [30, 60],  warn: [25, 65] },
   raiseCbetFlop:{ good: [5, 20],   acceptable: [3, 25],   warn: [1, 30] },
-  donkBetFlop:  { good: [0, 5],    acceptable: [5, 8],    warn: [8, 100] },
-  betVsMissedCbet:{ good: [20, 60],acceptable: [10, 20],  warn: [5, 10] },
+  donkBetFlop:  { good: [0, 5],    acceptable: [5, 7],    warn: [7, 100] },
+  betVsMissedCbet:{ good: [20, 60],acceptable: [10, 20],  warn: [0, 10] },
+	checkRaiseFlop:{ good: [8, 15],   acceptable: [5, 20],   warn: [3, 25] },
+	probeBetTurn: { good: [35, 55],  acceptable: [25, 65],  warn: [15, 75] },
   // 摊牌
   wtsd:         { good: [25, 28],  acceptable: [23, 35],  warn: [20, 40] },
   wtsdWon:      { good: [55],      acceptable: [50, 55],  warn: [48] },
@@ -695,9 +696,9 @@ export const STAT_RANGES = {
   wwsfAsPfr:    { good: [45, 70],  acceptable: [40, 45],  warn: [35, 40] },
   wwsfAsCaller: { good: [25, 50],  acceptable: [20, 55],  warn: [15, 60] },
   // 攻击性
-  afqFlop:      { good: [25, 35],  acceptable: [20, 40],  warn: [15, 50] },
-  afqTurn:      { good: [25, 35],  acceptable: [20, 40],  warn: [15, 50] },
-  afqRiver:     { good: [25, 35],  acceptable: [20, 40],  warn: [15, 50] },
+  afqFlop:      { good: [30, 45],  acceptable: [25, 50],  warn: [20, 55] },
+  afqTurn:      { good: [35, 50],  acceptable: [30, 55],  warn: [25, 60] },
+  afqRiver:     { good: [40, 60],  acceptable: [35, 65],  warn: [30, 70] },
 };
 
 // ===== 优化建议规则 =====
@@ -708,47 +709,79 @@ export const RECOMMENDATION_RULES = [
   { statKey: 'vpip', threshold: 20, type: '<', recKey: 'rec_vpip_low' },
   { statKey: 'pfr', threshold: 10, type: '<', recKey: 'rec_pfr_low' },
   { statKey: 'threeBet', threshold: 7, type: '<', recKey: 'rec_3bet_low' },
-  { statKey: 'squeeze', threshold: 6, type: '<', recKey: 'rec_squeeze_low' },
+  { statKey: 'squeeze', threshold: 8, type: '<', recKey: 'rec_squeeze_low' },
   { statKey: 'limp', threshold: 5, type: '>', recKey: 'rec_limp_high' },
   { statKey: 'coldCall', threshold: 12, type: '>', recKey: 'rec_coldcall_high' },
-  { statKey: 'fourBet', threshold: 7, type: '<', recKey: 'rec_4bet_low' },
-  { statKey: 'stealAttempt', threshold: 35, type: '<', recKey: 'rec_steal_low' },
+  { statKey: 'fourBet', threshold: 4, type: '<', recKey: 'rec_4bet_low' },
+  { statKey: 'stealAttempt', threshold: 38, type: '<', recKey: 'rec_steal_low' },
   { statKey: 'foldTo3bet', threshold: 60, type: '>', recKey: 'rec_fold_to_3bet_high' },
   { statKey: 'foldTo3bet', threshold: 35, type: '<', recKey: 'rec_fold_to_3bet_low' },
   { statKey: 'foldToSteal', threshold: 75, type: '>', recKey: 'rec_foldtosteal_high' },
   // 翻后
-  { statKey: 'cbetFlop', threshold: 50, type: '<', recKey: 'rec_cbet_low' },
-  { statKey: 'cbetFlop', threshold: 75, type: '>', recKey: 'rec_cbet_high' },
-  { statKey: 'cbetTurn', threshold: 45, type: '<', recKey: 'rec_cbetturn_low' },
+  { statKey: 'cbetFlop', threshold: 55, type: '<', recKey: 'rec_cbet_low' },
+  { statKey: 'cbetFlop', threshold: 80, type: '>', recKey: 'rec_cbet_high' },
+  { statKey: 'cbetTurn', threshold: 35, type: '<', recKey: 'rec_cbetturn_low' },
   { statKey: 'foldToCbet', threshold: 60, type: '>', recKey: 'rec_fold_to_cbet_high' },
-  { statKey: 'donkBetFlop', threshold: 8, type: '>', recKey: 'rec_donk_high' },
+  { statKey: 'donkBetFlop', threshold: 7, type: '>', recKey: 'rec_donk_high' },
   // 摊牌
   { statKey: 'wtsd', threshold: 24, type: '<', recKey: 'rec_wtsd_low' },
   { statKey: 'wtsdWon', threshold: 50, type: '<', recKey: 'rec_wtsdwon_low' },
   { statKey: 'wwsf', threshold: 35, type: '<', recKey: 'rec_wwsf_low' },
+  { statKey: 'squeeze', threshold: 18, type: '>', recKey: 'rec_squeeze_high' },
+  { statKey: 'fourBet', threshold: 10, type: '>', recKey: 'rec_4bet_high' },
+  { statKey: 'cbetTurn', threshold: 70, type: '>', recKey: 'rec_cbetturn_high' },
+  { statKey: 'cbetRiver', threshold: 25, type: '<', recKey: 'rec_cbetriver_low' },
+  { statKey: 'cbetRiver', threshold: 60, type: '>', recKey: 'rec_cbetriver_high' },
+  { statKey: 'checkRaiseFlop', threshold: 5, type: '<', recKey: 'rec_crflop_low' },
+  { statKey: 'wtsd', threshold: 35, type: '>', recKey: 'rec_wtsd_high' },
+  { statKey: 'afqFlop', threshold: 25, type: '<', recKey: 'rec_afqflop_low' },
+  { statKey: 'afqFlop', threshold: 50, type: '>', recKey: 'rec_afqflop_high' },
+  { statKey: 'afqTurn', threshold: 30, type: '<', recKey: 'rec_afqturn_low' },
+  { statKey: 'afqTurn', threshold: 55, type: '>', recKey: 'rec_afqturn_high' },
+  { statKey: 'afqRiver', threshold: 35, type: '<', recKey: 'rec_afqriver_low' },
+  { statKey: 'afqRiver', threshold: 65, type: '>', recKey: 'rec_afqriver_high' },
 ];
 
 export const RECOMMENDATION_TEXTS = {
-  rec_vpip_high: 'VPIP ({value}%) 偏高，入池过于频繁。**建议收紧起手牌范围**，尤其是前位减少投机牌入池。',
-  rec_vpip_low: 'VPIP ({value}%) 偏低，可能玩得太紧。**建议适当放宽后位起手牌范围**，尤其是 CO/BTN 位置。',
-  rec_pfr_low: 'PFR 偏低，主动加注不足。**建议多用加注而非跟注入池**，掌握主动权。',
-  rec_3bet_low: '3-Bet 频率 ({value}%) 偏低。**建议增加 3-Bet 诈唬**，尤其是在 BTN vs CO 的对抗中。',
-  rec_squeeze_low: 'Squeeze 频率 ({value}%) 偏低。**当有人加注且有跟注者时，可考虑用较宽范围进行挤压**。',
-  rec_limp_high: 'Limp ({value}%) 偏高，平跟入池过多。**建议减少平跟，改为加注开池或弃牌**，避免被动入池。',
-  rec_coldcall_high: 'Cold Call ({value}%) 偏高，冷跟注过多。**建议面对加注时更多选择 3-Bet 或弃牌**，而非被动跟注。',
-  rec_4bet_low: '4-Bet 频率 ({value}%) 偏低。**建议增加 4-Bet 诈唬范围**，在合适位置对 3-Bet 进行反击。',
-  rec_steal_low: 'Steal ({value}%) 偏低，CO/BTN 偷盲不足。**建议在 CO/BTN 放宽开池范围**，利用位置优势偷取盲注。',
-  rec_fold_to_3bet_high: 'Fold to 3-Bet ({value}%) 偏高，被 3-Bet 后弃牌过多。**建议适当防守 3-Bet**，尤其是 IP 时。',
-  rec_fold_to_3bet_low: 'Fold to 3-Bet ({value}%) 偏低，面对 3-Bet 弃牌不足。**建议对紧凶对手的 3-Bet 更多弃牌**。',
-  rec_foldtosteal_high: 'Fold to Steal ({value}%) 偏高，盲位面对偷盲弃牌过多。**建议增加防守频率**，3-Bet 或跟注防守盲注。',
-  rec_cbet_low: 'C-Bet 频率 ({value}%) 偏低。**建议在翻牌多持续下注**，尤其是在干燥牌面上。',
-  rec_cbet_high: 'C-Bet 频率 ({value}%) 偏高。**建议减少在不利牌面的 C-Bet**，避免被对手利用。',
-  rec_cbetturn_low: '转牌 C-Bet ({value}%) 偏低。**翻牌 CBet 后应在转牌继续施压**，尤其是转牌有利时。',
-  rec_fold_to_cbet_high: '面对 C-Bet 弃牌率 ({value}%) 偏高。**建议增加跟注和加注防守频率**，不让对手轻易抢池。',
-  rec_donk_high: 'Donk Bet ({value}%) 偏高，非标准玩法。**建议减少翻牌直接下注**，优先选择过牌给攻击者。',
-  rec_wtsd_low: 'WTSD ({value}%) 偏低。**可能过度弃牌，建议在某些中等牌力时坚持到摊牌**。',
-  rec_wtsdwon_low: 'WTSD 胜率 ({value}%) 偏低。**进摊牌时牌力不足，建议减少边缘牌的摊牌频率**。',
-  rec_wwsf_low: 'WWSF ({value}%) 偏低，入池后赢率不足。**入池后应更激进地争夺底池**，提高非摊牌赢率。',
+  // 翻前
+  rec_vpip_high: 'VPIP {value}% 偏高，入池过于频繁。多数牌局中你的起手牌处于范围劣势。建议收紧前位(EP/MP)开池范围，减少投机牌平跟入池。',
+  rec_vpip_low: 'VPIP {value}% 偏低，可能错过了后位的盈利机会。建议在 CO/BTN 放宽开池范围至 35-45%，利用位置优势多入池。',
+  rec_pfr_low: 'PFR {value}% 偏低，跟注多于加注，失去了主动权。翻前以跟注代替加注会让你频繁在不利条件下看翻牌。建议跟注转加注，尤其在无人开池时。',
+  rec_3bet_low: '3-Bet {value}% 偏低。3-Bet 不仅是价值，也是重要的诈唬武器。建议增加 BTN vs CO、SB vs BTN 的 3-Bet 诈唬频率。',
+  rec_squeeze_low: 'Squeeze {value}% 偏低。挤压位有额外死钱，诈唬 EV 高于普通 3-Bet。当有人加注且有跟注者时，考虑用较宽范围挤压。',
+  rec_squeeze_high: 'Squeeze {value}% 偏高。过度挤压可能被对手识别并 4-Bet 反击。建议减少对前位开池者的挤压，优先选择 LP vs LP 的场景。',
+  rec_limp_high: 'Limp {value}% 偏高，平跟入池让你的范围完全暴露为中等牌力。建议：无人开池时一律加注（而非跟注），否则弃牌。',
+  rec_coldcall_high: 'Cold Call {value}% 偏高。冷跟注让你在没主动权的情况下打翻后，容易被 C-Bet 压制。建议转为 3-Bet 或弃牌。',
+  rec_4bet_low: '4-Bet {value}% 偏低。面对 3-Bet 只用 AA/KK 反击过于可预测。建议加入 A5s/A4s 类阻断诈唬 4-Bet，让对手不敢肆意 3-Bet 你。',
+  rec_4bet_high: '4-Bet {value}% 偏高。过度 4-Bet 意味着你用太多中等牌推出去。4-Bet 后底池已膨胀，对手跟注范围很强。减少用 TT/JJ/AQ 类牌 4-Bet。',
+  rec_steal_low: 'Steal {value}% 偏低，CO/BTN 偷盲是稳定的盈利来源。建议在 CO 开池到 28%+、BTN 开池到 42%+，尤其是盲注位对手 fold-to-steal 偏高时。',
+  rec_fold_to_3bet_high: 'Fold to 3-Bet {value}% 偏高。被 3-Bet 后弃牌太多等于邀请对手肆意 3-Bet 你。建议在有位置时至少防守 40% 的开池范围。',
+  rec_fold_to_3bet_low: 'Fold to 3-Bet {value}% 偏低。面对紧凶对手的 3-Bet 范围很强，用边缘牌防守只会损失更多。建议对 UTG/MP 的 3-Bet 多弃牌。',
+  rec_foldtosteal_high: 'Fold to Steal {value}% 偏高。盲注面对偷盲弃牌过多等于免费送钱。建议 BB 至少防守 40-50%，包括 3-Bet 和跟注防守。',
+
+  // 翻后
+  rec_cbet_low: 'C-Bet {value}% 偏低。作为翻前攻击者，错过翻牌就放弃是常见漏洞。干燥牌面(A/K-high)应继续施压，湿润牌面选择放弃。关键：根据牌面决定是否 C-Bet。',
+  rec_cbet_high: 'C-Bet {value}% 偏高。无差别 C-Bet 是明显的剥削信号。在连通性高的牌面(如 9TJ/QT8)减少 C-Bet，这类牌面对跟注者有利。',
+  rec_cbetturn_low: '转牌 C-Bet {value}% 偏低。翻牌 C-Bet 后转牌放弃说明翻牌选错了诈唬。做翻牌 C-Bet 时就应有转牌继续下注的计划(至少部分牌面)。',
+  rec_cbetturn_high: '转牌 C-Bet {value}% 偏高。转牌被跟注后河牌 SPR 会很浅，剩最后一枪的空间很小。建议在不利转牌(完成听牌的牌面)减少二枪频率。',
+  rec_cbetriver_low: '河牌 C-Bet {value}% 偏低。能坚持到河牌说明牌力或诈唬逻辑支撑足够。检查是否在河牌犹豫——价值下注不足可能损失大量 EV。',
+  rec_cbetriver_high: '河牌 C-Bet {value}% 偏高。三枪诈唬代价极大(被跟注输整个底池)。建议只在牌面支持两极分化时打第三枪，中间牌力控池。',
+  rec_fold_to_cbet_high: '面对 C-Bet 弃牌率 {value}% 偏高。翻前跟注后翻牌面对一枪就弃牌等于送钱。至少在有后门听牌/高牌时跟注一枪看转牌。',
+  rec_donk_high: 'Donk Bet {value}% 偏高。领打不是 GTO 中的常规武器(翻前跟注者应过牌给攻击者)。建议将多数领打转为过牌-加注或过牌-跟注。',
+  rec_crflop_low: 'Check-Raise Flop {value}% 偏低。翻牌过牌-加注是强大的半诈唬武器。建议在有利牌面(有听牌+高牌的组合)增加过牌-加注诈唬比例。',
+
+  // 摊牌
+  rec_wtsd_low: 'WTSD {value}% 偏低。进摊牌率过低说明可能过度弃牌。检查是否在某些中等牌力时刻放弃了太多底池——对手的河牌下注并不总是强牌。',
+  rec_wtsd_high: 'WTSD {value}% 偏高。进摊牌率过高通常是"好奇心太重"——用中等牌力频繁支付对手的价值下注。建议河牌面对大注时多信对手有牌。',
+  rec_wtsdwon_low: 'WTSD 胜率 {value}% 偏低。进摊牌了但赢不了=你的摊牌范围太弱。检查翻前起手牌选择和翻后追牌的纪律。',
+  rec_wwsf_low: 'WWSF {value}% 偏低。入池后赢率不足说明需要提高攻击性。入池后要主动争夺底池(下注或加注)，而非等待摊牌。',
+  // 攻击性
+  rec_afqflop_low: 'AFQ Flop {value}% 偏低。翻牌攻击频率过低说明过度被动——过多跟注或过牌而非下注或加注。建议增加翻牌半诈唬下注频率，尤其在有利牌面上。',
+  rec_afqflop_high: 'AFQ Flop {value}% 偏高。翻牌过于激进意味着你几乎从不过牌-跟注。中等牌力需要控池保留河牌判断空间。',
+  rec_afqturn_low: 'AFQ Turn {value}% 偏低。转牌攻击频率不足暗示你只用强牌出手。建议在转牌增加试探下注和半诈唬，不让对手免费看河牌。',
+  rec_afqturn_high: 'AFQ Turn {value}% 偏高。转牌几乎全攻全守=范围透明。加入一些中等牌的过牌-跟注以保护过牌范围。',
+  rec_afqriver_low: 'AFQ River {value}% 偏低。河牌攻击频率过低可能=价值下注不足。中等强牌也应寻求价值（薄价值下注），而非总是过牌。',
+  rec_afqriver_high: 'AFQ River {value}% 偏高。河牌过度攻击=诈唬过多。检查河牌诈唬是否选对了阻挡牌，减少无阻挡的纯空气诈唬。',
 };
 
 /**

@@ -1,5 +1,5 @@
 // [V6.9.2] 赔率计算模块
-import { CONSTANTS } from '../constants.js';
+import { CONSTANTS, EQUITY_FLOP, EQUITY_TURN } from '../constants.js';
 import { Utils } from '../utils.js';
 
 export const Odds = {
@@ -69,6 +69,30 @@ export const Odds = {
       });
     }
     this.calc();
+    // [V7.2.0]
+    if (window.innerWidth >= 768) {
+      var srp = document.getElementById('srpDetails');
+      var imp = document.getElementById('impliedDetails');
+      var outsRef = document.getElementById('outsRefDetails');
+      if (srp) srp.open = true;
+      if (imp) imp.open = true;
+      if (outsRef) outsRef.open = true;
+      this.renderOutsTable();
+    }
+  },
+  // [V7.2.0] Outs → Equity 速查表（静态数据仅高亮行变化，缓存避免重复渲染）
+  renderOutsTable() {
+    var el = document.getElementById('outsRefBody');
+    if (!el) return;
+    var highlight = +this.outsInput.value || 8;
+    if (highlight === this._lastOutsHl) return;
+    this._lastOutsHl = highlight;
+    var rows = '';
+    for (var i = 0; i <= 20; i++) {
+      var cls = i === highlight ? ' class="is-current"' : '';
+      rows += '<tr' + cls + '><td>' + i + '</td><td>' + Utils.safeFixed(EQUITY_FLOP[i], 1) + '%</td><td>' + Utils.safeFixed(EQUITY_TURN[i], 1) + '%</td></tr>';
+    }
+    el.innerHTML = rows;
   },
   calc() {
     const pot = +this.potInput.value,
@@ -78,7 +102,7 @@ export const Odds = {
     var impliedRes = document.getElementById('impliedResult');
     if (impliedRes && parseFloat(document.getElementById('impliedInput').value) > 0) {
       impliedRes.innerHTML =
-        '<span style="color: #facc15;">⚠️ 参数已更改，请修改隐含赔率以重新计算</span>';
+        '<span style="color: #d4a853;">⚠️ 参数已更改，请修改隐含赔率以重新计算</span>';
     }
     const isOne = document.querySelector('input[name="street"]:checked').value === 'one',
       combo = document.getElementById('comboCheck').checked,
@@ -138,7 +162,7 @@ export const Odds = {
     if (combo) html += '转牌下注 ' + turnBet + ' BB，总成本 <span class="highlight">' + cost + ' BB</span><br>';
     html += '胜率 <span class="' + (rawEstWin >= reqWin ? 'text-win' : 'text-lose') + '">' + Utils.safeFixed(rawEstWin * 100, 1) + '%</span> (精确)';
     if (adjFactor < 1) {
-      html += ' → <span style="color:#94a3b8">' + (mwVal === 2 ? '2人' : '多人') + '修正 ≈ <span class="' + (estWin >= reqWin ? 'text-win' : 'text-lose') + '">' + Utils.safeFixed(estWin * 100, 1) + '%</span></span>';
+      html += ' → <span style="color:#a8afba">' + (mwVal === 2 ? '2人' : '多人') + '修正 ≈ <span class="' + (estWin >= reqWin ? 'text-win' : 'text-lose') + '">' + Utils.safeFixed(estWin * 100, 1) + '%</span></span>';
     }
     html += '<br>';
     html += 'EV ≈ <span class="' + (ev >= 0 ? 'text-win' : 'text-lose') + '">' + Utils.safeFixed(ev, 2) + ' BB</span> → ' + verdict + '<br>';
@@ -146,7 +170,7 @@ export const Odds = {
     if (stack > 0) {
       const geoBets = Math.max(1, Math.min(3, Math.round(stack / (pot + bet))));
       const geoSize = 0.5 * (Math.pow((pot + 2 * stack) / pot, 1 / geoBets) - 1) * 100;
-      html += '<br><details style="margin-top:1.5px"><summary style="font-size:0.8em;color:#94a3b8;cursor:pointer">📏 几何路线与Stack Off (基于翻牌视角)</summary>';
+      html += '<br><details style="margin-top:1.5px"><summary style="font-size:0.8em;color:#a8afba;cursor:pointer">📏 几何路线与Stack Off (基于翻牌视角)</summary>';
       html += '<p style="font-size:0.8em;color:#cbd5e1;margin:4px 0">';
       const streetNames = ['Flop', 'Turn', 'River'];
       for (let i = 0; i < geoBets; i++) {
@@ -166,13 +190,13 @@ export const Odds = {
         currentStack = newStack;
       }
       html += '</div>';
-      html += '<p style="font-size:0.7em;color:#64748b">⚡ 提示：基于当前底池与筹码深度的几何下注路线。剩余下注轮数已自动识别。实战中请根据牌面结构动态调整。</p></details>';
+      html += '<p style="font-size:0.7em;color:#a8afba">⚡ 提示：基于当前底池与筹码深度的几何下注路线。剩余下注轮数已自动识别。实战中请根据牌面结构动态调整。</p></details>';
     }
     const consecutiveMDF = Math.pow(mdf, 3) * 100;
-    html += '<br><details style="margin-top:1.5px"><summary style="font-size:0.8em;color:#94a3b8;cursor:pointer">🛡️ MDF <span class="highlight">' + mdfPct + '%</span> · 连续防守 <span class="highlight">' + Utils.safeFixed(consecutiveMDF, 1) + '%</span></summary>';
+    html += '<br><details style="margin-top:1.5px"><summary style="font-size:0.8em;color:#a8afba;cursor:pointer">🛡️ MDF <span class="highlight">' + mdfPct + '%</span> · 连续防守 <span class="highlight">' + Utils.safeFixed(consecutiveMDF, 1) + '%</span></summary>';
     html += '<p style="font-size:0.8em;color:#cbd5e1;margin:4px 0">当前下注需防守 <span class="highlight">' + mdfPct + '%</span> 的范围</p>';
     html += '<p style="font-size:0.8em;color:#cbd5e1;margin:4px 0">若对手连开三枪，最终需防守范围 ≈ <span class="highlight">' + Utils.safeFixed(consecutiveMDF, 1) + '%</span></p>';
-    html += '<p style="font-size:0.7em;color:#64748b">⚡ 提示：MDF³ 假设对手始终使用当前下注尺度。面对低诈唬频率对手时，可适当收缩防守范围。</p></details>';
+    html += '<p style="font-size:0.7em;color:#a8afba">⚡ 提示：MDF³ 假设对手始终使用当前下注尺度。面对低诈唬频率对手时，可适当收缩防守范围。</p></details>';
     const betRatio = bet / pot;
     const sizes = [
       { label: '1/4', r: 0.25 }, { label: '1/3', r: 1 / 3 }, { label: '1/2', r: 0.5 },
@@ -192,12 +216,12 @@ export const Odds = {
         alphaV = Utils.safeFixed((s.r / (1 + s.r)) * 100, 0),
         mdfV = Utils.safeFixed((1 / (1 + s.r)) * 100, 0);
       const rowClass = i === matchIdx ? 'is-current' : '';
-      const betweenStyle = i === betweenIdx ? 'style="border-bottom:2px solid #facc15"' : '';
+      const betweenStyle = i === betweenIdx ? 'style="border-bottom:2px solid #d4a853"' : '';
       stHtml += '<tr class="' + rowClass + '" ' + betweenStyle + '><td>' + s.label + '</td><td>' + req + '%</td><td>' + alphaV + '%</td><td>' + mdfV + '%</td></tr>';
     });
     stHtml += '</tbody></table>';
     document.getElementById('sizingTable').innerHTML =
-      '<details style="margin-top:2px"><summary style="font-size:0.75em;color:#94a3b8;cursor:pointer">📊 尺度速查（尺度 | 所需胜率 | Alpha | MDF）</summary>' + stHtml + '</details>';
+      '<details style="margin-top:2px"><summary style="font-size:0.75em;color:#a8afba;cursor:pointer">📊 尺度速查（尺度 | 所需胜率 | Alpha | MDF）</summary>' + stHtml + '</details>';
     res.innerHTML = html;
     var impInput = document.getElementById('impliedInput');
     if (impInput) {
@@ -209,6 +233,7 @@ export const Odds = {
       }
       impInput.value = Utils.safeFixed(def, 1);
     }
+    this.renderOutsTable();
     this.calcImplied();
   },
   calcImplied() {

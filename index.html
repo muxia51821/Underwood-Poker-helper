@@ -25,7 +25,8 @@
         <div class="app__settings-menu" id="settingsMenu">
           <button class="app__settings-option is-active" id="soundOption">🔊 声音</button
           ><button class="app__settings-option is-active" id="vibrateOption">📳 振动</button
-          ><button class="app__settings-option" id="testNotifyOption">🔔 测试通知</button>
+          ><button class="app__settings-option" id="testNotifyOption">🔔 测试通知</button
+          ><button class="app__settings-option" id="colorSchemeOption" title="切换配色方案">🎨 V11</button>
         </div>
       </div>
       <h1 class="app__title">
@@ -35,10 +36,9 @@
       <nav class="nav">
         <button class="nav__btn nav__btn--active" data-tab="timer">⏱️ Timer</button
         ><button class="nav__btn" data-tab="odds">🎯 Odds</button
-        ><button class="nav__btn" data-tab="tournament">🏆 Tournament</button
         ><button class="nav__btn" data-tab="review">📋 Review</button>
       </nav>
-      <main class="main">
+      <main class="main" data-active-tab="timer">
         <section id="timerPanel" class="panel is-visible">
           <div class="card">
             <div class="card__title">🧍 站立提醒</div>
@@ -347,64 +347,70 @@
           </div>
           <div class="card">
             <details id="srpDetails">
-              <summary class="card__title" style="margin-bottom: 0; cursor: pointer">
-                📊 SB v BB SRP 翻牌策略
-              </summary>
+              <summary class="tech-summary">📊 SB v BB SRP Flop Strategy</summary>
               <div class="srp-filters">
                 <select id="filterHigh" class="select">
-                  <option value="all">全部高牌</option>
-                  <option value="A高">A高</option>
-                  <option value="K高">K高</option>
-                  <option value="Q高">Q高</option>
-                  <option value="J高">J高</option>
-                  <option value="低牌">低牌</option></select
+                  <option value="all">All High Cards</option>
+                  <option value="A-High">A-High</option>
+                  <option value="K-High">K-High</option>
+                  <option value="Q-High">Q-High</option>
+                  <option value="J-High">J-High</option>
+                  <option value="Low">Low</option></select
                 ><select id="filterSuit" class="select">
-                  <option value="all">全部花色</option>
-                  <option value="天花">天花</option>
-                  <option value="听花">听花</option>
-                  <option value="彩虹">彩虹</option></select
+                  <option value="all">All Suits</option>
+                  <option value="Monotone">Monotone</option>
+                  <option value="Flush Draw">Flush Draw</option>
+                  <option value="Rainbow">Rainbow</option></select
                 ><select id="filterConnect" class="select">
-                  <option value="all">全部连接</option>
-                  <option value="天顺">天顺</option>
-                  <option value="听顺">听顺</option>
-                  <option value="无连">无连</option></select
+                  <option value="all">All Connects</option>
+                  <option value="Straight">Straight</option>
+                  <option value="Straight Draw">Straight Draw</option>
+                  <option value="No Connect">No Connect</option></select
                 ><select id="filterPair" class="select">
-                  <option value="all">是否公对面</option>
-                  <option value="是">公对面</option>
-                  <option value="否">非公对面</option>
+                  <option value="all">All Pairs</option>
+                  <option value="Yes">Paired</option>
+                  <option value="No">Unpaired</option>
                 </select>
               </div>
               <div style="max-height: 300px; overflow-y: auto">
                 <table class="srp-table" id="srpTable">
                   <thead>
                     <tr>
-                      <th>翻牌</th>
-                      <th>高牌</th>
-                      <th>花色</th>
-                      <th>连接</th>
-                      <th>公对</th>
-                      <th>尺度</th>
+                      <th>Flop</th>
+                      <th>High</th>
+                      <th>Suit</th>
+                      <th>Connect</th>
+                      <th>Pair</th>
+                      <th>Size</th>
                     </tr>
                   </thead>
                   <tbody id="srpBody"></tbody>
                 </table>
               </div>
             </details>
-          </div>
-        </section>
-        <section id="tournamentPanel" class="panel">
-          <div class="card" style="text-align: center">
-            <div class="card__title">🏆 锦标赛策略</div>
-
-            <a
-              href="https://www.geecegto.com/strategy/8-max-chip-ev-pre-flop"
-              target="_blank"
-              rel="noopener"
-              class="btn"
-              style="display: inline-block; width: auto; padding: 12px 24px; text-decoration: none"
-              >📊 GTO 范围表</a
-            >
-            <div class="text-muted" style="margin-top: 16px">基于Chip EV计算:geecegto.com</div>
+            <details style="margin-top:12px" id="outsRefDetails">
+              <summary class="tech-summary">📊 Outs → Equity</summary>
+              <div style="max-height:300px;overflow-y:auto">
+                <table class="cheatsheet" id="outsRefTbl">
+                  <thead><tr><th>Outs</th><th>Flop (2 cards)</th><th>Turn (1 card)</th></tr></thead>
+                  <tbody id="outsRefBody"></tbody>
+                </table>
+              </div>
+            </details>
+            <details style="margin-top:12px">
+              <summary class="tech-summary">🏆 Tournament GTO</summary>
+              <div style="text-align:center;padding-top:10px">
+                <a
+                  href="https://www.geecegto.com/strategy/8-max-chip-ev-pre-flop"
+                  target="_blank"
+                  rel="noopener"
+                  class="btn"
+                  style="display:inline-block;width:auto;padding:10px 20px;text-decoration:none;font-size:0.85em"
+                  >📊 GTO 范围表</a
+                >
+                <div class="text-muted" style="margin-top:10px">基于 Chip EV 计算：geecegto.com</div>
+              </div>
+            </details>
           </div>
         </section>
         <section id="reviewPanel" class="panel">

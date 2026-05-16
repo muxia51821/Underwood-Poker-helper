@@ -229,6 +229,7 @@ export const GGParser = {
         }
         var mainOpp = seatsWithNames[0] || { seat: 1, name: 'Villain' };
         hand.opponentId = mainOpp.name;
+        hand.oHash = Utils.normalizeOpponentName(mainOpp.name);  // [V7.0.2]
         // 街道边界
         // [V6.12.0] 支持 Run-it-twice: FIRST/SECOND FLOP/TURN/RIVER
         var flopIdx = block.indexOf('*** FLOP ***');

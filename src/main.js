@@ -34,7 +34,7 @@ initStorage({ safeMode: isSafeMode() })
       ? ''
       : '<p style="margin-top:16px"><a href="#safemode" style="color:#facc15">尝试安全模式启动（跳过 IndexedDB）</a></p>';
     document.body.innerHTML =
-      '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0f172a;color:#cbd5e1;font-family:sans-serif;text-align:center;padding:20px"><div><h2 style="color:#f87171;margin-bottom:12px">数据加载失败</h2><p style="margin-bottom:16px;font-size:0.85em">请尝试刷新页面，或使用备份文件恢复数据。</p><button id="fatalReloadBtn" style="background:#3b82f6;color:#fff;border:none;padding:8px 20px;border-radius:6px;font-size:0.9em;cursor:pointer">刷新页面</button>' +
+      '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#141b24;color:#c8ccd0;font-family:sans-serif;text-align:center;padding:20px"><div><h2 style="color:#f87171;margin-bottom:12px">数据加载失败</h2><p style="margin-bottom:16px;font-size:0.85em">请尝试刷新页面，或使用备份文件恢复数据。</p><button id="fatalReloadBtn" style="background:#3b82f6;color:#fff;border:none;padding:8px 20px;border-radius:6px;font-size:0.9em;cursor:pointer">刷新页面</button>' +
       safeModeLink +
       '</div></div>';
     document.getElementById('fatalReloadBtn').addEventListener('click', function () {

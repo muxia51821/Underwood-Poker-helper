@@ -32,6 +32,7 @@
 - **重构时先试最简方案 → `npm run build`**：让编译器（200ms）报错引导修正，不要在脑中穷举（[[over-analysis-lesson]]）
 - **dev + build 双验证**：`npm run build` 成功不代表 `npm run dev` 正常（[[vite-css-import-pitfall]]）
 - **改完代码后**：检查版本号 → 备份到 `牌桌助手历史迭代版本/indexVx.x.x.html` → 更新 `版本更新说明.md` → 更新本文状态 → `npm run build` → `npm run dev`（详见 [[post-change-checklist]]）
+- **每两个版本执行一次 `/simplify`**：检查代码重复、死代码、可合并逻辑、过时注释，保持代码库整洁
 
 ## 输出
 
@@ -40,7 +41,7 @@
 
 ## 用户
 
-扑克牌手，非专业程序员。解释用通俗语言。扑克缩写可直接使用（OTF/OTT/OTR/SPR/BB/100/SIA/SID/SOA/SOD/3IA 等）。手机端为主，注意按钮大小和间距。
+扑克牌手，非专业程序员。解释用通俗语言。扑克缩写可直接使用（OTF/OTT/OTR/SPR/BB/100/SIA/SID/SOA/SOD/3IA 等）。考虑手机端，注意按钮大小和间距。
 
 ## UI 导航
 
@@ -80,7 +81,7 @@ docs/                  # 架构文档
 
 ## 状态
 
-- **最新稳定版**：V7.0.0
+- **最新稳定版**：V7.1.0
 - **Git 基线**：V6.19.9（规则：当前稳定版往前退两个版本 commit 为基线）
 - **已知缺陷**：无
 
