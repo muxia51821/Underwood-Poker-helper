@@ -2,6 +2,171 @@
 import { CONSTANTS } from '../constants.js';
 import { Utils } from '../utils.js';
 import { Store, SessionRepo, HandRepo, WeeklyRepo, TiltLogRepo } from '../store/store.js';
+import { analyze, getStatColor, STAT_TOOLTIPS, STAT_DEFINITIONS } from './statsEngine.js';  // [V6.18.4]
+import { openGGImportForSession } from './ggImport.js';  // [V6.14.0]
+import { HandPicker } from './handPicker.js';  // [V6.15.0]
+
+// [V7.0.0] 对手统计缓存 — 避免排序/筛选时重复聚合全量手牌
+var _oppStatsCache = null;
+var _oppStatsCacheLen = -1;
+
+// [V6.15.0] 切换手牌标记状态
+function _toggleMarkHand(id, btnEl) {
+  var reviews = HandRepo.getAll();
+  var found = false;
+  reviews.forEach(function (r) {
+    if (r.id === id) {
+      r.marked = !r.marked;
+      found = true;
+      if (btnEl) {
+        btnEl.textContent = r.marked ? '★' : '☆';
+        btnEl.style.color = r.marked ? '#facc15' : '#64748b';
+      }
+    }
+  });
+  if (found) {
+    HandRepo.saveAll(reviews);
+    HandPicker.render();
+  }
+}
+
+// [V6.18.4] 可复用：渲染折叠统计面板 + 点击 tooltip
+function _renderStatSection(targetEl, title, keys, es, isPercent) {
+  var openAttr = (title === 'Overview') ? ' open' : '';
+  var html = '<details class="stats-details"' + openAttr + '><summary class="stats-section-title">' + title + '</summary><div class="stats" style="flex-wrap:wrap">';
+  keys.forEach(function (key) {
+    var stat = es[key];
+    if (!stat) return;
+    if (isPercent && stat.type !== 'percent') return;
+    var cls = isPercent ? getStatColor(stat.value, key) : (stat.type === 'bb' ? (stat.value >= 0 ? 'text-win' : 'text-lose') : '');
+    var prefix = isPercent ? '' : (stat.type === 'bb' ? (stat.value >= 0 ? '+' : '') : '');
+    var suffix = isPercent ? '%' : (stat.type === 'percent' ? '%' : (stat.type === 'bb' ? ' BB' : ''));
+    html += '<div class="stats__item" data-stat-key="' + key + '" style="cursor:pointer"><div class="stats__label">' + stat.name + '</div><div class="stats__value ' + cls + '">' + prefix + Utils.safeFixed(stat.value, 1) + suffix + '</div></div>';
+  });
+  html += '</div></details>';
+  targetEl.insertAdjacentHTML('beforeend', html);
+}
+// [V6.18.4] 嵌套分组：一个父 details 包裹多个子 details
+function _renderNestedGroup(targetEl, parentTitle, groups, es, isPercent) {
+  var html = '<details class="stats-details"><summary class="stats-section-title">' + parentTitle + '</summary>';
+  groups.forEach(function (g) {
+    html += '<details class="stats-details" open><summary class="stats-section-title">' + g.title + '</summary><div class="stats" style="flex-wrap:wrap">';
+    g.keys.forEach(function (key) {
+      var stat = es[key];
+      if (!stat) return;
+      if (isPercent && stat.type !== 'percent') return;
+      var cls = isPercent ? getStatColor(stat.value, key) : (stat.type === 'bb' ? (stat.value >= 0 ? 'text-win' : 'text-lose') : '');
+      var prefix = isPercent ? '' : (stat.type === 'bb' ? (stat.value >= 0 ? '+' : '') : '');
+      var suffix = isPercent ? '%' : (stat.type === 'percent' ? '%' : (stat.type === 'bb' ? ' BB' : ''));
+      html += '<div class="stats__item" data-stat-key="' + key + '" style="cursor:pointer"><div class="stats__label">' + stat.name + '</div><div class="stats__value ' + cls + '">' + prefix + Utils.safeFixed(stat.value, 1) + suffix + '</div></div>';
+    });
+    html += '</div></details>';
+  });
+  html += '</details>';
+  targetEl.insertAdjacentHTML('beforeend', html);
+}
+// [V6.18.4] tooltip 事件委托 — 在 Total/Session 统计区统一处理
+function _initStatTooltip(containerId) {
+  var el = document.getElementById(containerId);
+  if (!el || el.dataset.tooltipReady) return;
+  el.dataset.tooltipReady = '1';
+  el.addEventListener('click', function (e) {
+    var item = e.target.closest('[data-stat-key]');
+    if (!item) return;
+    var key = item.dataset.statKey;
+    var stat = STAT_DEFINITIONS[key];
+    var name = stat ? stat.name : key;
+    var tip = STAT_TOOLTIPS[key] || '暂无说明。';
+    var modal = document.getElementById('statTooltip');
+    document.getElementById('statTooltipTitle').textContent = name;
+    document.getElementById('statTooltipText').textContent = tip;
+    modal.style.display = 'flex';
+  });
+}
+
+// [V6.18.5] 可复用：渲染引擎统计面板（Total/Session/Weekly 共用）
+// opts.extraOverviewHtml — 可选，追加到 Overview 网格末尾的 HTML（如 Hands/Hour）
+function renderStatsPanel(opts) {
+  var el = opts.containerEl;
+  var es = opts.es;
+  var recs = opts.recs;
+  var showExtras = opts.showExtras !== false;
+  var overviewKeys = ['totalHands', 'bbPer100', 'profitWithRake', 'bbPer100WithRake'];
+  var preflopOpenKeys = ['vpip', 'pfr', 'limp'];
+  var vsRaiseKeys = ['threeBet', 'fourBet', 'foldTo3bet', 'foldTo4bet', 'squeeze', 'coldCall'];
+  var stealKeys = ['stealAttempt', 'foldToSteal'];
+  var pfaKeys = ['cbetFlop', 'cbetTurn', 'cbetRiver', 'wwsfAsPfr', 'wtsdAfterCbet'];
+  var pfdKeys = ['foldToCbet', 'raiseCbetFlop', 'donkBetFlop', 'betVsMissedCbet', 'checkRaiseFlop', 'wwsfAsCaller'];
+  var sdKeys = ['wtsd', 'wtsdWon', 'wwsf'];
+  var aggKeys = ['probeBetTurn', 'afqFlop', 'afqTurn', 'afqRiver'];
+  if (showExtras) {
+    var rakeHtml = '<div class="stats" style="margin-top:8px">';
+    rakeHtml += '<div class="stats__item"><div class="stats__label">Total Rake</div><div class="stats__value" style="color:#f87171">-$' + Utils.safeFixed(es.totalRake.value, 2) + '</div></div>';
+    rakeHtml += '<div class="stats__item"><div class="stats__label">Total Jackpot</div><div class="stats__value">$' + Utils.safeFixed(es.totalJackpot.value, 2) + '</div></div>';
+    rakeHtml += '<div class="stats__item stats__item--win"><div class="stats__label">Pre-Rake Profit</div><div class="stats__value text-win">' + (es.profitWithRake.value >= 0 ? '+' : '') + Utils.safeFixed(es.profitWithRake.value, 1) + ' BB</div></div>';
+    rakeHtml += '<div class="stats__item ' + (es.bbPer100WithRake.value >= 0 ? 'stats__item--win' : 'stats__item--lose') + '"><div class="stats__label">bb/100 (Pre-Rake)</div><div class="stats__value ' + (es.bbPer100WithRake.value >= 0 ? 'text-win' : 'text-lose') + '">' + Utils.safeFixed(es.bbPer100WithRake.value, 1) + '</div></div>';
+    rakeHtml += '</div>';
+    el.insertAdjacentHTML('beforeend', rakeHtml);
+    _renderStatSection(el, 'Overview', overviewKeys, es, false);
+    if (opts.extraOverviewHtml) {
+      // 注入到最后一个 Overview details 的 .stats 网格中
+      var overviewGrids = el.querySelectorAll('.stats-details .stats');
+      if (overviewGrids.length > 0) {
+        overviewGrids[overviewGrids.length - 1].insertAdjacentHTML('beforeend', opts.extraOverviewHtml);
+      }
+    }
+  }
+  _renderNestedGroup(el, 'Preflop', [
+    { title: 'Preflop Open', keys: preflopOpenKeys },
+    { title: 'Vs. Raise', keys: vsRaiseKeys },
+    { title: 'Steal Dynamics', keys: stealKeys }
+  ], es, true);
+  _renderNestedGroup(el, 'Postflop', [
+    { title: 'Preflop Aggressor', keys: pfaKeys },
+    { title: 'Preflop Defender', keys: pfdKeys },
+    { title: 'Showdown Stats', keys: sdKeys },
+    { title: 'Aggression by Street', keys: aggKeys }
+  ], es, true);
+  // [V6.18.9] Position 位置统计
+  if (opts.showPosition !== false) {
+    var posGroups = { EP: ['UTG', 'UTG+1', 'UTG+2'], MP: ['MP', 'HJ'], CO: ['CO'], BTN: ['BTN'], SB: ['SB'], BB: ['BB'] };
+    var posKeys = ['vpip', 'pfr', 'threeBet', 'cbetFlop', 'foldToCbet', 'wtsd', 'wwsf'];
+    var posItems = [];
+    Object.keys(posGroups).forEach(function (pos) {
+      var posHands = HandRepo.getAll().filter(function (h) {
+        var m = (h.desc || '').match(/^preflop.*Hero\s+(\w+)\//m);
+        return m && posGroups[pos].indexOf(m[1]) !== -1;
+      });
+      if (posHands.length > 0) {
+        var posResult = analyze(posHands);
+        var posStats = posResult.stats;
+        var posHtml = '<details class="stats-details"><summary class="stats-section-title">' + pos + ' (' + posHands.length + 'h)</summary><div class="stats" style="flex-wrap:wrap">';
+        posKeys.forEach(function (key) {
+          var stat = posStats[key];
+          if (!stat || stat.type !== 'percent') return;
+          var colorClass = getStatColor(stat.value, key);
+          posHtml += '<div class="stats__item" data-stat-key="' + key + '" style="cursor:pointer"><div class="stats__label">' + stat.name + '</div><div class="stats__value ' + colorClass + '">' + stat.value + '%</div></div>';
+        });
+        posHtml += '</div></details>';
+        posItems.push(posHtml);
+      }
+    });
+    if (posItems.length > 0) {
+      var posParentHtml = '<details class="stats-details"><summary class="stats-section-title">Position</summary>' + posItems.join('') + '</details>';
+      el.insertAdjacentHTML('beforeend', posParentHtml);
+    }
+  }
+  if (showExtras) {
+    var recHtml = '<div class="card" style="margin-top:12px"><div class="card__title">Recommendations</div>';
+    if (recs.length === 0) {
+      recHtml += '<div class="rec-good">各项指标均在理想范围，继续保持！</div>';
+    } else {
+      recs.forEach(function (r) { recHtml += '<div class="rec-card">' + r.text + '</div>'; });
+    }
+    recHtml += '</div>';
+    el.insertAdjacentHTML('beforeend', recHtml);
+  }
+}
 
 export const Review = {
   init() {
@@ -13,6 +178,11 @@ export const Review = {
     document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFileInput').click());
     document.getElementById('importFileInput').addEventListener('change', (e) => this.importData(e));
     document.getElementById('saveHandBtn').addEventListener('click', () => this.saveHandReview());
+    // [V6.15.1] 手牌筛选器
+    var handPotFilter = document.getElementById('handPotSizeFilter');
+    var handSessFilter = document.getElementById('handSessFilter');
+    if (handPotFilter) { handPotFilter.addEventListener('change', () => { this.handCurrentPage = 1; this.renderHandReviews(); }); }
+    if (handSessFilter) { handSessFilter.addEventListener('change', () => { this.handCurrentPage = 1; this.renderHandReviews(); }); }
     document.getElementById('saveWeeklyBtn').addEventListener('click', () => this.saveWeeklyReview());
     Utils.initDropdown(document.getElementById('migrateBtn'), document.getElementById('migrateMenu'));
     document.getElementById('sessDate').value = Utils.getLocalDate();
@@ -24,13 +194,44 @@ export const Review = {
       const editBtn = e.target.closest('[data-edit-id]');
       if (editBtn) this.editSession(editBtn.dataset.editId);
       const expandBtn = e.target.closest('[data-expand-id]');
-      if (expandBtn) { this.toggleSessionExpand(expandBtn.dataset.expandId, expandBtn); }
+      if (expandBtn) { this.toggleSessionExpand(expandBtn.dataset.expandId, expandBtn); this.updateStatsForSession(expandBtn.dataset.expandId); }
+      // [V6.18.6] Session 展开区手牌编辑 → 跳转 Hand 面板
+      const sessHandEditBtn = e.target.closest('[data-hand-edit]');
+      if (sessHandEditBtn) {
+        var handTab = document.querySelector('[data-sub="hand"]');
+        if (handTab) handTab.click();
+        setTimeout(function () { Review.editHandReview(sessHandEditBtn.dataset.handEdit); }, 100);
+      }
+      // [V6.15.0] Session 展开区域内的标记按钮
+      const markBtn = e.target.closest('[data-hand-mark]');
+      if (markBtn) { _toggleMarkHand(markBtn.dataset.handMark, markBtn); }
+    });
+    // [V6.15.1] Session 展开区域手牌筛选
+    document.getElementById('sessionBody').addEventListener('change', (e) => {
+      const sessFilter = e.target.closest('[data-sess-filter]');
+      if (sessFilter) {
+        var sid = sessFilter.dataset.sessFilter;
+        var expandBtn = document.querySelector('[data-expand-id="' + sid + '"]');
+        if (expandBtn) {
+          // 关闭再重新展开以应用筛选
+          var existingRow = document.getElementById('expand-row-' + sid);
+          if (existingRow) existingRow.remove();
+          expandBtn.textContent = '📋';
+          Review.toggleSessionExpand(sid, expandBtn, sessFilter.value);
+        }
+      }
     });
     document.getElementById('handBody').addEventListener('click', (e) => {
       const delBtn = e.target.closest('[data-hand-delete]');
       if (delBtn) this.deleteHandReview(delBtn.dataset.handDelete);
       const editBtn = e.target.closest('[data-hand-edit]');
       if (editBtn) this.editHandReview(editBtn.dataset.handEdit);
+      // [V6.15.1] 手牌展开按钮
+      const expandBtn = e.target.closest('[data-hand-expand]');
+      if (expandBtn) { this.toggleHandExpand(expandBtn.dataset.handExpand, expandBtn); }
+      // [V6.15.1] 展开行内的标记按钮
+      const expMarkBtn = e.target.closest('[data-hand-mark]');
+      if (expMarkBtn && expMarkBtn.dataset.handMark) { _toggleMarkHand(expMarkBtn.dataset.handMark, expMarkBtn); }
     });
     document.getElementById('weeklyBody').addEventListener('click', (e) => {
       const delBtn = e.target.closest('[data-week-delete]');
@@ -38,38 +239,49 @@ export const Review = {
       const editBtn = e.target.closest('[data-week-edit]');
       if (editBtn) this.editWeeklyReview(editBtn.dataset.weekEdit);
     });
-    // [V6.5.4] 手局批量操作 — [V6.13.0] 全选移至批量栏 + 计数
-    document.getElementById('handSelectAll').addEventListener('change', function () {
-      var checked = this.checked;
-      document.querySelectorAll('.hand-check').forEach(function (cb) { cb.checked = checked; });
+    // [V6.5.4] 手局批量操作 — [V6.16.0] 行点击选中替代 checkbox
+    document.getElementById('handSelectAllBtn').addEventListener('click', function () {
+      var allRows = document.querySelectorAll('#handBody tr[data-hand-id]');
+      if (Review._selectedHandIds.size === allRows.length && allRows.length > 0) {
+        Review._selectedHandIds.clear();
+      } else {
+        allRows.forEach(function (row) { Review._selectedHandIds.add(row.dataset.handId); });
+      }
       Review._updateHandBatchUI();
     });
-    document.getElementById('handBody').addEventListener('change', function (e) {
-      if (e.target.classList.contains('hand-check')) { Review._updateHandBatchUI(); }
+    document.getElementById('handBody').addEventListener('click', function (e) {
+      if (e.target.closest('button') || e.target.closest('input') || e.target.closest('select')) return;
+      var row = e.target.closest('tr[data-hand-id]');
+      if (!row) return;
+      var id = row.dataset.handId;
+      if (Review._selectedHandIds.has(id)) {
+        Review._selectedHandIds.delete(id);
+      } else {
+        Review._selectedHandIds.add(id);
+      }
+      Review._updateHandBatchUI();
     });
     document.getElementById('handBatchDelBtn').addEventListener('click', function () {
-      var checks = document.querySelectorAll('.hand-check:checked');
-      if (!checks.length) { alert('请先勾选要删除的手牌'); return; }
-      if (!confirm('确定删除选中的 ' + checks.length + ' 手牌局？此操作不可恢复。')) return;
-      var ids = new Set();
-      checks.forEach(function (cb) { ids.add(cb.dataset.handId); });
+      if (!Review._selectedHandIds.size) { Utils.showToast('请先点击行选择要删除的手牌'); return; }
+      if (!confirm('确定删除选中的 ' + Review._selectedHandIds.size + ' 手牌局？此操作不可恢复。')) return;
+      var ids = Review._selectedHandIds;
       var reviews = HandRepo.getAll().filter(function (r) { return !ids.has(r.id); });
       HandRepo.saveAll(reviews);
-      alert('已删除 ' + checks.length + ' 手牌');
+      Utils.showToast('已删除 ' + ids.size + ' 手牌');
+      ids.clear();
       Review.handCurrentPage = 1;
       Review.renderHandReviews();
     });
     document.getElementById('handBatchLinkBtn').addEventListener('click', function () {
-      var checks = document.querySelectorAll('.hand-check:checked');
-      if (!checks.length) { alert('请先勾选手牌'); return; }
+      if (!Review._selectedHandIds.size) { Utils.showToast('请先选择手牌'); return; }
       var sid = document.getElementById('handBatchSessionSelect').value;
-      if (!sid) { alert('请选择目标 Session'); return; }
-      if (!confirm('将选中的 ' + checks.length + ' 手牌关联到选定 Session？')) return;
-      var ids = new Set();
-      checks.forEach(function (cb) { ids.add(cb.dataset.handId); });
+      if (!sid) { Utils.showToast('请选择目标 Session'); return; }
+      if (!confirm('将选中的 ' + Review._selectedHandIds.size + ' 手牌关联到选定 Session？')) return;
+      var ids = Review._selectedHandIds;
       var reviews = HandRepo.getAll();
       reviews.forEach(function (r) { if (ids.has(r.id)) r.sessionId = sid; });
       HandRepo.saveAll(reviews);
+      ids.clear();
       Review.renderHandReviews();
     });
     var handleHandDescInput = Utils.debounce(function () { Utils.updateHandVisual(); }, 150);
@@ -79,23 +291,26 @@ export const Review = {
     if (gotoBtn) gotoBtn.addEventListener('click', function () {
       document.querySelector('[data-sub="opponent"]').click();
     });
-    // [V6.9.2] 监听 tiltLogSaved 事件
-    var _tiltLogSavedBound = false;
-    if (!_tiltLogSavedBound) {
-      // 需要在 app.js init 中调用 PubSub.on('tiltLogSaved', ...)
-      _tiltLogSavedBound = true;
+    // [V6.18.4] tooltip 关闭
+    var tooltipModal = document.getElementById('statTooltip');
+    if (tooltipModal) {
+      document.getElementById('statTooltipClose').addEventListener('click', function () {
+        tooltipModal.style.display = 'none';
+      });
+      tooltipModal.addEventListener('click', function (e) {
+        if (e.target === tooltipModal) tooltipModal.style.display = 'none';
+      });
     }
+    // [V6.9.2] tiltLogSaved 事件在 app.js init 中通过 PubSub 绑定
   },
   renderAll() {
     this.renderSessions();
-    this.updateStats();
+    this.updateTotalStats();
     this.populateHandSessionSelect();
     this.renderHandReviews();
     this.renderWeeklyReviews();
     this.generateWeeklyStats();
     this.renderTiltLogs();
-    // renderHealthIndicator 由 app.js shell 提供
-    if (typeof window._renderHealthIndicator === 'function') window._renderHealthIndicator();
   },
   getSessions() { return SessionRepo.getAll(); },
   saveSessions(s) { SessionRepo.saveAll(s); },
@@ -113,7 +328,7 @@ export const Review = {
     if (custom) mistakes.push(custom);
     const mistakeStr = mistakes.join(', ') || '无';
     if (isNaN(dur) || isNaN(hands) || isNaN(profit) || dur <= 0 || hands <= 0) {
-      alert('请填写有效的时长、手数和盈亏'); return;
+      Utils.showToast('请填写有效的时长、手数和盈亏'); return;
     }
     const s = { date, level, duration: dur, hands, profit, tilt, mistake: mistakeStr, remark };
     const sessions = this.getSessions();
@@ -137,12 +352,16 @@ export const Review = {
     }
     this.clearSessionForm(); this.renderAll();
   },
-  toggleSessionExpand(sessionId, btn) {
+  toggleSessionExpand(sessionId, btn, filterVal) {
     var existingRow = document.getElementById('expand-row-' + sessionId);
-    if (existingRow) { existingRow.remove(); btn.textContent = '📋'; return; }
+    if (existingRow) { existingRow.remove(); btn.textContent = '📋'; if (!filterVal) return; }
     btn.textContent = '▲';
     var handReviews = HandRepo.getAll();
     var linked = handReviews.filter(function (r) { return r.sessionId === sessionId; });
+    // [V6.15.1] 应用筛选
+    filterVal = filterVal || 'all';
+    if (filterVal === 'above2') linked = linked.filter(function (r) { return r.pBB != null && Math.abs(r.pBB) >= 2; });
+    else if (filterVal === 'above30') linked = linked.filter(function (r) { return r.pBB != null && Math.abs(r.pBB) >= 30; });
     var tr = document.createElement('tr');
     tr.id = 'expand-row-' + sessionId;
     var td = document.createElement('td');
@@ -151,17 +370,42 @@ export const Review = {
     if (linked.length === 0) {
       td.innerHTML = '<span style="color:#64748b">📋 暂无关联手牌</span>';
     } else {
-      var parts = ['<div style="color:#94a3b8;margin-bottom:4px">📋 关联手牌 (' + linked.length + '手):</div>'];
+      // [V6.15.1] 筛选下拉 + 筛选逻辑
+      var expandFilterId = 'sessHandFilter-' + sessionId;
+      var parts = [
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">',
+        '<span style="color:#94a3b8">📋 关联手牌 (' + linked.length + '手):</span>',
+        '<select class="select" data-sess-filter="' + sessionId + '" id="' + expandFilterId + '" style="font-size:0.7em;padding:2px 6px;width:auto">',
+        '<option value="all"' + (filterVal === 'all' ? ' selected' : '') + '>全部</option>',
+        '<option value="above2"' + (filterVal === 'above2' ? ' selected' : '') + '>≥ 2 BB</option>',
+        '<option value="above30"' + (filterVal === 'above30' ? ' selected' : '') + '>≥ 30 BB</option>',
+        '</select>',
+        '</div>'
+      ];
       linked.forEach(function (r) {
-        var typeLabel = (r.potType || '--') + (r.board ? ' ' + r.board : '');
-        var profitStr = r.pBB != null ? '<span style="color:' + (r.pBB >= 0 ? '#4ade80' : '#f87171') + '">' + (r.pBB >= 0 ? '+' : '') + Utils.safeFixed(r.pBB, 1) + ' BB</span>' : '--';
+        // [V6.15.2] 从 desc 提取 Hero 底牌渲染花色徽章，替代原来的 potType+board
+        var handHtml = '';
+        var heroCardsM = (r.desc || '').match(/Hero[^\n\[]*\[([^\]]+)\]/);
+        if (heroCardsM) {
+          handHtml += Utils.renderCardBadges(heroCardsM[1], { style: 'margin-right:2px' });
+          // [V6.15.2] 对手牌灰色小字标注
+          if (r.oCards) {
+            handHtml += ' <span style="color:#64748b;font-size:0.7em">vs ' + Utils.escapeHtml(r.oCards) + '</span>';
+          }
+        } else {
+          handHtml = '--';
+        }
+        var profitStr = r.pBB != null ? Utils.formatProfitHTML(r.pBB) : '--';
         var mistakeStr = r.mistake || '--';
         var ggMark = r.gg ? ' <span style="color:#64748b;font-size:0.85em">GG</span>' : '';
         parts.push('<div style="display:flex;align-items:center;gap:6px;padding:2px 0;border-bottom:1px solid #1e293b">');
-        parts.push('<span style="color:#facc15;min-width:60px">' + Utils.escapeHtml(typeLabel) + '</span>');
+        parts.push('<span style="min-width:80px">' + handHtml + '</span>');
+        var markIcon = r.marked ? '★' : '☆';
+        var markColor = r.marked ? '#facc15' : '#64748b';
         parts.push('<span style="flex:1;color:#cbd5e1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + profitStr + ggMark + '</span>');
         parts.push('<span style="color:#94a3b8;min-width:60px;text-align:right">' + Utils.escapeHtml(mistakeStr) + '</span>');
-        parts.push('<button class="btn--mini" data-hand-edit="' + r.id + '" style="font-size:0.85em">✎</button>');
+        parts.push('<button class="btn--mini" data-hand-edit="' + r.id + '" style="font-size:0.85em">👁️</button>');
+        parts.push('<button class="btn--mini hand-mark-btn" data-hand-mark="' + r.id + '" style="font-size:0.85em;color:' + markColor + '" title="标记">' + markIcon + '</button>');
         parts.push('</div>');
       });
       td.innerHTML = parts.join('');
@@ -236,19 +480,39 @@ export const Review = {
       row.querySelector('[data-bind="tilt"]').textContent = s.tilt;
       row.querySelector('[data-bind="mistake"]').textContent = s.mistake;
       row.querySelector('[data-expand-id]').setAttribute('data-expand-id', s.id);
+      row.querySelector('[data-import-sid]').setAttribute('data-import-sid', s.id);
       row.querySelector('[data-edit-id]').setAttribute('data-edit-id', s.id);
       row.querySelector('[data-delete-id]').setAttribute('data-delete-id', s.id);
+      // [V6.14.0] 导入按钮点击
+      var importSessionBtn = row.querySelector('[data-import-sid]');
+      importSessionBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        openGGImportForSession(s.id);
+      });
       frag.appendChild(row);
     });
     body.replaceChildren(frag);
   },
-  updateStats() {
-    const sessions = this.getSessions(), live = sessions.filter((s) => s.level.toLowerCase() === 'live');
+  // [V6.18.1] 全局统计 — 渲染到 Total 面板
+  updateTotalStats() {
+    const self = this;
+    const sessions = this.getSessions();
+    // [V7.0.0] 渲染指纹：Session/手牌数量未变则跳过全量 DOM 重建
+    var allHands = HandRepo.getAll();
+    var fp = sessions.length + '|' + allHands.length;
+    if (this._totalFp === fp) return;
+    this._totalFp = fp;
+    const live = sessions.filter((s) => s.level.toLowerCase() === 'live');
     let tp = 0, th = 0, td = 0, tt = 0;
     sessions.forEach((s) => { tp += s.profit; th += s.hands; td += s.duration; tt += s.tilt; });
     const c = sessions.length, avgTilt = c ? Utils.safeFixed(tt / c, 1) : 'N/A',
       bb100 = th ? Utils.safeFixed((tp / th) * 100, 1) : 'N/A', hr = td ? Utils.safeFixed(tp / td, 2) : 'N/A';
-    document.getElementById('statsArea').innerHTML = '<div class="stats"><div class="stats__item"><div class="stats__label">总场次</div><div class="stats__value">' + c + '</div></div><div class="stats__item ' + (tp >= 0 ? 'stats__item--win' : 'stats__item--lose') + '"><div class="stats__label">总盈亏</div><div class="stats__value ' + (tp >= 0 ? 'text-win' : 'text-lose') + '">' + (tp >= 0 ? '+' + Utils.safeFixed(tp, 1) : Utils.safeFixed(tp, 1)) + ' BB</div></div><div class="stats__item"><div class="stats__label">总手数</div><div class="stats__value">' + th + '</div></div><div class="stats__item ' + (parseFloat(bb100) >= 0 ? 'stats__item--win' : 'stats__item--lose') + '"><div class="stats__label">bb/100</div><div class="stats__value ' + (parseFloat(bb100) >= 0 ? 'text-win' : 'text-lose') + '">' + bb100 + '</div></div><div class="stats__item ' + (parseFloat(hr) >= 0 ? 'stats__item--win' : 'stats__item--lose') + '"><div class="stats__label">时薪</div><div class="stats__value ' + (parseFloat(hr) >= 0 ? 'text-win' : 'text-lose') + '">' + hr + ' BB/h</div></div><div class="stats__item"><div class="stats__label">平均Tilt</div><div class="stats__value">' + avgTilt + '</div></div></div>';
+    var hph = td > 0 ? Math.round(th / (td / 60)) : 0; // [V6.18.1] 手/小时
+    var pph = td > 0 ? Utils.safeFixed(tp / (td / 60), 1) : 'N/A'; // [V6.18.1] BB/小时
+    var tsa = document.getElementById('totalStatsArea');
+    if (!tsa) return;
+    Utils.setSafeHTML(tsa, '<div class="stats"><div class="stats__item"><div class="stats__label">Sessions</div><div class="stats__value">' + c + '</div></div><div class="stats__item ' + (tp >= 0 ? 'stats__item--win' : 'stats__item--lose') + '"><div class="stats__label">Net Profit</div><div class="stats__value ' + (tp >= 0 ? 'text-win' : 'text-lose') + '">' + (tp >= 0 ? '+' + Utils.safeFixed(tp, 1) : Utils.safeFixed(tp, 1)) + ' BB</div></div><div class="stats__item"><div class="stats__label">Hands</div><div class="stats__value">' + th + '</div></div><div class="stats__item ' + (parseFloat(bb100) >= 0 ? 'stats__item--win' : 'stats__item--lose') + '"><div class="stats__label">bb/100</div><div class="stats__value ' + (parseFloat(bb100) >= 0 ? 'text-win' : 'text-lose') + '">' + bb100 + '</div></div><div class="stats__item ' + (parseFloat(hr) >= 0 ? 'stats__item--win' : 'stats__item--lose') + '"><div class="stats__label">Hourly</div><div class="stats__value ' + (parseFloat(hr) >= 0 ? 'text-win' : 'text-lose') + '">' + hr + ' BB/h</div></div><div class="stats__item"><div class="stats__label">Avg Tilt</div><div class="stats__value">' + avgTilt + '</div></div></div>');
+    // 错误追踪
     const mistakeMap = new Map(), mistakeProfitMap = new Map();
     sessions.forEach((s) => {
       if (s.mistake !== '无') { s.mistake.split(', ').forEach((m) => { const t = m.trim(); if (t) { mistakeMap.set(t, (mistakeMap.get(t) || 0) + 1); mistakeProfitMap.set(t, (mistakeProfitMap.get(t) || 0) + s.profit); } }); }
@@ -258,29 +522,93 @@ export const Review = {
       const sorted = [...mistakeMap.entries()].map(([k, v]) => ({ name: k, count: v, avgProfit: Utils.safeFixed(mistakeProfitMap.get(k) / v, 1) })).sort((a, b) => parseFloat(a.avgProfit) - parseFloat(b.avgProfit));
       sorted.forEach((item) => { mh += '<span class="mistake-tag">' + Utils.escapeHtml(item.name) + ' x' + item.count + ' <span class="' + (parseFloat(item.avgProfit) >= 0 ? 'text-win' : 'text-lose') + '" style="font-size:0.85em">' + (parseFloat(item.avgProfit) >= 0 ? '+' : '') + item.avgProfit + ' BB</span></span> '; });
     } else { mh = '暂无错误记录'; }
-    document.getElementById('mistakeStats').innerHTML = mh;
-    let lh = '';
-    if (live.length) {
-      let lp = 0, lhI = 0, ld = 0, lt = 0;
-      live.forEach((s) => { lp += s.profit; lhI += s.hands; ld += s.duration; lt += s.tilt; });
-      lh = '场次: ' + live.length + ' | 总手: ' + lhI + ' | 盈亏: ' + Utils.safeFixed(lp, 1) + ' BB | 平均Tilt: ' + Utils.safeFixed(lt / live.length, 1) + ' | 时薪: ' + Utils.safeFixed(ld ? lp / ld : 0, 2) + ' BB/h';
-    } else lh = '暂无Live数据';
-    document.getElementById('liveStats').innerHTML = lh;
-    this.renderChart();
+    var tms = document.getElementById('totalMistakeStats');
+    if (tms) Utils.setSafeHTML(tms, mh);
+    // 统计引擎（allHands 已在指纹检查时获取）
+    var engineResult = analyze(allHands);
+    var es = engineResult.stats;
+    var recs = engineResult.recommendations;
+    // [V6.18.5] 引擎统计 — 公共渲染
+    var extraOvHtml = '<div class="stats__item"><div class="stats__label">Hands/Hour</div><div class="stats__value">' + hph + '</div></div>';
+    extraOvHtml += '<div class="stats__item ' + (parseFloat(pph) >= 0 ? 'stats__item--win' : 'stats__item--lose') + '"><div class="stats__label">BB/Hour</div><div class="stats__value ' + (parseFloat(pph) >= 0 ? 'text-win' : 'text-lose') + '">' + (parseFloat(pph) >= 0 ? '+' : '') + pph + ' BB</div></div>';
+    renderStatsPanel({ containerEl: tsa, es: es, recs: recs, extraOverviewHtml: extraOvHtml });
+    this.renderChart('totalProfitChart');
+    _initStatTooltip('totalStatsArea');
+    // [V6.18.9] Live 数据更新（元素在 Villain 面板）
+    var tlsEl2 = document.getElementById('totalLiveStats');
+    if (tlsEl2) {
+      var liveSessions = sessions.filter(function (s) { return s.level.toLowerCase() === 'live'; });
+      var lh = '';
+      if (liveSessions.length) {
+        var lp = 0, lhI = 0, ld = 0, lt = 0;
+        liveSessions.forEach(function (s) { lp += s.profit; lhI += s.hands; ld += s.duration; lt += s.tilt; });
+        lh = '场次: ' + liveSessions.length + ' | 手数: ' + lhI + ' | 盈亏: ' + Utils.safeFixed(lp, 1) + ' BB | Tilt: ' + Utils.safeFixed(lt / liveSessions.length, 1) + ' | 时薪: ' + Utils.safeFixed(ld ? lp / ld : 0, 2) + ' BB/h';
+      } else { lh = '暂无Live数据'; }
+      tlsEl2.innerHTML = lh;
+    }
   },
-  renderChart() {
+  // [V6.18.1] 向后兼容，重定向到 Total 面板
+  updateStats() {
+    this.updateTotalStats();
+  },
+  // [V6.16.5] 按 Session 过滤统计面板
+  updateStatsForSession(sessionId) {
+    var allSessions = this.getSessions();
+    var target = allSessions.find(function (s) { return s.id === sessionId; });
+    if (!target) return;
+    // 使用单 Session 数组计算基础统计
+    var sessions = [target];
+    var tp = target.profit, th = target.hands, td = target.duration, tt = target.tilt;
+    var c = 1, avgTilt = Utils.safeFixed(tt, 1),
+      bb100 = th ? Utils.safeFixed((tp / th) * 100, 1) : 'N/A',
+      hr = td ? Utils.safeFixed(tp / td, 2) : 'N/A';
+    var titleHtml = '<div style="font-size:0.8em;color:#f97316;margin-bottom:6px">📌 仅显示: ' + Utils.escapeHtml(target.date) + ' ' + Utils.escapeHtml(target.level) + ' <button class="btn--mini" id="resetStatsFilterBtn" style="font-size:0.75em;margin-left:8px">↺ 全部</button></div>';
+    Utils.setSafeHTML(document.getElementById('statsArea'), titleHtml + '<div class="stats"><div class="stats__item"><div class="stats__label">Session</div><div class="stats__value">' + c + '</div></div><div class="stats__item ' + (tp >= 0 ? 'stats__item--win' : 'stats__item--lose') + '"><div class="stats__label">Profit</div><div class="stats__value ' + (tp >= 0 ? 'text-win' : 'text-lose') + '">' + (tp >= 0 ? '+' + Utils.safeFixed(tp, 1) : Utils.safeFixed(tp, 1)) + ' BB</div></div><div class="stats__item"><div class="stats__label">Hands</div><div class="stats__value">' + th + '</div></div><div class="stats__item ' + (parseFloat(bb100) >= 0 ? 'stats__item--win' : 'stats__item--lose') + '"><div class="stats__label">bb/100</div><div class="stats__value ' + (parseFloat(bb100) >= 0 ? 'text-win' : 'text-lose') + '">' + bb100 + '</div></div><div class="stats__item ' + (parseFloat(hr) >= 0 ? 'stats__item--win' : 'stats__item--lose') + '"><div class="stats__label">Hourly</div><div class="stats__value ' + (parseFloat(hr) >= 0 ? 'text-win' : 'text-lose') + '">' + hr + ' BB/h</div></div><div class="stats__item"><div class="stats__label">Tilt</div><div class="stats__value">' + avgTilt + '</div></div></div>');
+    // 错误统计
+    var mh = target.mistake && target.mistake !== '无' ? target.mistake : '暂无错误记录';
+    var mhEl2 = document.getElementById('mistakeStats'); if (mhEl2) mhEl2.innerHTML = '<span class="mistake-tag">' + Utils.escapeHtml(mh) + '</span>';
+    // 统计引擎 — 只算该 Session 的手牌
+    var allHands = HandRepo.getAll();
+    var engineResult = analyze(allHands, { sessionId: sessionId });
+    var es = engineResult.stats;
+    var recs = engineResult.recommendations;
+    // [V6.18.5] 引擎统计 — 公共渲染
+    var ssa = document.getElementById('statsArea');
+    renderStatsPanel({ containerEl: ssa, es: es, recs: recs });
+    _initStatTooltip('statsArea');
+    var tlsEl = document.getElementById('totalLiveStats'); if (tlsEl) tlsEl.innerHTML = target.level.toLowerCase() === 'live' ? 'Live 场次' : '';
+    var self = this;
+    document.getElementById('resetStatsFilterBtn').addEventListener('click', function () {
+      var totalTab = document.querySelector('[data-sub="total"]');
+      if (totalTab) totalTab.click();
+    });
+    _initStatTooltip('statsArea');
+  },
+  // [V6.19.6] requestAnimationFrame 防抖，避免同一帧多次绘制
+  _chartRAF: null,
+  // [V6.18.1] canvasId 可选，默认 'profitChart'（向后兼容）
+  renderChart(canvasId) {
+    var self = this;
+    if (self._chartRAF) cancelAnimationFrame(self._chartRAF);
+    self._chartRAF = requestAnimationFrame(function () {
+      self._chartRAF = null;
+      self._doRenderChart(canvasId);
+    });
+  },
+  _doRenderChart(canvasId) {
+    var cid = canvasId || 'profitChart';
     const sessions = Utils.sortByDateKey(this.getSessions()).reverse().slice(0, 15).reverse();
-    const canvas = document.getElementById('profitChart');
+    const canvas = document.getElementById(cid);
     if (!canvas) return;
     if (sessions.length < 2) {
       canvas.style.display = 'none';
-      var statsArea = document.getElementById('statsArea');
-      if (statsArea && statsArea.querySelector('.chart-placeholder') === null) {
+      var chartParent = canvas.parentElement;
+      if (chartParent && chartParent.querySelector('.chart-placeholder') === null) {
         var placeholder = document.createElement('div');
         placeholder.className = 'chart-placeholder text-muted';
         placeholder.textContent = '至少需要 2 场 Session 才能显示盈亏图表';
         placeholder.style.cssText = 'text-align:center;padding:20px 0;font-size:0.8em';
-        statsArea.appendChild(placeholder);
+        chartParent.appendChild(placeholder);
       }
       return;
     }
@@ -357,12 +685,16 @@ export const Review = {
   // [V6.10.0] 对手画像：按对手名聚合统计
   // [V6.11.0] 增加 hands 数组，供详情展开
   getOpponentStats() {
-    var hands = HandRepo.getAll().filter(function (r) { return r.oId; });
+    var allHands = HandRepo.getAll();
+    // [V7.0.0] 缓存：排序/筛选切换时手牌总数未变则跳过聚合
+    if (_oppStatsCache && allHands.length === _oppStatsCacheLen) return _oppStatsCache;
+    _oppStatsCacheLen = allHands.length;
+    var hands = allHands.filter(function (r) { return r.oId; });
     var map = {};
     hands.forEach(function (r) {
       var oid = r.oId;
       if (!map[oid]) {
-        map[oid] = { name: oid, totalHands: 0, showdowns: 0, profit: 0, wins: 0, cards: [], lastDate: '', hands: [] };
+        map[oid] = { name: oid, totalHands: 0, showdowns: 0, profit: 0, wins: 0, cards: [], lastDate: '', hands: [], _handRefs: [] };
       }
       var p = map[oid];
       p.totalHands++;
@@ -373,6 +705,8 @@ export const Review = {
         if (p.cards.indexOf(r.oCards) === -1) p.cards.push(r.oCards);
       }
       if (r.date > p.lastDate) p.lastDate = r.date;
+      // [V7.0.0] 保存完整手牌引用供懒加载统计
+      p._handRefs.push(r);
       // [V6.13.0] 提取 Hero 手牌
       var hCards = '';
       var hm = r.desc ? r.desc.match(/Hero[^\n\[]*\[([^\]]+)\]/) : null;
@@ -382,7 +716,47 @@ export const Review = {
     var list = [];
     for (var k in map) { if (map.hasOwnProperty(k)) list.push(map[k]); }
     list.sort(function (a, b) { return b.totalHands - a.totalHands; });
+    _oppStatsCache = list;
     return list;
+  },
+  // [V7.0.0] 按需构建单个对手的手牌列表 HTML（懒渲染回调）
+  _buildOppHandListHtml(p, oppIdx, sessionsMap) {
+    var html = '';
+    p.hands.sort(function (a, b) { return a.date > b.date ? -1 : a.date < b.date ? 1 : 0; }).forEach(function (h, hi) {
+      var dateFormatted = Utils.formatHandDate(h.date);
+      var hProfitStr = h.pBB != null ? ((h.pBB >= 0 ? '+' : '') + Utils.safeFixed(h.pBB, 1) + ' BB') : '--';
+      var hProfitColor = h.pBB >= 0 ? '#4ade80' : '#f87171';
+      var heroCardsHtml = '';
+      if (h.heroCards) {
+        heroCardsHtml += Utils.renderCardBadges(h.heroCards, { style: 'margin-right:1px;font-size:0.85em' });
+      } else { heroCardsHtml = '--'; }
+      var filterClass = 'opp-filterable';
+      if (h.pBB != null && Math.abs(h.pBB) >= 2) filterClass += ' above2';
+      if (h.pBB != null && Math.abs(h.pBB) >= 30) filterClass += ' above30';
+      html += '<div class="opp-hand-row ' + filterClass + '" style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid #1e293b;cursor:pointer" data-opp-idx="' + oppIdx + '" data-hand-idx="' + hi + '">';
+      html += '<span style="min-width:85px;color:#cbd5e1">' + dateFormatted + '</span>';
+      html += '<span style="min-width:70px">' + heroCardsHtml + '</span>';
+      html += '<span style="min-width:65px;color:' + hProfitColor + '">' + hProfitStr + '</span>';
+      html += '<span style="flex:1;color:#94a3b8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + Utils.escapeHtml(h.mistake || '--') + '</span>';
+      html += '</div>';
+      html += '<div class="opp-hand-detail ' + filterClass + '" id="oppHandDetail-' + oppIdx + '-' + hi + '" style="display:none;padding:6px 10px;background:#0a1628;border-radius:6px;margin-bottom:4px;font-size:0.9em">';
+      html += '<div style="color:#94a3b8">底池类型: ' + Utils.escapeHtml(h.potType || '--') + '</div>';
+      if (h.heroCards || h.oCards) {
+        html += '<div style="color:#cbd5e1;margin-top:4px">';
+        html += '<span style="color:#4ade80">我: ' + Utils.escapeHtml(h.heroCards || '--') + '</span>';
+        html += '  <span style="color:#f87171">对手: ' + Utils.escapeHtml(h.oCards || '--') + '</span>';
+        html += '</div>';
+      }
+      var hSession = sessionsMap.get(h.sessionId);
+      if (hSession) {
+        html += '<div style="color:#94a3b8">Session: ' + Utils.escapeHtml(hSession.date) + ' ' + Utils.escapeHtml(hSession.level) + '</div>';
+      } else {
+        html += '<div style="color:#64748b">未关联 Session</div>';
+      }
+      html += '<button class="btn--mini" data-hand-edit="' + h.id + '" style="margin-top:4px;font-size:0.85em">👁️ 查看手局</button>';
+      html += '</div>';
+    });
+    return html;
   },
   // [V6.10.0] 渲染对手画像面板
   // [V6.11.0] 别名编辑 + 手牌列表展开
@@ -426,13 +800,20 @@ export const Review = {
       self._bindOpponentSortAndFilter(bar, sortBy, sortDir, filterLive);
       return;
     }
+    // [V7.0.0] 渲染指纹：数据/排序/筛选未变则跳过 DOM 重建
     var totalHands = 0;
     stats.forEach(function (s) { totalHands += s.totalHands; });
+    var fp = stats.length + '|' + totalHands + '|' + sortBy + '|' + sortDir + '|' + (filterLive ? 1 : 0);
+    if (self._villainFp === fp) return;
+    self._villainFp = fp;
     bar.innerHTML = '共 ' + stats.length + ' 名对手，' + totalHands + ' 次交手 &nbsp;' +
       '<button class="btn--mini sort-btn' + (sortBy === 'lastDate' ? ' is-active' : '') + '" data-sort="lastDate" style="font-size:0.7em">Recent</button> ' +
       '<button class="btn--mini sort-btn' + (sortBy === 'profit' ? ' is-active' : '') + '" data-sort="profit" style="font-size:0.7em">Net</button> ' +
       '<button class="btn--mini sort-btn' + (sortBy === 'winRate' ? ' is-active' : '') + '" data-sort="winRate" style="font-size:0.7em">Win Rate</button> ' +
       '<button class="btn--mini live-filter-btn' + (filterLive ? ' is-active' : '') + '" style="font-size:0.7em;background:' + (filterLive ? '#dc2626' : '#334155') + '">Live</button>';
+    // [V7.0.0] Session Map 预建 — O(1) 查找替代 O(n) find
+    var sessionsMap = new Map();
+    sessions.forEach(function (s) { sessionsMap.set(s.id, s); });
     var html = '';
     stats.forEach(function (p, i) {
       var displayName = Utils.getOpponentDisplayName(p.name, aliases);
@@ -448,91 +829,100 @@ export const Review = {
       html += '</div>';
       html += '<div class="opponent-detail" id="oppDetail-' + i + '" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid #334155;font-size:0.75em;color:#94a3b8">';
       html += '摊牌 ' + p.showdowns + ' 次 | 最近 ' + p.lastDate.substring(0, 10);
-      if (p.cards.length) {
-        html += '<div style="margin-top:4px">底牌: ';
-        p.cards.forEach(function (c) {
-          html += '<span style="color:#cbd5e1;background:#1e293b;padding:2px 6px;border-radius:4px;margin-right:4px;font-size:0.9em">' + Utils.escapeHtml(c) + '</span>';
-        });
-        html += '</div>';
-      }
-      // [V6.11.0] 手牌列表
+      // [V7.0.0] 手牌列表 — 仅渲染筛选按钮和空容器，手牌行延迟到展开时构建
       if (p.hands.length) {
-        html += '<div style="margin-top:8px;font-weight:bold;color:#94a3b8">手牌 (' + p.hands.length + '):</div>';
-        p.hands.sort(function (a, b) { return a.date > b.date ? -1 : a.date < b.date ? 1 : 0; }).forEach(function (h, hi) {
-          var dateFormatted = Utils.formatHandDate(h.date);
-          var typeStr = (h.potType || '--') + (h.board ? ' ' + h.board : '');
-          var hProfitStr = h.pBB != null ? ((h.pBB >= 0 ? '+' : '') + Utils.safeFixed(h.pBB, 1) + ' BB') : '--';
-          var hProfitColor = h.pBB >= 0 ? '#4ade80' : '#f87171';
-          html += '<div class="opp-hand-row" style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid #1e293b;cursor:pointer" data-opp-idx="' + i + '" data-hand-idx="' + hi + '">';
-          html += '<span style="min-width:85px;color:#cbd5e1">' + dateFormatted + '</span>';
-          html += '<span style="min-width:80px;color:#94a3b8">' + Utils.escapeHtml(typeStr) + '</span>';
-          html += '<span style="min-width:65px;color:' + hProfitColor + '">' + hProfitStr + '</span>';
-          html += '<span style="flex:1;color:#94a3b8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + Utils.escapeHtml(h.mistake || '--') + '</span>';
-          html += '</div>';
-          html += '<div class="opp-hand-detail" id="oppHandDetail-' + i + '-' + hi + '" style="display:none;padding:6px 10px;background:#0a1628;border-radius:6px;margin-bottom:4px;font-size:0.9em">';
-          html += '<div style="color:#94a3b8">牌面: ' + Utils.escapeHtml(typeStr) + '</div>';
-          // [V6.13.0] Hero/对手底牌
-          if (h.heroCards || h.oCards) {
-            html += '<div style="color:#cbd5e1;margin-top:4px">';
-            html += '<span style="color:#4ade80">我: ' + Utils.escapeHtml(h.heroCards || '--') + '</span>';
-            html += '  <span style="color:#f87171">对手: ' + Utils.escapeHtml(h.oCards || '--') + '</span>';
-            html += '</div>';
-          }
-          var hSession = sessions.find(function (x) { return x.id === h.sessionId; });
-          if (hSession) {
-            html += '<div style="color:#94a3b8">Session: ' + Utils.escapeHtml(hSession.date) + ' ' + Utils.escapeHtml(hSession.level) + '</div>';
-          } else {
-            html += '<div style="color:#64748b">未关联 Session</div>';
-          }
-          html += '<button class="btn--mini" data-hand-edit="' + h.id + '" style="margin-top:4px;font-size:0.85em">✎ 编辑手牌</button>';
-          html += '</div>';
-        });
+        var oppHandFilterId = 'oppHandFilter-' + i;
+        html += '<div style="margin-top:8px;display:flex;align-items:center;gap:6px">';
+        html += '<span style="font-weight:bold;color:#94a3b8">手牌 (' + p.hands.length + '):</span>';
+        html += '<button class="btn--mini opp-filter-btn" data-opp-idx="' + i + '" data-filter="all" style="font-size:0.65em;padding:2px 6px;background:#f97316">全部</button>';
+        html += '<button class="btn--mini opp-filter-btn" data-opp-idx="' + i + '" data-filter="above2" style="font-size:0.65em;padding:2px 6px">≥2 BB</button>';
+        html += '<button class="btn--mini opp-filter-btn" data-opp-idx="' + i + '" data-filter="above30" style="font-size:0.65em;padding:2px 6px">≥30 BB</button>';
+        html += '</div>';
+        html += '<div class="opp-hand-list" id="' + oppHandFilterId + '" data-opp-idx="' + i + '"></div>';
       }
+      html += '<div id="oppStats-' + i + '" style="margin-top:8px"></div>';
       html += '</div></div>';
     });
-    list.innerHTML = html;
-    // 展开/收起对手详情
-    list.querySelectorAll('.opponent-row').forEach(function (row) {
-      row.addEventListener('click', function (e) {
-        if (e.target.closest('.alias-edit-btn') || e.target.closest('.opp-hand-row') || e.target.closest('[data-hand-edit]')) return;
-        var idx = this.dataset.oppIdx;
-        var detail = document.getElementById('oppDetail-' + idx);
-        if (detail) detail.style.display = detail.style.display === 'none' ? 'block' : 'none';
-      });
-    });
-    // 别名编辑
-    list.querySelectorAll('.alias-edit-btn').forEach(function (btn) {
-      btn.addEventListener('click', function (e) {
+    Utils.setSafeHTML(list, html);
+    // [V7.0.0] 事件委托 — 先解绑旧 handler 防止重复绑定叠加
+    if (list._clickHandler) list.removeEventListener('click', list._clickHandler);
+    list._clickHandler = function (e) {
+      // 1. 别名编辑
+      var aliasBtn = e.target.closest('.alias-edit-btn');
+      if (aliasBtn) {
         e.stopPropagation();
-        var oid = this.dataset.oid;
+        var oid = aliasBtn.dataset.oid;
         var cur = aliases[oid] || '';
         var input = prompt('为 ' + oid + ' 设置昵称：', cur);
         if (input === null) return;
-        if (input.trim()) {
-          aliases[oid] = input.trim();
-        } else {
-          delete aliases[oid];
-        }
+        if (input.trim()) { aliases[oid] = input.trim(); }
+        else { delete aliases[oid]; }
         Store.opponentAliases.save(aliases);
         self.renderOpponentProfiles();
-      });
-    });
-    // 手牌行展开
-    list.querySelectorAll('.opp-hand-row').forEach(function (row) {
-      row.addEventListener('click', function (e) {
+        return;
+      }
+      // 2. 查看手局
+      var handEditBtn = e.target.closest('[data-hand-edit]');
+      if (handEditBtn) {
         e.stopPropagation();
-        var detail = document.getElementById('oppHandDetail-' + this.dataset.oppIdx + '-' + this.dataset.handIdx);
-        if (detail) detail.style.display = detail.style.display === 'none' ? 'block' : 'none';
-      });
-    });
-    // 手牌编辑按钮
-    list.querySelectorAll('[data-hand-edit]').forEach(function (btn) {
-      btn.addEventListener('click', function (e) {
-        e.stopPropagation();
-        self.editHandReview(this.dataset.handEdit);
+        self.editHandReview(handEditBtn.dataset.handEdit);
         document.querySelector('[data-sub="hand"]').click();
-      });
-    });
+        return;
+      }
+      // 3. 手牌行展开
+      var handRow = e.target.closest('.opp-hand-row');
+      if (handRow) {
+        e.stopPropagation();
+        var hDetail = document.getElementById('oppHandDetail-' + handRow.dataset.oppIdx + '-' + handRow.dataset.handIdx);
+        if (hDetail) hDetail.style.display = hDetail.style.display === 'none' ? 'block' : 'none';
+        return;
+      }
+      // 4. 手牌筛选
+      var filterBtn = e.target.closest('.opp-filter-btn');
+      if (filterBtn) {
+        e.stopPropagation();
+        var oppIdx = filterBtn.dataset.oppIdx;
+        var filter = filterBtn.dataset.filter;
+        var container = document.getElementById('oppHandFilter-' + oppIdx);
+        if (!container) return;
+        container.parentElement.querySelectorAll('.opp-filter-btn').forEach(function (b) { b.style.background = ''; });
+        filterBtn.style.background = '#f97316';
+        container.querySelectorAll('.opp-filterable').forEach(function (el) {
+          if (filter === 'all') { el.style.display = ''; }
+          else if (filter === 'above2') { el.style.display = el.classList.contains('above2') ? '' : 'none'; }
+          else if (filter === 'above30') { el.style.display = el.classList.contains('above30') ? '' : 'none'; }
+        });
+        return;
+      }
+      // 5. 对手展开/收起（仅标题区域，排除 detail 内部点击）
+      if (e.target.closest('.opponent-detail')) return;
+      var oppRow = e.target.closest('.opponent-row');
+      if (oppRow) {
+        var idx = oppRow.dataset.oppIdx;
+        var detail = document.getElementById('oppDetail-' + idx);
+        if (!detail) return;
+        var isOpening = detail.style.display === 'none';
+        detail.style.display = isOpening ? 'block' : 'none';
+        if (isOpening) {
+          // 懒渲染：手牌列表（首次展开时构建）
+          var handListEl = document.getElementById('oppHandFilter-' + idx);
+          if (handListEl && !handListEl.dataset.rendered && stats[idx] && stats[idx].hands && stats[idx].hands.length) {
+            handListEl.innerHTML = self._buildOppHandListHtml(stats[idx], idx, sessionsMap);
+            handListEl.dataset.rendered = '1';
+          }
+          // 懒渲染：Opponent Stats（首次展开时计算）
+          var oppStatsEl = document.getElementById('oppStats-' + idx);
+          if (oppStatsEl && !oppStatsEl.dataset.rendered && stats[idx] && stats[idx].totalHands >= 3 && stats[idx]._handRefs && stats[idx]._handRefs.length >= 3) {
+            var oppResult = analyze(stats[idx]._handRefs);
+            oppStatsEl.innerHTML = '<details class="stats-details"><summary class="stats-section-title">Opponent Stats</summary></details>';
+            var statsContainer = oppStatsEl.querySelector('.stats-details');
+            if (statsContainer) renderStatsPanel({ containerEl: statsContainer, es: oppResult.stats, recs: oppResult.recommendations, showExtras: false, showPosition: false });
+            oppStatsEl.dataset.rendered = '1';
+          }
+        }
+      }
+    };
+    list.addEventListener('click', list._clickHandler);
     // [V6.13.0] 排序 + Live 筛选按钮
     self._bindOpponentSortAndFilter(bar, sortBy, sortDir, filterLive);
   },
@@ -571,7 +961,7 @@ export const Review = {
     const custom = document.getElementById('handMistakeCustom').value.trim();
     if (custom) mistakes.push(custom);
     const mistakeStr = mistakes.join(', ') || '';
-    if (!desc && !reflection) { alert('请至少填写一项内容'); return; }
+    if (!desc && !reflection) { Utils.showToast('请至少填写一项内容'); return; }
     const r = { sessionId: sid || null, date: Utils.getLocalDatetime(), potType, board, desc, mistake: mistakeStr, reflection, pBB: null };
     const reviews = this.getHandReviews();
     if (this.handEditingId) {
@@ -614,26 +1004,101 @@ export const Review = {
     window.scrollTo({ top: document.getElementById('saveHandBtn').offsetTop - 100, behavior: 'smooth' });
   },
   handPageSize: 50, handCurrentPage: 1,
-  // [V6.13.0] 批量栏 UI 状态同步
+  _selectedHandIds: new Set(),
+  // [V6.15.1] 手牌筛选状态
+  _handPotFilter: 'all',
+  _handSessFilter: 'all',
+  // [V6.15.1] 切换手牌行展开/折叠
+  toggleHandExpand: function (handId, btn) {
+    var existingRow = document.getElementById('hand-expand-row-' + handId);
+    if (existingRow) { existingRow.remove(); if (btn) btn.textContent = '▶'; return; }
+    if (btn) btn.textContent = '▼';
+    var reviews = HandRepo.getAll();
+    var r = reviews.find(function (x) { return x.id === handId; });
+    if (!r) return;
+    var tr = document.createElement('tr');
+    tr.id = 'hand-expand-row-' + handId;
+    var td = document.createElement('td');
+    td.colSpan = 7;
+    td.style.cssText = 'padding:10px 14px;background:#0a1628;font-size:0.78em;border-top:1px solid #1e3a5f;line-height:1.6';
+    var html = '';
+    // 手牌详情
+    html += '<div style="color:#cbd5e1;white-space:pre-wrap;margin-bottom:6px">' + Utils.escapeHtml(r.desc || '--') + '</div>';
+    // 错误 + 反思
+    if (r.mistake) html += '<div style="margin-bottom:4px"><span style="color:#94a3b8">错误：</span><span style="color:#f87171">' + Utils.escapeHtml(r.mistake) + '</span></div>';
+    if (r.reflection) html += '<div style="margin-bottom:6px"><span style="color:#94a3b8">反思：</span><span style="color:#e2e8f0">' + Utils.escapeHtml(r.reflection) + '</span></div>';
+    // 操作按钮
+    html += '<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">';
+    html += '<button class="btn--mini" data-hand-edit="' + r.id + '">✎ 编辑</button>';
+    html += '<button class="btn--mini btn--danger" data-hand-delete="' + r.id + '">✕ 删除</button>';
+    var markIcon = r.marked ? '★' : '☆';
+    var markColor = r.marked ? '#facc15' : '#64748b';
+    html += '<button class="btn--mini hand-mark-btn" data-hand-mark="' + r.id + '" style="color:' + markColor + '">' + markIcon + ' 标记</button>';
+    html += '</div>';
+    td.innerHTML = html;
+    tr.appendChild(td);
+    btn.closest('tr').after(tr);
+  },
+  // [V6.16.0] 行点击选中——批量栏 UI 状态同步
   _updateHandBatchUI() {
-    var checks = document.querySelectorAll('.hand-check:checked');
-    var allChecks = document.querySelectorAll('.hand-check');
-    var selectAll = document.getElementById('handSelectAll');
+    var selCount = Review._selectedHandIds.size;
+    var allRows = document.querySelectorAll('#handBody tr[data-hand-id]');
+    var totalVisible = allRows.length;
     var batchBar = document.getElementById('handBatchBar');
+    var btn = document.getElementById('handSelectAllBtn');
     var countEl = document.getElementById('handBatchCount');
-    if (checks.length === 0) {
-      selectAll.checked = false; selectAll.indeterminate = false; batchBar.style.display = 'none';
+    if (selCount === 0) {
+      batchBar.style.display = 'none';
     } else {
       batchBar.style.display = 'flex';
-      if (checks.length === allChecks.length) { selectAll.checked = true; selectAll.indeterminate = false; }
-      else { selectAll.checked = false; selectAll.indeterminate = true; }
     }
-    if (countEl) countEl.textContent = '已选 ' + checks.length + ' 项';
+    if (btn) {
+      btn.textContent = (selCount === totalVisible && totalVisible > 0) ? 'Deselect All' : 'Select All';
+    }
+    if (countEl) countEl.textContent = selCount + ' selected';
+    allRows.forEach(function (row) {
+      if (Review._selectedHandIds.has(row.dataset.handId)) {
+        row.classList.add('is-selected');
+      } else {
+        row.classList.remove('is-selected');
+      }
+    });
   },
   renderHandReviews() {
     var self = this;
     var pageSize = self.handPageSize; var pageNum = self.handCurrentPage;
     var allReviews = Utils.sortByDateKey(this.getHandReviews());
+    // [V6.15.1] 读取筛选器并应用过滤
+    var potFilter = document.getElementById('handPotSizeFilter');
+    var sessFilter = document.getElementById('handSessFilter');
+    if (potFilter) self._handPotFilter = potFilter.value;
+    if (sessFilter) self._handSessFilter = sessFilter.value;
+    // 更新 session 筛选下拉选项
+    if (sessFilter && sessFilter.options.length <= 2) {
+      var sessions = this.getSessions();
+      sessions.forEach(function (s) {
+        if (!sessFilter.querySelector('option[value="' + s.id + '"]')) {
+          var opt = document.createElement('option');
+          opt.value = s.id; opt.textContent = s.date + ' ' + s.level;
+          sessFilter.appendChild(opt);
+        }
+      });
+    }
+    // 应用底池筛选
+    if (self._handPotFilter === 'above2') {
+      allReviews = allReviews.filter(function (r) { return r.pBB != null && Math.abs(r.pBB) >= 2; });
+    } else if (self._handPotFilter === 'above30') {
+      allReviews = allReviews.filter(function (r) { return r.pBB != null && Math.abs(r.pBB) >= 30; });
+    }
+    // 应用 Session 筛选
+    if (self._handSessFilter === 'unlinked') {
+      allReviews = allReviews.filter(function (r) { return !r.sessionId || r.sessionId === ''; });
+    } else if (self._handSessFilter && self._handSessFilter !== 'all') {
+      allReviews = allReviews.filter(function (r) { return r.sessionId === self._handSessFilter; });
+    }
+    // 更新筛选计数
+    var countEl = document.getElementById('handFilteredCount');
+    if (countEl) countEl.textContent = allReviews.length + ' 手';
     var totalPages = Math.ceil(allReviews.length / pageSize) || 1;
     if (pageNum > totalPages) { pageNum = totalPages; self.handCurrentPage = pageNum; }
     var pageReviews = allReviews.slice((pageNum - 1) * pageSize, pageNum * pageSize);
@@ -654,11 +1119,10 @@ export const Review = {
         var validRe = /^[2-9TJQKA][shdc]$/i;
         var allValid = cards.every(function (c) { return validRe.test(c); });
         if (allValid) {
-          var suitMap = { s: '♠', h: '♥', c: '♣', d: '♦' };
-          handHtml = cards.map(function (c) { var rk = c.charAt(0).toUpperCase(), st = c.charAt(1).toLowerCase(); return '<span class="card-badge ' + (st === 'h' || st === 'd' ? 'red' : 'black') + '">' + Utils.escapeHtml(rk) + suitMap[st] + '</span>'; }).join('');
+          handHtml = Utils.renderCardBadges(heroM[1]);
         } else { handHtml = Utils.escapeHtml((r.desc || '').substring(0, 20)) + '…'; }
       } else { handHtml = Utils.escapeHtml((r.desc || '').substring(0, 20)) + '…'; }
-      if (r.pBB != null) { var pbb = Utils.safeFixed(r.pBB, 1); profitHtml = '<span style="color:' + (r.pBB >= 0 ? '#4ade80' : '#f87171') + '">' + (r.pBB >= 0 ? '+' : '') + pbb + ' BB</span>'; }
+      if (r.pBB != null) { profitHtml = Utils.formatProfitHTML(r.pBB); }
       else { profitHtml = '--'; }
       var row = document.importNode(tmpl.content, true).firstElementChild;
       row.querySelector('[data-bind="date"]').textContent = Utils.formatHandDate(r.date);
@@ -667,9 +1131,18 @@ export const Review = {
       row.querySelector('[data-bind="handHtml"]').innerHTML = handHtml;
       row.querySelector('[data-bind="profitHtml"]').innerHTML = profitHtml;
       row.querySelector('[data-bind="mistake"]').textContent = r.mistake || '--';
-      row.querySelector('.hand-check').setAttribute('data-hand-id', r.id);
+      row.setAttribute('data-hand-id', r.id);
       row.querySelector('[data-hand-edit]').setAttribute('data-hand-edit', r.id);
       row.querySelector('[data-hand-delete]').setAttribute('data-hand-delete', r.id);
+      // [V6.15.1] 展开 / 标记按钮 — 事件由 #handBody 委托统一处理
+      var expandBtn = row.querySelector('[data-hand-expand]');
+      if (expandBtn) expandBtn.setAttribute('data-hand-expand', r.id);
+      var markBtn = row.querySelector('[data-hand-mark]');
+      if (markBtn) {
+        markBtn.setAttribute('data-hand-mark', r.id);
+        markBtn.textContent = r.marked ? '★' : '☆';
+        markBtn.style.color = r.marked ? '#facc15' : '#64748b';
+      }
       frag.appendChild(row);
     });
     body.replaceChildren(frag);
@@ -677,10 +1150,10 @@ export const Review = {
     var batchBar = document.getElementById('handBatchBar');
     var sessSel = document.getElementById('handBatchSessionSelect');
     if (sessSel) {
-      sessSel.innerHTML = '<option value="">-- 关联到 Session --</option>';
+      sessSel.innerHTML = '<option value="">-- Link to Session --</option>';
       sessions.forEach(function (s) { sessSel.innerHTML += '<option value="' + s.id + '">' + Utils.escapeHtml(s.date) + ' ' + Utils.escapeHtml(s.level) + '</option>'; });
     }
-    batchBar.style.display = 'none'; document.getElementById('handSelectAll').checked = false; document.getElementById('handBatchCount').textContent = '已选 0 项';
+    Review._selectedHandIds.clear(); batchBar.style.display = 'none'; document.getElementById('handBatchCount').textContent = '0 selected';
   },
   _renderHandPagination(total, pageNum, totalPages) {
     var self = this; var bar = document.getElementById('handPagination');
@@ -740,6 +1213,16 @@ export const Review = {
     const wBb100 = th ? Utils.safeFixed((tp / th) * 100, 1) : 'N/A';
     document.getElementById('weeklyAutoStats').innerHTML = '<div class="stats"><div class="stats__item"><div class="stats__label">本周场次</div><div class="stats__value">' + sessions.length + '</div></div><div class="stats__item ' + (tp >= 0 ? 'stats__item--win' : 'stats__item--lose') + '"><div class="stats__label">本周盈亏</div><div class="stats__value ' + (tp >= 0 ? 'text-win' : 'text-lose') + '">' + (tp >= 0 ? '+' + Utils.safeFixed(tp, 1) : Utils.safeFixed(tp, 1)) + ' BB</div></div><div class="stats__item"><div class="stats__label">总手数</div><div class="stats__value">' + th + '</div></div><div class="stats__item ' + (parseFloat(wBb100) >= 0 ? 'stats__item--win' : 'stats__item--lose') + '"><div class="stats__label">bb/100</div><div class="stats__value ' + (parseFloat(wBb100) >= 0 ? 'text-win' : 'text-lose') + '">' + wBb100 + '</div></div><div class="stats__item"><div class="stats__label">平均Tilt</div><div class="stats__value">' + (sessions.length ? Utils.safeFixed(tt / sessions.length, 1) : 'N/A') + '</div></div><div class="stats__item"><div class="stats__label">主要错误</div><div class="stats__value" style="font-size:0.8em">' + Utils.escapeHtml(topMistakes) + '</div></div></div>' + trendHtml;
     document.getElementById('weeklySummary').innerHTML = autoSummary ? '<b>🧠 本周总结</b><br>' + autoSummary : '';
+    // [V6.18.5] 本周引擎统计
+    var wEngineResult = analyze(hrs);
+    var wes = document.getElementById('weeklyEngineStats');
+    if (wes && wEngineResult.stats.totalHands && wEngineResult.stats.totalHands.value > 0) {
+      wes.innerHTML = '<details class="stats-details"><summary class="stats-section-title">Weekly Stats</summary></details>';
+      renderStatsPanel({ containerEl: wes.querySelector('.stats-details'), es: wEngineResult.stats, recs: wEngineResult.recommendations, showExtras: false });
+      _initStatTooltip('weeklyEngineStats');
+    } else if (wes) {
+      wes.innerHTML = '';
+    }
   },
   generateWeeklySummary(sessions, tp, tt, topMistakes) {
     if (sessions.length === 0) return '';
@@ -756,7 +1239,7 @@ export const Review = {
   saveWeeklyReviews(r) { WeeklyRepo.saveAll(r); },
   saveWeeklyReview() {
     const week = this.getWeekStr(), weakness = document.getElementById('weeklyWeakness').value.trim(), plan = document.getElementById('weeklyPlan').value.trim();
-    if (!weakness && !plan) { alert('请至少填写一项'); return; }
+    if (!weakness && !plan) { Utils.showToast('请至少填写一项'); return; }
     const reviews = this.getWeeklyReviews(), exist = reviews.find((r) => r.week === week);
     if (exist) { exist.weakness = weakness || exist.weakness; exist.plan = plan || exist.plan; }
     else reviews.push({ week, weakness, plan });
@@ -799,8 +1282,8 @@ export const Review = {
         const imp = JSON.parse(reader.result);
         if (imp.sessions !== undefined) {
           if (confirm('将合并导入数据（不覆盖已有记录），确定继续？')) { Store.importAll(imp); alert('导入成功！页面将刷新。'); location.reload(); }
-        } else alert('文件格式不正确');
-      } catch (ex) { alert('解析失败'); }
+        } else Utils.showToast('文件格式不正确');
+      } catch (ex) { Utils.showToast('解析失败'); }
     };
     reader.readAsText(file);
   },

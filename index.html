@@ -176,7 +176,7 @@
               </button>
             </div>
           </div>
-                      <button id="emergencyBtn" class="btn btn--emergency" style="margin-top: 16px">
+          <button id="emergencyBtn" class="btn btn--emergency" style="margin-top: 16px">
             🆘 暂停30秒 (冷静)
           </button>
         </section>
@@ -281,8 +281,8 @@
               ><button class="btn--mini outs-btn" data-outs="15">Combo Draw</button
               ><select id="multiWaySelect" class="multi-way-select" title="对手数量">
                 <option value="1">HU</option>
-                <option value="2">2人</option>
-                <option value="3">多人</option>
+                <option value="2">3-Way</option>
+                <option value="3">Multi-Way</option>
               </select>
             </div>
             <div id="sprDisplay" class="text-muted" style="margin: 4px 0; min-height: 18px"></div>
@@ -402,11 +402,9 @@
               rel="noopener"
               class="btn"
               style="display: inline-block; width: auto; padding: 12px 24px; text-decoration: none"
-              >📊  GTO 范围表</a
+              >📊 GTO 范围表</a
             >
-            <div class="text-muted" style="margin-top: 16px">
-              基于Chip EV计算:geecegto.com
-            </div>
+            <div class="text-muted" style="margin-top: 16px">基于Chip EV计算:geecegto.com</div>
           </div>
         </section>
         <section id="reviewPanel" class="panel">
@@ -414,8 +412,33 @@
             <button class="subnav__btn subnav__btn--active" data-sub="hand">Hand</button
             ><button class="subnav__btn" data-sub="session">Session</button
             ><button class="subnav__btn" data-sub="weekly">Weekly</button
+            ><button class="subnav__btn" data-sub="total">Overall</button
             ><button class="subnav__btn" data-sub="opponent">Villain</button>
           </nav>
+          <div id="subTotal" class="sub-panel">
+            <div class="card">
+              <div class="card__title">Total Stats</div>
+              <div id="totalStatsArea"><div class="text-muted">暂无数据</div></div>
+              <canvas
+                id="totalProfitChart"
+                width="600"
+                height="300"
+                style="
+                  display: none;
+                  width: 100%;
+                  max-width: 440px;
+                  height: auto;
+                  margin: 10px 0;
+                  border-radius: 8px;
+                  background: #0f172a;
+                "
+              ></canvas>
+            </div>
+            <div class="card">
+              <div class="card__title">错误追踪 Error Tracking</div>
+              <div id="totalMistakeStats" class="text-muted">暂无错误记录</div>
+            </div>
+          </div>
           <div id="subHand" class="sub-panel is-visible">
             <div class="card">
               <div class="card__title">🃏 手局级复盘</div>
@@ -488,10 +511,21 @@ OTR河牌 牌面：    行动：</textarea
                   面对下注时：我能赢价值还是只能抓诈唬？他有能力诈唬吗？我给了他操作空间吗？这个下注尺寸代表什么？他有多少缺乏SDV的牌？
                 </div>
               </details>
-              <details id="actionLineDetails" style="font-size:0.75em;margin-top:8px">
-                <summary style="color:#94a3b8;cursor:pointer">📊 行动线速查</summary>
-                <table class="srp-table" id="actionLineTable" style="max-height:200px;display:block;overflow-y:auto">
-                  <thead><tr><th>行动线</th><th>诈唬不足</th><th>行动线</th><th>诈唬过度</th></tr></thead>
+              <details id="actionLineDetails" style="font-size: 0.75em; margin-top: 8px">
+                <summary style="color: #94a3b8; cursor: pointer">📊 行动线速查</summary>
+                <table
+                  class="srp-table"
+                  id="actionLineTable"
+                  style="max-height: 200px; display: block; overflow-y: auto"
+                >
+                  <thead>
+                    <tr>
+                      <th>行动线</th>
+                      <th>诈唬不足</th>
+                      <th>行动线</th>
+                      <th>诈唬过度</th>
+                    </tr>
+                  </thead>
                   <tbody id="actionLineBody"></tbody>
                 </table>
               </details>
@@ -521,69 +555,113 @@ OTR河牌 牌面：    行动：</textarea
                 <button class="toggle-btn" data-mistake="追回损失">追回损失</button>
               </div>
               <label class="field"
-                ><input
-                  type="text"
-                  id="handMistakeCustom"
-                  class="input"
-                  placeholder="其他错误类型"
+                ><input type="text" id="handMistakeCustom" class="input" placeholder="其他错误类型"
               /></label>
               <button id="saveHandBtn" class="btn">💾 保存手局</button>
-              <button id="importGGBtn" class="btn btn--secondary" style="margin-top: 8px">
-                📥 从 GG 牌谱导入
-              </button>
             </div>
-            <div class="card">
-              <div class="card__title">Hand History</div>
+            <!-- [V6.16.0] Picks 手牌精选，位于 Hand History 上方 -->
+            <div class="card" id="picksCard" style="display: none">
+              <div class="card__title card__title--flex">
+                <span>⭐ Picks</span>
+                <span
+                  id="picksCount"
+                  style="font-size: 0.7em; color: #64748b; font-weight: normal"
+                ></span>
+              </div>
               <div class="table-container" style="max-height: 300px">
-                <table class="session-table" id="handTable">
+                <table class="session-table">
                   <thead>
                     <tr>
                       <th>Time</th>
-                      <th>Type</th>
                       <th>Session</th>
                       <th>Hand</th>
                       <th>Profit</th>
                       <th>Errors</th>
-                      <th>Edit</th>
+                      <th>操作</th>
                     </tr>
                   </thead>
-                  <tbody id="handBody"></tbody>
+                  <tbody id="picksBody"></tbody>
                 </table>
-                <div id="handPagination" class="pagination-bar" style="display: none"></div>
-                <div
-                  id="handBatchBar"
-                  style="
-                    display: none;
-                    margin-top: 8px;
-                    gap: 8px;
-                    align-items: center;
-                    flex-wrap: wrap;
-                  "
+              </div>
+            </div>
+            <div class="card">
+              <!-- [V6.16.5] Hand History 默认折叠 -->
+              <details id="handHistoryDetails">
+                <summary
+                  class="card__title card__title--flex"
+                  style="cursor: pointer; list-style: none"
                 >
-                  <label
+                  <span>Hand History</span>
+                  <span
+                    id="handFilteredCount"
+                    style="font-size: 0.7em; color: #64748b; font-weight: normal"
+                  ></span>
+                </summary>
+                <div
+                  class="filter-row"
+                  id="handFilterBar"
+                  style="margin-bottom: 6px; margin-top: 8px"
+                >
+                  <select
+                    id="handPotSizeFilter"
+                    class="select"
+                    style="font-size: 0.7em; padding: 4px 8px"
+                  >
+                    <option value="all">全部底池</option>
+                    <option value="above2">≥ 2 BB</option>
+                    <option value="above30">≥ 30 BB（关键）</option>
+                  </select>
+                  <select
+                    id="handSessFilter"
+                    class="select"
+                    style="font-size: 0.7em; padding: 4px 8px"
+                  >
+                    <option value="all">全部 Session</option>
+                    <option value="unlinked">未分类</option>
+                  </select>
+                </div>
+                <div class="table-container" style="max-height: 300px">
+                  <table class="session-table" id="handTable">
+                    <thead>
+                      <tr>
+                        <th>Time</th>
+                        <th>Type</th>
+                        <th>Session</th>
+                        <th>Hand</th>
+                        <th>Profit</th>
+                        <th>Errors</th>
+                        <th>Edit</th>
+                      </tr>
+                    </thead>
+                    <tbody id="handBody"></tbody>
+                  </table>
+                  <div id="handPagination" class="pagination-bar" style="display: none"></div>
+                  <div
+                    id="handBatchBar"
                     style="
-                      display: flex;
+                      display: none;
+                      margin-top: 8px;
+                      gap: 8px;
                       align-items: center;
-                      gap: 4px;
-                      font-size: 0.75em;
-                      color: #94a3b8;
-                      cursor: pointer;
-                      white-space: nowrap;
+                      flex-wrap: wrap;
                     "
                   >
-                    <input type="checkbox" id="handSelectAll" /> 全选
-                  </label>
-                  <span
-                    id="handBatchCount"
-                    style="font-size: 0.75em; color: #facc15; white-space: nowrap"
-                    >已选 0 项</span
-                  >
-                  <button id="handBatchDelBtn" class="btn--mini btn--danger">🗑 删除选中</button
-                  ><select id="handBatchSessionSelect" style="font-size: 0.75em; min-width: 140px">
-                    <option value="">-- 关联到 Session --</option></select
-                  ><button id="handBatchLinkBtn" class="btn--mini">🔗 关联</button>
+                    <button id="handSelectAllBtn" class="btn--mini">Select All</button>
+                    <span
+                      id="handBatchCount"
+                      style="font-size: 0.75em; color: #facc15; white-space: nowrap"
+                      >0 selected</span
+                    >
+                    <button id="handBatchDelBtn" class="btn--mini btn--danger">🗑 Delete</button
+                    ><select
+                      id="handBatchSessionSelect"
+                      style="font-size: 0.75em; min-width: 140px"
+                    >
+                      <option value="">-- Link to Session --</option></select
+                    ><button id="handBatchLinkBtn" class="btn--mini">🔗 Link</button>
+                  </div>
                 </div>
-              </div>
+              </details>
             </div>
           </div>
           <div id="subSession" class="sub-panel">
@@ -689,47 +767,39 @@ OTR河牌 牌面：    行动：</textarea
             </div>
             <div class="card">
               <div class="card__title card__title--flex">
-                <span>📊 数据统计</span>
+                <span>本场统计 Session Stats</span>
                 <div style="position: relative">
-                  <button id="migrateBtn" class="btn--mini">📦 迁徙</button>
+                  <button id="migrateBtn" class="btn--mini">数据迁移</button>
                   <div
                     id="migrateMenu"
                     class="app__settings-menu"
                     style="top: 28px; right: 0; bottom: auto; left: auto; width: 160px"
                   >
-                    <button id="exportBtn" class="app__settings-option">📤 导出文件</button>
-                    <button id="importBtn" class="app__settings-option">📥 导入文件</button>
+                    <button id="exportBtn" class="app__settings-option">导出文件</button>
+                    <button id="importBtn" class="app__settings-option">导入文件</button>
                     <input type="file" id="importFileInput" accept=".json" style="display: none" />
-                    <button id="shareSiteBtn" class="app__settings-option">🌐 分享网站</button>
-                    <button id="clipboardExportBtn" class="app__settings-option">
-                      📋 复制备份
-                    </button>
-                    <button id="clipboardImportBtn" class="app__settings-option">
-                      📲 粘贴备份
-                    </button>
-                    <button id="csvExportBtn" class="app__settings-option">📊 导出CSV</button>
+                    <button id="shareSiteBtn" class="app__settings-option">分享网站</button>
+                    <button id="clipboardExportBtn" class="app__settings-option">复制备份</button>
+                    <button id="clipboardImportBtn" class="app__settings-option">粘贴备份</button>
+                    <button id="csvExportBtn" class="app__settings-option">导出CSV</button>
                   </div>
                 </div>
               </div>
-              <div id="statsArea"><div class="text-muted">暂无数据</div></div>
-              <canvas
-                id="profitChart"
-                width="600"
-                height="300"
-                style="
-                  display: none;
-                  width: 100%;
-                  max-width: 440px;
-                  height: auto;
-                  margin: 10px 0;
-                  border-radius: 8px;
-                  background: #0f172a;
-                "
-              ></canvas>
+              <div id="statsArea">
+                <div class="text-muted">点击 Session 行或从 Picks 选择查看</div>
+              </div>
               <div class="filter-row">
                 <select id="filterLevel" class="select">
                   <option value="all">全部级别</option></select
-                ><button id="refreshSessionsBtn" class="btn--mini">刷新</button>
+                ><button id="refreshSessionsBtn" class="btn--mini">刷新</button
+                ><button
+                  id="importGGBtn"
+                  class="btn--mini"
+                  style="background: #f97316"
+                  title="从 GG 牌谱快速导入"
+                >
+                  📥 导入牌谱
+                </button>
               </div>
               <div class="table-container">
                 <table class="session-table" id="sessionTbl">
@@ -749,47 +819,12 @@ OTR河牌 牌面：    行动：</textarea
                 </table>
               </div>
             </div>
-            <div class="card">
-              <div class="card__title">⚠️ 错误追踪</div>
-              <div id="mistakeStats" class="text-muted">暂无数据</div>
-            </div>
-            <div class="card">
-              <details>
-                <summary class="card__title" style="margin-bottom: 0; cursor: pointer">
-                  🎲 玩家数据分析
-                </summary>
-                <div style="margin-top: 8px">
-                  <div style="font-size: 0.75em; color: #94a3b8; margin-bottom: 4px">
-                    📊 Live 数据
-                  </div>
-                  <div id="liveStats" class="text-muted">暂无Live数据</div>
-                </div>
-                <div style="margin-top: 12px">
-                  <div style="font-size: 0.75em; color: #94a3b8; margin-bottom: 4px">
-                    👤 对手画像 —
-                    <button
-                      id="gotoOpponentBtn"
-                      style="
-                        background: none;
-                        border: none;
-                        color: #facc15;
-                        text-decoration: underline;
-                        cursor: pointer;
-                        font-size: 0.75em;
-                        padding: 0;
-                      "
-                    >
-                      前往查看 →
-                    </button>
-                  </div>
-                </div>
-              </details>
-            </div>
           </div>
           <div id="subWeekly" class="sub-panel">
             <div class="card">
               <div class="card__title">📆 本周自动统计</div>
               <div id="weeklyAutoStats"></div>
+              <div id="weeklyEngineStats"></div>
               <div
                 id="weeklySummary"
                 class="text-muted"
@@ -840,13 +875,17 @@ OTR河牌 牌面：    行动：</textarea
           </div>
           <div id="subOpponent" class="sub-panel">
             <div class="card">
-              <div class="card__title">👤 对手画像</div>
+              <div class="card__title">Opponent Profiles</div>
               <div
                 id="opponentStatsBar"
                 class="text-muted"
                 style="margin-bottom: 10px; font-size: 0.8em"
               ></div>
               <div id="opponentList" style="max-height: 400px; overflow-y: auto"></div>
+            </div>
+            <div class="card">
+              <div class="card__title">Live Data</div>
+              <div id="totalLiveStats" class="text-muted">暂无Live数据</div>
             </div>
           </div>
         </section>
@@ -903,8 +942,31 @@ OTR河牌 牌面：    行动：</textarea
             line-height: 1.4;
           "
         >
-          粘贴 GG
-          手牌历史文本（可多局连续粘贴）。解析后红色高亮为大底池亏损（>40BB）的手牌。勾选你要导入的手牌，点击"导入选中"即可自动填充到手牌复盘表单。
+          拖拽 .txt 牌谱文件到下方区域，或粘贴 GG 手牌历史文本。导入后自动按 3 小时间隔分配到
+          Session。
+        </div>
+        <!-- [V6.14.0] 文件拖放区 -->
+        <div
+          id="ggDropZone"
+          style="
+            border: 2px dashed #475569;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 10px;
+            transition: all 0.2s ease;
+            color: #94a3b8;
+            font-size: 0.85em;
+          "
+        >
+          📂 拖拽 .txt 文件到此处（支持多文件）<br /><span style="font-size: 0.7em"
+            >或点击选择文件</span
+          >
+        </div>
+        <input type="file" id="ggFileInput" accept=".txt,.json" style="display: none" />
+        <div style="text-align: center; color: #475569; margin-bottom: 8px; font-size: 0.75em">
+          ── 或粘贴文本 ──
         </div>
         <textarea
           id="ggImportText"
@@ -934,13 +996,21 @@ OTR河牌 牌面：    行动：</textarea
         <td data-bind="mistake"></td>
         <td>
           <button class="btn--mini" data-expand-id="">▶</button>
+          <button
+            class="btn--mini"
+            data-import-sid=""
+            title="导入牌谱到此 Session"
+            style="background: #334155"
+          >
+            📥
+          </button>
           <button class="btn--mini" data-edit-id="">✎</button>
           <button class="btn--mini btn--danger" data-delete-id="">✕</button>
         </td>
       </tr>
     </template>
     <template id="tmpl-hand-row">
-      <tr>
+      <tr data-hand-id="">
         <td data-bind="date"></td>
         <td data-bind="typeLabel"></td>
         <td data-bind="sessionCell"></td>
@@ -948,14 +1018,10 @@ OTR河牌 牌面：    行动：</textarea
         <td data-bind="profitHtml"></td>
         <td data-bind="mistake"></td>
         <td>
+          <button class="btn--mini" data-hand-expand="" title="展开">▶</button>
+          <button class="btn--mini hand-mark-btn" data-hand-mark="" title="标记">☆</button>
           <button class="btn--mini" data-hand-edit="">✎</button>
           <button class="btn--mini btn--danger" data-hand-delete="">✕</button>
-          <input
-            type="checkbox"
-            class="hand-check"
-            data-hand-id=""
-            style="width: auto; margin: 0; margin-left: 6px"
-          />
         </td>
       </tr>
     </template>
@@ -972,6 +1038,14 @@ OTR河牌 牌面：    行动：</textarea
         <div style="font-size: 0.7em; color: #94a3b8; margin-top: 4px" data-bind="details"></div>
       </div>
     </template>
+    <div id="statTooltip" class="tooltip-modal" style="display: none">
+      <div class="tooltip-content">
+        <div id="statTooltipTitle" class="tooltip-title"></div>
+        <div id="statTooltipText" class="tooltip-text"></div>
+        <button id="statTooltipClose" class="btn--mini">Close</button>
+      </div>
+    </div>
+    <div id="toast" class="toast"></div>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

@@ -73,7 +73,7 @@ export const TiltRescue = {
       // [V6.9.2] 通过 PubSub 通知 Review 刷新 tilt 日志，避免循环依赖
       PubSub.emit('tiltLogSaved');
     } catch (e) {
-      alert('保存失败');
+      Utils.showToast('保存失败');
       this.locked = false;
     }
   },

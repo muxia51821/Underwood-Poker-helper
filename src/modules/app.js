@@ -10,6 +10,7 @@ import { Timer, _setTimerGlobals } from './timer.js';
 import { Odds } from './odds.js';
 import { Review } from './review.js';
 import { initGGImport } from './ggImport.js';
+import { HandPicker } from './handPicker.js';  // [V6.15.0]
 
 export const App = {
           sound: true,
@@ -132,8 +133,16 @@ export const App = {
               }
             });
 
+            // [V6.19.7] 遮罩层点击背景关闭
+            document.querySelectorAll('.tilt-overlay, .share-overlay').forEach(function (ov) {
+              ov.addEventListener('click', function (e) {
+                if (e.target === ov) ov.classList.remove('is-active');
+              });
+            });
             // [V6.9.3] GG手牌导入（独立模块）
             initGGImport();
+            // [V6.15.0] 手牌精选模块
+            HandPicker.init();
 
             // [V6.12.4] SW 注册：保存引用供 notify() 使用；内联 Blob 也含 notificationclick
             if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
@@ -283,10 +292,14 @@ export const App = {
               new Notification(t, opts);
             }
           },
+          _audioCtx: null,
           beep() {
             if (!this.sound) return;
             try {
-              const c = new (window.AudioContext || window.webkitAudioContext)(),
+              if (!this._audioCtx) {
+                this._audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+              }
+              const c = this._audioCtx,
                 o = c.createOscillator(),
                 g = c.createGain();
               o.connect(g);
@@ -297,7 +310,7 @@ export const App = {
               o.start(c.currentTime);
               g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + 0.25);
               o.stop(c.currentTime + 0.25);
-            } catch (e) {}
+            } catch (e) { console.warn('beep failed:', e); }
           },
           vibrate() {
             if (this.vibrateOn && navigator.vibrate) navigator.vibrate([300, 100, 300]);
@@ -360,13 +373,16 @@ export const App = {
                   'sub' + b.dataset.sub.charAt(0).toUpperCase() + b.dataset.sub.slice(1)
                 )
                 .classList.add('is-visible');
+              if (b.dataset.sub === 'total') {
+                Review.updateTotalStats();
+              }
               if (b.dataset.sub === 'session') {
                 Review.renderSessions();
-                Review.updateStats();
               }
               if (b.dataset.sub === 'hand') {
                 Review.populateHandSessionSelect();
                 Review.renderHandReviews();
+                HandPicker.render();  // [V6.16.0]
               }
               if (b.dataset.sub === 'weekly') {
                 Review.generateWeeklyStats();

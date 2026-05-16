@@ -11,7 +11,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 .version-tag{font-size:0.55em;color:#94a3b8;font-weight:normal;margin-left:4px}
 .nav{display:flex;gap:4px;margin-bottom:18px;background:#0f172a;border-radius:14px;padding:4px}
 .nav__btn{flex:1;padding:10px 4px;font-size:0.75em;font-weight:600;border:none;border-radius:10px;background:transparent;color:#94a3b8;cursor:pointer;white-space:nowrap;transition:all .15s ease}
-.nav__btn--active{background:#f97316;color:#fff;box-shadow:0 2px 8px rgba(249,115,22,.4)}
+.nav__btn:hover{color:#e2e8f0;transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.25)}.nav__btn--active{background:#f97316;color:#fff;box-shadow:0 2px 8px rgba(249,115,22,.4)}.nav__btn--active:hover{color:#fff;transform:translateY(-1px);box-shadow:0 4px 14px rgba(249,115,22,.5)}
 .panel{display:none}.panel.is-visible{display:block}
 .card{background:#0f3460;border-radius:16px;padding:16px 14px;margin-bottom:14px}
 .card__title{font-size:1.05em;font-weight:bold;margin-bottom:12px;display:flex;align-items:center;gap:6px}
@@ -63,7 +63,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 .stats__item{background:#0f172a;border-radius:10px;padding:10px;text-align:center}
 .stats__item--win{background:linear-gradient(135deg,#0f172a,#0a2f1a)}
 .stats__item--lose{background:linear-gradient(135deg,#0f172a,#2f0a0a)}
-.stats__value{font-size:1.3em;font-weight:bold}.stats__label{font-size:0.7em;color:#94a3b8}
+.stats__value{font-size:1.3em;font-weight:bold}.stats__label{font-size:0.7em;color:#94a3b8}.stat-good{color:#22c55e;font-weight:700}.stat-acceptable{color:#f59e0b;font-weight:700}.stat-warn{color:#ef4444;font-weight:700}.stats-details{margin-top:4px}.stats-section-title{text-align:center;font-size:0.8em;font-weight:400;color:#e2e8f0;padding:6px 0;margin:12px 0 6px;border:1px solid rgba(148,163,184,0.2);border-left:none;border-right:none;text-transform:uppercase;letter-spacing:0.18em;text-shadow:0 0 6px rgba(226,232,240,0.3);background:linear-gradient(90deg,transparent,rgba(148,163,184,0.03),transparent)}.tooltip-modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:1000}.tooltip-content{background:#1e293b;border:1px solid rgba(249,115,22,0.2);border-radius:16px;padding:24px;max-width:360px;width:90%;text-align:center}.tooltip-title{font-size:1em;font-weight:700;color:#f97316;margin-bottom:8px}.tooltip-text{font-size:0.85em;color:#cbd5e1;line-height:1.5;margin-bottom:16px}
 .timer__stats-number{font-size:2.4em;font-weight:bold;color:#facc15;text-shadow:0 0 20px rgba(250,204,21,0.3)}
 .result-highlight{display:inline-block;background:rgba(250,204,21,0.1);border:1px solid rgba(250,204,21,0.2);border-radius:8px;padding:6px 10px;margin:2px 0}
 .filter-row{display:flex;gap:8px;align-items:center;margin:10px 0;flex-wrap:wrap}
@@ -74,6 +74,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 .session-table th{color:#94a3b8;position:sticky;top:0;background:#0f3460}
 .session-table tbody tr:nth-child(even){background:rgba(15,23,42,.25)}
 .session-table tbody tr:hover{background:rgba(249,115,22,.08)}
+.session-table tbody tr.is-selected{background:rgba(249,115,22,.12);box-shadow:inset 3px 0 0 #f97316}
+.session-table tbody tr.is-selected:nth-child(even){background:rgba(249,115,22,.15)}
 .mistake-tag{display:inline-block;background:#334155;padding:2px 8px;border-radius:10px;margin:2px;font-size:0.7em}
 .toggle-group{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
 .toggle-btn{font-size:0.65em;padding:4px 6px;background:#334155;border-radius:8px;border:none;color:#94a3b8;cursor:pointer;transition:all .15s ease}
@@ -88,7 +90,7 @@ details{margin-top:12px}details summary{font-size:0.85em;color:#94a3b8;cursor:po
 .srp-table tbody tr:hover{background:rgba(249,115,22,.08)}
 .subnav{display:flex;gap:4px;margin-bottom:16px;background:#0f172a;border-radius:10px;padding:3px}
 .subnav__btn{flex:1;padding:8px 4px;font-size:0.75em;font-weight:600;border:none;border-radius:8px;background:transparent;color:#94a3b8;cursor:pointer;transition:all .15s ease}
-.subnav__btn--active{background:#f97316;color:#fff;box-shadow:0 2px 8px rgba(249,115,22,.4)}
+.subnav__btn:hover{color:#e2e8f0;transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.25)}.subnav__btn--active{background:#f97316;color:#fff;box-shadow:0 2px 8px rgba(249,115,22,.4)}.subnav__btn--active:hover{color:#fff;transform:translateY(-1px);box-shadow:0 4px 14px rgba(249,115,22,.5)}
 .sub-panel{display:none}.sub-panel.is-visible{display:block}
 .textarea{resize:vertical}
 /* [V6.2.1 修改] 手牌实时可视化 */
@@ -132,4 +134,15 @@ input[type=checkbox]{accent-color:#f97316;width:16px;height:16px;cursor:pointer}
 .pagination-bar button:disabled{opacity:0.4;cursor:default}
 .pagination-bar button.is-active{background:#f97316;color:#fff}
 .pagination-bar .page-num{min-width:24px;text-align:center}
+/* [V6.13.0] 优化建议卡片 */
+.rec-card{background:#0f172a;border-radius:10px;padding:12px;margin-bottom:8px;font-size:0.85em;line-height:1.5;color:#cbd5e1;border-left:3px solid #f97316}
+.rec-card strong{color:#facc15}
+.rec-good{text-align:center;padding:16px;background:rgba(74,222,128,.08);border-radius:10px;color:#4ade80;font-size:0.9em}
+/* [V6.14.0] 文件拖放区 */
+.gg-drop-active{border-color:#f97316!important;background:rgba(249,115,22,.08);color:#f97316}
+/* [V6.15.0] 手牌标记按钮 */
+.hand-mark-btn{background:transparent;border:none;font-size:0.85em;cursor:pointer;padding:2px 4px;transition:transform 0.15s ease}.hand-mark-btn:hover{transform:scale(1.2)}
+/* [V6.19.2] Toast 通知 */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e293b;color:#e2e8f0;padding:10px 20px;border-radius:8px;font-size:0.85em;z-index:10001;opacity:0;pointer-events:none;transition:opacity 0.3s ease;max-width:90vw;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.4)}
+.toast--visible{opacity:1;pointer-events:auto}
 /* #endregion */

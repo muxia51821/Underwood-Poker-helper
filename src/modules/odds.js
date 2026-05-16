@@ -30,7 +30,7 @@ export const Odds = {
           };
           const r = map[b.dataset.ratio];
           if (r) {
-            this.betInput.value = Math.round(p * r);
+            this.betInput.value = Utils.safeFixed(p * r, 1);
             this.calc();
           }
         }
@@ -239,7 +239,7 @@ export const Odds = {
       b = +this.betInput.value,
       pct = +document.getElementById('turnPctInput').value;
     if (p > 0 && b > 0 && !isNaN(pct))
-      document.getElementById('turnBetInput').value = Math.round(((p + b * 2) * pct) / 100);
+      document.getElementById('turnBetInput').value = Utils.safeFixed(((p + b * 2) * pct) / 100, 1);
     this.calc();
   },
 };

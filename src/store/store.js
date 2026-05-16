@@ -1,5 +1,7 @@
 import { CONSTANTS } from '../constants.js';
 import { Utils } from '../utils.js';
+import { DB } from './db.js';  // [V6.17.0] DB 独立模块
+import { clearStatsCache } from '../modules/statsEngine.js';  // [V7.0.0] 数据变更时清统计缓存
 
 // #region Store
 /* ==================== 分层存储 ==================== */
@@ -25,7 +27,7 @@ export const Store = {
     }
     try {
       localStorage.setItem(this._prefix + key, JSON.stringify(value));
-    } catch (e) {}
+    } catch (e) { console.warn('Store._setRaw failed:', e); }
   },
   settings: {
     get() {
@@ -129,7 +131,7 @@ export const Store = {
       TiltLogRepo.saveAll(mergeByKey(TiltLogRepo.getAll(), data.tiltLogs, 'time'));
     if (data.weeklyReviews)
       WeeklyRepo.saveAll(mergeByKey(WeeklyRepo.getAll(), data.weeklyReviews, 'week'));
-    if (data.logs) {
+    if (data.logs && typeof data.logs === 'object') {
       Object.keys(data.logs).forEach(function (d) {
         const local = Store.logs.get(d);
         const imp = data.logs[d] || [];
@@ -172,113 +174,13 @@ export const Store = {
         const ds = key.replace(this._prefix + 'log_', '');
         try {
           logs[ds] = JSON.parse(localStorage.getItem(key));
-        } catch (e) {}
+        } catch (e) { console.warn('Store._collectLogs parse failed:', e); }
       }
     }
     return logs;
   },
 };
 // #endregion
-
-// [V6.7] IndexedDB 封装 — 异步读写，启动时初始化
-const DB = {
-  _db: null,
-  _name: 'pa_store',
-  _version: 1,
-
-  open: function () {
-    var self = this;
-    return new Promise(function (resolve, reject) {
-      var req = indexedDB.open(self._name, self._version);
-      req.onupgradeneeded = function (e) {
-        var db = e.target.result;
-        if (!db.objectStoreNames.contains('sessions'))
-          db.createObjectStore('sessions', { keyPath: 'id' });
-        if (!db.objectStoreNames.contains('handReviews')) {
-          var hrStore = db.createObjectStore('handReviews', { keyPath: 'id' });
-          hrStore.createIndex('sessionId', 'sessionId', { unique: false });
-          hrStore.createIndex('ggId', 'ggId', { unique: false });
-          hrStore.createIndex('date', 'date', { unique: false });
-        }
-        if (!db.objectStoreNames.contains('weeklyReviews'))
-          db.createObjectStore('weeklyReviews', { keyPath: 'week' });
-        if (!db.objectStoreNames.contains('tiltLogs'))
-          db.createObjectStore('tiltLogs', { keyPath: 'time' });
-      };
-      req.onsuccess = function (e) {
-        self._db = e.target.result;
-        resolve(self._db);
-      };
-      req.onerror = function (e) {
-        reject(e.target.error);
-      };
-    });
-  },
-
-  getAll: function (storeName) {
-    var self = this;
-    return new Promise(function (resolve, reject) {
-      if (!self._db) return resolve([]);
-      try {
-        var tx = self._db.transaction(storeName, 'readonly');
-        var store = tx.objectStore(storeName);
-        var req = store.getAll();
-        req.onsuccess = function () {
-          resolve(req.result || []);
-        };
-        req.onerror = function () {
-          reject(req.error);
-        };
-      } catch (e) {
-        reject(e);
-      }
-    });
-  },
-
-  putAll: function (storeName, items) {
-    var self = this;
-    return new Promise(function (resolve, reject) {
-      if (!self._db) return resolve();
-      try {
-        var tx = self._db.transaction(storeName, 'readwrite');
-        var store = tx.objectStore(storeName);
-        var clearReq = store.clear();
-        clearReq.onsuccess = function () {
-          for (var i = 0; i < items.length; i++) {
-            store.put(items[i]);
-          }
-        };
-        tx.oncomplete = function () {
-          resolve();
-        };
-        tx.onerror = function () {
-          reject(tx.error);
-        };
-      } catch (e) {
-        reject(e);
-      }
-    });
-  },
-
-  count: function (storeName) {
-    var self = this;
-    return new Promise(function (resolve, reject) {
-      if (!self._db) return resolve(0);
-      try {
-        var tx = self._db.transaction(storeName, 'readonly');
-        var req = tx.objectStore(storeName).count();
-        req.onsuccess = function () {
-          resolve(req.result);
-        };
-        req.onerror = function () {
-          reject(req.error);
-        };
-      } catch (e) {
-        reject(e);
-      }
-    });
-  },
-};
 
 // [V6.6.2] 仓储基类 — 抽象 localStorage 数组实体的增删改查
 // [V6.7] 升级：内存缓存 + IndexedDB 双后端，对外 API 签名不变
@@ -297,6 +199,8 @@ export class BaseRepo {
   /** @param {Array} items */
   saveAll(items) {
     this._cache = items;
+    // [V7.0.0] 手牌数据变更时清除统计缓存（context + analyze 两层）
+    if (this._key === 'pa_handReviews') clearStatsCache();
     if (this._dbReady) {
       this._scheduleDBWrite();
     } else {
@@ -445,7 +349,7 @@ function migrateOldData() {
       if (old.weeklyReviews) WeeklyRepo.saveAll(old.weeklyReviews);
       if (old.tiltLogs) TiltLogRepo.saveAll(old.tiltLogs);
       localStorage.removeItem(oldKey);
-    } catch (e) {}
+    } catch (e) { console.warn('migrateOldData failed:', e); }
   }
 }
 
@@ -479,6 +383,11 @@ function migrateHandReviews() {
       delete r.opponentCards;
       changed = true;
     }
+    // [V6.13.0] rake/jackpot 字段补缺
+    if (r.rake === undefined) { r.rake = 0; changed = true; }
+    if (r.jackpot === undefined) { r.jackpot = 0; changed = true; }
+    // [V6.15.0] marked 字段补缺
+    if (r.marked === undefined) { r.marked = false; changed = true; }
   });
   if (changed) HandRepo.saveAll(reviews);
 }
@@ -543,6 +452,10 @@ export async function initStorage(opts) {
 
     if (DB._db) {
       await migrateToIndexedDB();
+      // [V6.12.4] 迁移完成后更新健康状态（全新安装首次加载时 pa_migrated_v1 刚被写入）
+      if (localStorage.getItem('pa_migrated_v1')) {
+        _healthMode = 'indexeddb';
+      }
     }
   }
 

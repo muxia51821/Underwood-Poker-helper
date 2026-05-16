@@ -1,10 +1,12 @@
 // [V6.9.3] GG 手牌导入模块（从 app.js init 提取）
+// [V6.14.0 修改] 支持 Session 关联 + 文件拖拽导入
 import { CONSTANTS } from '../constants.js';
 import { Utils } from '../utils.js';
-import { Store, HandRepo } from '../store/store.js';
+import { Store, HandRepo, SessionRepo } from '../store/store.js';
 import { Review } from './review.js';
 
 var ggParsedHands = [];
+var _targetSessionId = null;  // [V6.14.0] 目标 Session ID
 
 function renderGGComparison(parsedHand) {
   var ex = parsedHand.duplicateOf;
@@ -58,26 +60,189 @@ function renderGGComparison(parsedHand) {
   });
 }
 
-export function initGGImport() {
-  document.getElementById('importGGBtn').addEventListener('click', function () {
-    document.getElementById('ggImportText').value = '';
-    document.getElementById('ggImportList').replaceChildren();
-    document.getElementById('ggImportSelectedBtn').style.display = 'none';
-    document.getElementById('ggImportOverlay').classList.add('is-active');
+// [V6.14.0 新增] 打开导入覆盖层，指定目标 Session
+export function openGGImportForSession(sessionId) {
+  _targetSessionId = sessionId;
+  document.getElementById('ggImportText').value = '';
+  document.getElementById('ggImportList').replaceChildren();
+  document.getElementById('ggImportSelectedBtn').style.display = 'none';
+  document.getElementById('ggImportOverlay').classList.add('is-active');
+}
+
+// [V6.14.0 新增] 快速导入（无指定 Session，自动分组）
+export function openGGImportQuick() {
+  _targetSessionId = null;  // null 表示自动分 Session
+  document.getElementById('ggImportText').value = '';
+  document.getElementById('ggImportList').replaceChildren();
+  document.getElementById('ggImportSelectedBtn').style.display = 'none';
+  document.getElementById('ggImportOverlay').classList.add('is-active');
+}
+
+// [V6.14.0 新增] 按 3h 间隔自动分组手牌为 Session
+function _autoGroupToSessions(parsedHands) {
+  if (!parsedHands.length) return [];
+  var sorted = parsedHands.slice().sort(function (a, b) {
+    return (a.date || '').localeCompare(b.date || '');
   });
+  var groups = [];
+  var currentGroup = { hands: [], startTime: null, endTime: null };
+  var gapMs = (CONSTANTS.SESSION_GAP_HOURS || 3) * 3600000;
+  for (var i = 0; i < sorted.length; i++) {
+    var h = sorted[i];
+    var ht = h.date ? new Date(h.date.replace(' ', 'T') + ':00') : null;
+    var htMs = ht ? ht.getTime() : 0;
+    if (!currentGroup.startTime) {
+      currentGroup.startTime = ht;
+      currentGroup.endTime = ht;
+      currentGroup.hands.push(h);
+    } else if (htMs - currentGroup.endTime.getTime() <= gapMs) {
+      currentGroup.endTime = ht;
+      currentGroup.hands.push(h);
+    } else {
+      groups.push(currentGroup);
+      currentGroup = { hands: [h], startTime: ht, endTime: ht };
+    }
+  }
+  if (currentGroup.hands.length) groups.push(currentGroup);
+  return groups;
+}
+
+// [V6.14.0 新增] 从手牌分组创建/匹配 Session
+function _createSessionsFromGroups(groups, existingSessions) {
+  var newSessions = [];
+  groups.forEach(function (group) {
+    var startStr = group.startTime ? group.startTime.toISOString().split('T')[0] : '';
+    var hour = group.startTime ? group.startTime.getHours() : 0;
+    var period = hour < 6 ? '凌晨' : hour < 12 ? '上午' : hour < 18 ? '下午' : '晚间';
+    var suggestedName = startStr + ' ' + period;
+    // 查找是否有日期匹配的已有 Session
+    var matched = null;
+    for (var i = 0; i < existingSessions.length; i++) {
+      if (existingSessions[i].date === startStr && existingSessions[i].level === 'NL5') {
+        matched = existingSessions[i];
+        break;
+      }
+    }
+    if (matched) {
+      newSessions.push({ session: matched, hands: group.hands });
+    } else {
+      var newId = Utils.generateUUID();
+      var totalProfit = 0, totalHands = 0;
+      group.hands.forEach(function (h) { totalProfit += (h.profitBB || 0); totalHands++; });
+      var newSess = {
+        id: newId,
+        date: startStr,
+        level: 'NL5',
+        duration: Math.max(0.5, Math.round(totalHands * 0.02 * 10) / 10),
+        hands: totalHands,
+        profit: parseFloat(totalProfit.toFixed(1)),
+        tilt: 5,
+        mistake: '',
+        remark: suggestedName,
+      };
+      existingSessions.push(newSess);
+      newSessions.push({ session: newSess, hands: group.hands });
+    }
+  });
+  return newSessions;
+}
+
+// [V6.14.0 新增] 文件拖拽 + 选择导入
+function _setupFileDrop() {
+  var overlay = document.getElementById('ggImportOverlay');
+  var textarea = document.getElementById('ggImportText');
+  var fileInput = document.getElementById('ggFileInput');
+
+  function handleFiles(files) {
+    if (!files || !files.length) return;
+    var txtFiles = [];
+    for (var i = 0; i < files.length; i++) {
+      var f = files[i];
+      if (f.name.endsWith('.txt')) { txtFiles.push(f); }
+      else if (f.name.endsWith('.json')) { Utils.showToast('"' + f.name + '" 为 JSON 备份文件，请使用"迁移 → 导入文件"导入。'); }
+      else { Utils.showToast('"' + f.name + '" 格式不支持，仅接受 .txt (GG牌谱) 和 .json 文件。'); }
+    }
+    if (!txtFiles.length) return;
+    // [V6.15.2] 批量读取多个 .txt 文件
+    var allContent = '';
+    var loaded = 0, failed = 0;
+    txtFiles.forEach(function (file) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        allContent += reader.result + '\n\n';
+        loaded++;
+        _checkAllDone();
+      };
+      reader.onerror = function () {
+        failed++;
+        Utils.showToast('文件 "' + file.name + '" 读取失败，已跳过。');
+        _checkAllDone();
+      };
+      reader.readAsText(file);
+    });
+    function _checkAllDone() {
+      if (loaded + failed < txtFiles.length) return;
+      if (!allContent.trim()) {
+        Utils.showToast('所有文件均读取失败或无有效内容。');
+        return;
+      }
+      textarea.value = allContent;
+      document.getElementById('ggParseBtn').click();
+    }
+  }
+
+  // 拖拽事件
+  var dropZone = document.getElementById('ggDropZone');
+  if (!dropZone) return;
+  ['dragenter', 'dragover'].forEach(function (evt) {
+    dropZone.addEventListener(evt, function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.add('gg-drop-active');
+    });
+  });
+  ['dragleave', 'drop'].forEach(function (evt) {
+    dropZone.addEventListener(evt, function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.remove('gg-drop-active');
+    });
+  });
+  dropZone.addEventListener('drop', function (e) {
+    handleFiles(e.dataTransfer.files);
+  });
+  dropZone.addEventListener('click', function () {
+    fileInput.click();
+  });
+  if (fileInput) {
+    fileInput.addEventListener('change', function (e) {
+      handleFiles(e.target.files);
+      fileInput.value = '';
+    });
+  }
+}
+
+export function initGGImport() {
+  // [V6.14.0 修改] 改为调用 openGGImportQuick
+  var importBtn = document.getElementById('importGGBtn');
+  if (importBtn) {
+    importBtn.addEventListener('click', function () {
+      openGGImportQuick();
+    });
+  }
   document.getElementById('ggImportCloseBtn').addEventListener('click', function () {
     document.getElementById('ggImportOverlay').classList.remove('is-active');
   });
   document.getElementById('ggParseBtn').addEventListener('click', function () {
     var raw = document.getElementById('ggImportText').value.trim();
     if (!raw) {
-      alert('请先粘贴 GG 手牌历史文本');
+      Utils.showToast('请先粘贴 GG 手牌历史文本');
       return;
     }
     var totalInText = (raw.match(/Poker Hand #/g) || []).length;
     ggParsedHands = Utils.parseGGHandHistory(raw);
     if (!ggParsedHands.length) {
-      alert('未识别到有效手牌记录，请检查粘贴内容。\n文本中检测到 ' + totalInText + ' 手牌，均解析失败。');
+      Utils.showToast('未识别到有效手牌记录，请检查粘贴内容。\n文本中检测到 ' + totalInText + ' 手牌，均解析失败。');
       return;
     }
     var existingReviews = HandRepo.getAll();
@@ -162,8 +327,9 @@ export function initGGImport() {
           reflection: h.profitBB != null && h.profitBB !== 0
             ? (h.profitBB > 0 ? '盈利：+' + h.profitBB + ' BB' : '亏损：' + h.profitBB + ' BB') : '',
           ggId: h.handId, oId: h.opponentId, oCards: h.opponentCards,
+          rake: h.rake || 0, jackpot: h.jackpot || 0,  // [V6.13.0]
         });
-        alert('已覆盖 ' + h.handId);
+        Utils.showToast('已覆盖 ' + h.handId);
         document.getElementById('ggParseBtn').click();
       });
     });
@@ -176,34 +342,77 @@ export function initGGImport() {
   });
   document.getElementById('ggImportSelectedBtn').addEventListener('click', function () {
     var checks = document.querySelectorAll('.gg-import-check:checked');
-    if (!checks.length) { alert('请至少勾选一手牌'); return; }
+    if (!checks.length) { Utils.showToast('请至少勾选一手牌'); return; }
     var toImport = [];
     checks.forEach(function (cb) { toImport.push(ggParsedHands[parseInt(cb.dataset.idx)]); });
     var estSize = JSON.stringify(toImport).length;
     if (!Utils.checkStorageQuota(estSize)) {
-      alert('存储空间不足（接近 ' + CONSTANTS.MAX_STORAGE_MB + 'MB 上限）。请先导出备份或清理旧数据后再导入。');
+      Utils.showToast('存储空间不足（接近 ' + CONSTANTS.MAX_STORAGE_MB + 'MB 上限）。请先导出备份或清理旧数据后再导入。');
       return;
     }
     var existingReviews = HandRepo.getAll();
+    var existingSessions = SessionRepo.getAll();
     var importCount = 0;
-    toImport.forEach(function (h) {
-      var r = {
-        id: Utils.generateUUID(), sessionId: null, date: h.date, potType: h.potType,
-        board: h.board, desc: h.desc, decision: '', mistake: '',
-        reflection:
-          h.profitBB != null && h.profitBB !== 0
-            ? (h.profitBB > 0 ? '盈利：+' + h.profitBB + ' BB' : '亏损：' + h.profitBB + ' BB')
-            : '',
-        pBB: h.profitBB != null ? h.profitBB : null,
-        gg: true, ggId: h.handId, oId: h.opponentId, oCards: h.opponentCards,
-      };
-      existingReviews.push(r);
-      importCount++;
-    });
-    HandRepo.saveAll(existingReviews);
-    document.getElementById('ggImportOverlay').classList.remove('is-active');
-    alert('成功导入 ' + importCount + ' 手牌！请点击手局列表中的 ✎ 编辑按钮逐一手工填写决策描述和结果与反思。');
+    var targetSid = _targetSessionId;  // [V6.14.0]
+
+    if (targetSid) {
+      // 导入到指定 Session
+      toImport.forEach(function (h) {
+        var r = {
+          id: Utils.generateUUID(), sessionId: targetSid, date: h.date, potType: h.potType,
+          board: h.board, desc: h.desc, decision: '', mistake: '',
+          reflection:
+            h.profitBB != null && h.profitBB !== 0
+              ? (h.profitBB > 0 ? '盈利：+' + h.profitBB + ' BB' : '亏损：' + h.profitBB + ' BB')
+              : '',
+          pBB: h.profitBB != null ? h.profitBB : null,
+          gg: true, ggId: h.handId, oId: h.opponentId, oCards: h.opponentCards,
+          rake: h.rake || 0, jackpot: h.jackpot || 0,
+        };
+        existingReviews.push(r);
+        importCount++;
+      });
+      HandRepo.saveAll(existingReviews);
+      document.getElementById('ggImportOverlay').classList.remove('is-active');
+      Utils.showToast('成功导入 ' + importCount + ' 手牌到 Session！');
+    } else {
+      // [V6.14.0] 自动分 Session
+      var groups = _autoGroupToSessions(toImport);
+      var sessionMappings = _createSessionsFromGroups(groups, existingSessions);
+      sessionMappings.forEach(function (mapping) {
+        mapping.hands.forEach(function (h) {
+          var r = {
+            id: Utils.generateUUID(), sessionId: mapping.session.id, date: h.date, potType: h.potType,
+            board: h.board, desc: h.desc, decision: '', mistake: '',
+            reflection:
+              h.profitBB != null && h.profitBB !== 0
+                ? (h.profitBB > 0 ? '盈利：+' + h.profitBB + ' BB' : '亏损：' + h.profitBB + ' BB')
+                : '',
+            pBB: h.profitBB != null ? h.profitBB : null,
+            gg: true, ggId: h.handId, oId: h.opponentId, oCards: h.opponentCards,
+            rake: h.rake || 0, jackpot: h.jackpot || 0,
+          };
+          existingReviews.push(r);
+          importCount++;
+        });
+        // 新建的 Session 写入 SessionRepo
+        if (!existingSessions.some(function (s) { return s.id === mapping.session.id; })) {
+          SessionRepo.saveAll(existingSessions);
+        }
+      });
+      HandRepo.saveAll(existingReviews);
+      document.getElementById('ggImportOverlay').classList.remove('is-active');
+      var newSessionCount = sessionMappings.filter(function (m) {
+        return !existingSessions.some(function (s) { return s.id === m.session.id && s._wasExisting; });
+      }).length;
+      Utils.showToast('成功导入 ' + importCount + ' 手牌，分配到 ' + sessionMappings.length + ' 个 Session' + (newSessionCount > 0 ? '（其中 ' + newSessionCount + ' 个为新建）' : '') + '。');
+    }
+    _targetSessionId = null;
     Review.handCurrentPage = 1;
     Review.renderHandReviews();
+    Review.renderSessions();
+    Review.updateTotalStats();
   });
+  // [V6.14.0] 设置文件拖拽
+  _setupFileDrop();
 }

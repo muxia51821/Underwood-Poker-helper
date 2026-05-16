@@ -28,7 +28,7 @@ export const Utils = {
   },
   sortByDateKey: function (arr, key) {
     key = key || 'id';
-    return arr.sort(function (a, b) {
+    return arr.slice().sort(function (a, b) {
       return b[key].localeCompare(a[key]);
     });
   },
@@ -41,7 +41,7 @@ export const Utils = {
   },
   escapeHtml(s) {
     if (!s) return '';
-    const d = document.createElement('div');
+    var d = Utils._escapeDiv || (Utils._escapeDiv = document.createElement('div'));
     d.textContent = String(s);
     return d.innerHTML;
   },
@@ -363,6 +363,44 @@ export const Utils = {
       }
     });
     return frag;
+  },
+  // [V6.19.2] 统一卡牌花色徽章渲染
+  renderCardBadges(cardsStr, opts) {
+    opts = opts || {};
+    var suitMap = { s: '♠', h: '♥', d: '♦', c: '♣' };
+    var classMap = { s: 'black', h: 'red', d: 'red', c: 'black' };
+    var cardRe = /[2-9TJQKAtjqka][shdcSHDC]/g;
+    var styleStr = opts.style || '';
+    var m, html = '';
+    while ((m = cardRe.exec(cardsStr)) !== null) {
+      var rank = m[0].charAt(0).toUpperCase();
+      var suit = m[0].charAt(1).toLowerCase();
+      html += '<span class="card-badge ' + classMap[suit] + '"' + (styleStr ? ' style="' + styleStr + '"' : '') + '>' + Utils.escapeHtml(rank) + suitMap[suit] + '</span>';
+    }
+    return html;
+  },
+  // [V6.19.9] 安全的 innerHTML 替代（createContextualFragment + replaceChildren）
+  setSafeHTML(el, html) {
+    var frag = document.createRange().createContextualFragment(html);
+    el.replaceChildren(frag);
+  },
+  // [V6.19.2] Toast 通知（替代 alert）
+  showToast(msg, duration) {
+    var el = document.getElementById('toast');
+    if (!el) { alert(msg); return; }
+    el.textContent = msg;
+    el.classList.add('toast--visible');
+    clearTimeout(el._timer);
+    el._timer = setTimeout(function () {
+      el.classList.remove('toast--visible');
+    }, duration || 2500);
+  },
+  // [V6.19.2] 统一盈亏格式化（带颜色和符号的 HTML）
+  formatProfitHTML(pBB) {
+    if (pBB == null || isNaN(pBB)) return '--';
+    var color = pBB >= 0 ? '#4ade80' : '#f87171';
+    var sign = pBB >= 0 ? '+' : '';
+    return '<span style="color:' + color + '">' + sign + Utils.safeFixed(pBB, 1) + ' BB</span>';
   },
 };
 // #endregion

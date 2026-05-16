@@ -6,20 +6,20 @@
 - **Build**: Vite + `vite-plugin-singlefile` → single `dist/index.html`
 - **Runtime**: ES 模块（dev 时 Vite 处理 import；build 时全内联）
 - **Storage**: IndexedDB (`pa_store`) 为主，localStorage 降级。`pa_migrated_v1` 标记迁移状态
-- **Hosting**: Netlify (`https://mxpoker.netlify.app/`)
+- **Hosting**: Netlify (`https://mxpoker.netlify.app/`) + GitHub Pages (`https://muxia51821.github.io/Underwood-Poker-helper/`)
 - **PWA**: `public/sw.js` (独立文件)，Blob URL 降级。仅 HTTPS 生效
 
 ## Dual-Scenario Runtime
 
 | | `file://` (offline) | `https://` (online) |
 |---|---|---|
-| Entry | 双击 `dist/index.html` | `https://mxpoker.netlify.app/` |
+| Entry | 双击 `dist/index.html` | Netlify / GitHub Pages |
 | Dev | — | `npm run dev` |
 | Service Worker | Disabled | `public/sw.js` (DevTools 可调试) |
 | Notifications | Disabled | Enabled |
 | Storage | IndexedDB + localStorage | 同左 |
 
-## Module Map (17 ES modules)
+## Module Map (19 ES modules)
 
 ```
 src/
@@ -30,10 +30,11 @@ src/
   selfTests.js         # GG 解析器自测（仅 DEV）
 
   parsers/
-    ggParser.js        # GG 手牌历史 → 结构化数据
+    ggParser.js        # GG 手牌历史 → 结构化数据（含 rake/jackpot）
 
   store/
-    store.js           # Store + DB(IndexedDB) + BaseRepo + repos + initStorage + 迁移
+    db.js              # IndexedDB 封装（DB 对象，零依赖）
+    store.js           # Store + BaseRepo + repos + initStorage + 迁移 + 健康状态
 
   modules/
     app.js             # App 骨架（init/导航/beep/vibrate/健康指示器/SRP/行动线）
@@ -43,35 +44,40 @@ src/
     tiltRescue.js      # 情绪急救（PubSub → Review）
     dataSync.js        # 剪切板导入导出 + CSV
     review.js          # 复盘系统（Session/手局/周级 + 分页 + 图表 + 统计 + 迁徙 + 对手画像）
-    ggImport.js        # GG 导入（解析/去重/覆盖/对比）
+    ggImport.js        # GG 导入（解析/去重/覆盖/对比/文件拖拽/Session 自动分组）
+    statsEngine.js     # 声明式统计引擎（VPIP/PFR/3Bet/Squeeze/CBet/WTSD/WWSF + 优化建议）
+    handPicker.js      # 手牌精选（☆ 标记/取消 + Picks 卡片渲染）
 
   data/
     srpData.js         # SB vs BB SRP 翻牌策略速查表 (~100 条)
     actionLines.js     # underBluff + overBluff 行动线表
 
 public/
-  sw.js                # Service Worker（cache-first）
+  sw.js                # Service Worker（cache-first + notificationclick）
 ```
 
 ### Dependency DAG
 
 ```
 main.js
-  ├── constants.js        (zero deps)
-  ├── utils.js            → constants
-  ├── parsers/ggParser.js → constants, utils
-  ├── store/store.js      → constants, utils
-  ├── modules/app.js      → constants, utils, store, srpData, actionLines, 全部子模块
-  ├── modules/timer.js    → constants, utils, store, [beep/vibrate/notify from app]
-  ├── modules/odds.js     → constants, utils
-  ├── modules/review.js   → constants, utils, store
-  ├── modules/ggImport.js → constants, utils, store, review
-  ├── modules/tiltRescue.js → constants, utils, store, PubSub
-  ├── modules/dataSync.js → utils, store
-  ├── modules/tournament.js (zero deps)
-  ├── data/srpData.js     (zero deps)
-  ├── data/actionLines.js (zero deps)
-  └── selfTests.js        → parsers/ggParser (DEV only)
+  ├── constants.js           (zero deps)
+  ├── utils.js               → constants
+  ├── parsers/ggParser.js    → constants, utils
+  ├── store/db.js            (zero deps)
+  ├── store/store.js         → constants, utils, db
+  ├── modules/app.js         → constants, utils, store, srpData, actionLines, 全部子模块
+  ├── modules/timer.js       → constants, utils, store, [beep/vibrate/notify from app]
+  ├── modules/odds.js        → constants, utils
+  ├── modules/review.js      → constants, utils, store, statsEngine, ggImport, handPicker
+  ├── modules/statsEngine.js → constants
+  ├── modules/handPicker.js  → constants, utils, store
+  ├── modules/ggImport.js    → constants, utils, store, review
+  ├── modules/tiltRescue.js  → constants, utils, store, PubSub
+  ├── modules/dataSync.js    → utils, store
+  ├── modules/tournament.js  (zero deps)
+  ├── data/srpData.js        (zero deps)
+  ├── data/actionLines.js    (zero deps)
+  └── selfTests.js           → parsers/ggParser (DEV only)
 ```
 
 ## Core Data Flows
@@ -149,15 +155,17 @@ Methods:
 ## Store Schema
 
 ```js
-settings:       { sound: bool, vibrate: bool }
-timerState:     { endTime, phase, workStart, breakStart, longBreak: { enabled, interval, minutes }, cycleCount }
-standup:        { date: 'YYYY-MM-DD', count: int }
-log_<date>:     [ { workStart, workEnd, breakStart, breakEnd } ]
-sessions:       [ { id, date, level, duration, hands, profit, tilt, mistake, remark } ]
-handReviews:    [ { id, sessionId, date, potType, board, desc, decision, mistake, reflection, pBB,
-                    gg?, ggId?, oId?, oCards? } ]
-weeklyReviews:  [ { week: 'YYYY-Www', weakness, plan } ]
-tiltLogs:       [ { date, time, trigger, intensity, note } ]
+settings:          { sound: bool, vibrate: bool }
+timerState:        { endTime, phase, workStart, breakStart, longBreak: { enabled, interval, minutes }, cycleCount }
+standup:           { date: 'YYYY-MM-DD', count: int }
+log_<date>:        [ { workStart, workEnd, breakStart, breakEnd } ]
+opponentAliases:   { oId: "昵称", ... }
+opponentLiveFlags: { oId: true, ... }
+sessions:          [ { id, date, level, duration, hands, profit, tilt, mistake, remark } ]
+handReviews:       [ { id, sessionId, date, potType, board, desc, mistake, reflection, pBB,
+                       gg?, ggId?, oId?, oCards?, rake, jackpot, marked } ]
+weeklyReviews:     [ { week: 'YYYY-Www', weakness, plan } ]
+tiltLogs:          [ { date, time, trigger, intensity, note } ]
 ```
 
 IndexedDB: `pa_store` v1, 4 ObjectStores (`handReviews`/`sessions`/`weeklyReviews`/`tiltLogs`).
@@ -166,13 +174,16 @@ IndexedDB: `pa_store` v1, 4 ObjectStores (`handReviews`/`sessions`/`weeklyReview
 ## UI Navigation
 
 ```
-计时 ──── 赔率 ──── 锦标赛 ──── 复盘 ──────────────────────
-番茄钟    底池赔率  (外链)     Session│手局│周级│对手
-今日统计  隐含赔率             SRP表  │行动线│    │
-错误日志  随机数               迁徙   │GG导入│    │
+计时 ──── 赔率 ──── 锦标赛 ──── 复盘 ─────────────────────────────
+番茄钟    底池赔率  (外链)     Hand│Session│Weekly│Villain
+今日统计  隐含赔率             ┌─Picks (手牌精选卡片)
+错误日志  随机数               ├─Hand History (筛选/分页)
+                               ├─GG 导入
+                               └─SRP表 / 行动线表 (<details>)
 ```
 
 四主 Tab（`.nav`），复盘下四子 Tab（`.subnav`，data-sub 驱动）。
+Hand 面板内含 Picks 精选卡片（有标记手牌时显示）。
 SRP 表 / 行动线表 `<details>` 懒加载。
 存储健康指示器：页面标题旁圆点，🟢 IndexedDB / 🟡 localStorage / 🔴 异常。
 

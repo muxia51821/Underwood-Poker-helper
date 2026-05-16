@@ -159,7 +159,7 @@ export const GGParser = {
   /**
    * 解析 GG 手牌历史文本，返回结构化手牌数据数组
    * @param {string} text - GG 原始手牌历史文本（可含多局）
-   * @returns {Array<{handId: string, date: string, heroPosition: string, heroCards: string, profit: number, profitBB: number, potType: string, boardCards: string, board: string, desc: string, opponentId?: string, opponentCards?: string}>}
+   * @returns {Array<{handId: string, date: string, heroPosition: string, heroCards: string, profit: number, profitBB: number, potType: string, boardCards: string, board: string, desc: string, opponentId?: string, opponentCards?: string, rake: number, jackpot: number}>}
    */
   parse: function (text) {
     var split = this._splitBlocks(text);
@@ -519,6 +519,10 @@ export const GGParser = {
         hand.boardCards = allBd;
         hand.board = self._classifyBoard(allBd);
         hand.desc = descParts.join('\n');
+        // [V6.13.0 新增] 提取水钱和Jackpot
+        var potLineM = block.match(/^Total pot \$([\d.]+) \| Rake \$([\d.]+) \| Jackpot \$([\d.]+)/m);
+        hand.rake = potLineM ? parseFloat(potLineM[2]) : 0;
+        hand.jackpot = potLineM ? parseFloat(potLineM[3]) : 0;
         if (hand.isBigLoss) hand.desc += '\n⚠️ 大底池亏损手牌，请详细复盘';
         results.push(hand);
       } catch (e) {
