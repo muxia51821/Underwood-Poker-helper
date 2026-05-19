@@ -40,15 +40,15 @@ export const App = {
             Review._confirmDelete = App.confirmDelete.bind(App);
             PubSub.on('tiltLogSaved', function () { Review.renderTiltLogs(); });
 
-            // [V6.9.0] Canvas 响应式：监听容器大小变化自动重绘
+            // [V7.3.0] Canvas 响应式：监听 chartsArea 容器大小变化自动重绘
             var chartObserver = new ResizeObserver(
               Utils.debounce(function () {
-                Review.renderChart();
+                Review.renderCharts();
               }, 200)
             );
-            var chartCanvas = document.getElementById('profitChart');
-            if (chartCanvas && chartCanvas.parentElement) {
-              chartObserver.observe(chartCanvas.parentElement);
+            var chartsArea = document.getElementById('chartsArea');
+            if (chartsArea) {
+              chartObserver.observe(chartsArea);
             }
 
             // [V6.9.0] 渲染存储健康指示器
@@ -339,14 +339,21 @@ export const App = {
               vb.classList.toggle('is-active', this.vibrateOn);
               Store.settings.save({ sound: this.sound, vibrate: this.vibrateOn });
             });
-            // [V7.3.0]
+            // [V7.2.3] 三配色方案切换: Pale → Nimbus → Ember
             var csBtn = document.getElementById('colorSchemeOption');
-            var savedScheme = localStorage.getItem('pa_colorScheme') || 'v7';
-            if (savedScheme === 'v11') { document.body.classList.add('color-v11'); csBtn.textContent = '🎨 V7'; }
+            var schemes = ['pale', 'nimbus', 'ember'];
+            var labels = { pale: '🎨 Nimbus', nimbus: '🎨 Ember', ember: '🎨 Pale' };
+            var classes = { nimbus: 'color-nimbus', ember: 'color-ember' };
+            var savedScheme = localStorage.getItem('pa_colorScheme') || 'pale';
+            if (savedScheme !== 'pale') { document.body.classList.add(classes[savedScheme]); }
+            csBtn.textContent = labels[savedScheme];
             csBtn.addEventListener('click', function () {
-              var isV11 = document.body.classList.toggle('color-v11');
-              csBtn.textContent = isV11 ? '🎨 V7' : '🎨 V11';
-              localStorage.setItem('pa_colorScheme', isV11 ? 'v11' : 'v7');
+              document.body.classList.remove('color-nimbus', 'color-ember');
+              var currentIdx = schemes.indexOf(localStorage.getItem('pa_colorScheme') || 'pale');
+              var nextScheme = schemes[(currentIdx + 1) % schemes.length];
+              if (nextScheme !== 'pale') { document.body.classList.add(classes[nextScheme]); }
+              csBtn.textContent = labels[nextScheme];
+              localStorage.setItem('pa_colorScheme', nextScheme);
             });
           },
           bindNav() {
@@ -361,14 +368,9 @@ export const App = {
               var main = document.querySelector('.main');
               main.setAttribute('data-active-tab', tab);
               document.querySelectorAll('.panel').forEach((p) => p.classList.remove('is-visible'));
-              // [V7.1.0] Timer + Odds 同屏可见（桌面端 CSS grid 双栏，移动端 CSS 隐藏非激活面板）
-              if (tab === 'timer' || tab === 'odds') {
-                document.getElementById('timerPanel').classList.add('is-visible');
-                document.getElementById('oddsPanel').classList.add('is-visible');
-                if (tab === 'odds') Odds.calc();
-              } else {
-                document.getElementById(tab + 'Panel').classList.add('is-visible');
-              }
+              // [V7.3.3] 一个 Tab 一个面板
+              document.getElementById(tab + 'Panel').classList.add('is-visible');
+              if (tab === 'odds') Odds.calc();
               if (tab === 'review' && !this.reviewRendered) {
                 Review.renderAll();
                 this.reviewRendered = true;

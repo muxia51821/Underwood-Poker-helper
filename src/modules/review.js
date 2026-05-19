@@ -168,6 +168,31 @@ function renderStatsPanel(opts) {
   }
 }
 
+
+
+// [V7.3.0] 位置利润聚合 — 按 EP/MP/CO/BTN/SB/BB 分组累加 pBB
+function _aggregatePositionProfit() {
+  var posGroups = { EP: ['UTG', 'UTG+1', 'UTG+2'], MP: ['MP', 'HJ'], CO: ['CO'], BTN: ['BTN'], SB: ['SB'], BB: ['BB'] };
+  var result = {};
+  Object.keys(posGroups).forEach(function (pos) { result[pos] = { profit: 0, hands: 0 }; });
+  var allHands = HandRepo.getAll();
+  for (var i = 0; i < allHands.length; i++) {
+    var h = allHands[i];
+    if (h.pBB == null) continue;
+    var m = (h.desc || '').match(/^preflop[^\n]*Hero\s+(\w+)\//m);
+    if (!m) continue;
+    var heroPos = m[1];
+    for (var pos in posGroups) {
+      if (posGroups[pos].indexOf(heroPos) !== -1) {
+        result[pos].profit += h.pBB;
+        result[pos].hands++;
+        break;
+      }
+    }
+  }
+  return result;
+}
+
 export const Review = {
   init() {
     document.getElementById('addSessionBtn').addEventListener('click', () => this.addSession());
@@ -532,7 +557,7 @@ export const Review = {
     var extraOvHtml = '<div class="stats__item"><div class="stats__label">Hands/Hour</div><div class="stats__value">' + hph + '</div></div>';
     extraOvHtml += '<div class="stats__item ' + (parseFloat(pph) >= 0 ? 'stats__item--win' : 'stats__item--lose') + '"><div class="stats__label">BB/Hour</div><div class="stats__value ' + (parseFloat(pph) >= 0 ? 'text-win' : 'text-lose') + '">' + (parseFloat(pph) >= 0 ? '+' : '') + pph + ' BB</div></div>';
     renderStatsPanel({ containerEl: tsa, es: es, recs: recs, extraOverviewHtml: extraOvHtml });
-    this.renderChart('totalProfitChart');
+    this.renderCharts();
     _initStatTooltip('totalStatsArea');
     // [V6.18.9] Live 数据更新（元素在 Villain 面板）
     var tlsEl2 = document.getElementById('totalLiveStats');
@@ -583,95 +608,551 @@ export const Review = {
       if (totalTab) totalTab.click();
     });
     _initStatTooltip('statsArea');
+    self._renderSessionHandChart(sessionId);
   },
-  // [V6.19.6] requestAnimationFrame 防抖，避免同一帧多次绘制
+  // [V7.3.0] 图表渲染 — 累计盈利 + Session柱状 + 位置盈亏
   _chartRAF: null,
-  // [V6.18.1] canvasId 可选，默认 'profitChart'（向后兼容）
-  renderChart(canvasId) {
+  renderCharts() {
     var self = this;
     if (self._chartRAF) cancelAnimationFrame(self._chartRAF);
     self._chartRAF = requestAnimationFrame(function () {
       self._chartRAF = null;
-      self._doRenderChart(canvasId);
+      var area = document.getElementById('chartsArea');
+      if (!area) return;
+      self._renderCumulativeProfitChart(area);
+      self._renderSessionBarChart(area);
+      self._renderPositionProfitChart(area);
+      self._initChartTooltips(area);
     });
   },
-  _doRenderChart(canvasId) {
-    var cid = canvasId || 'profitChart';
-    const sessions = Utils.sortByDateKey(this.getSessions()).reverse().slice(0, 15).reverse();
-    const canvas = document.getElementById(cid);
-    if (!canvas) return;
-    if (sessions.length < 2) {
-      canvas.style.display = 'none';
-      var chartParent = canvas.parentElement;
-      if (chartParent && chartParent.querySelector('.chart-placeholder') === null) {
-        var placeholder = document.createElement('div');
-        placeholder.className = 'chart-placeholder text-muted';
-        placeholder.textContent = '至少需要 2 场 Session 才能显示盈亏图表';
-        placeholder.style.cssText = 'text-align:center;padding:20px 0;font-size:0.8em';
-        chartParent.appendChild(placeholder);
+
+// [V7.3.1] 图表 hover tooltip + crosshair
+  _initChartTooltips(area) {
+    var tooltip = document.getElementById('chartTooltip');
+    if (!tooltip) {
+      tooltip = document.createElement('div');
+      tooltip.id = 'chartTooltip';
+      tooltip.className = 'chart-tooltip';
+      area.appendChild(tooltip);
+    }
+    if (area._tooltipBound) return;
+    area._tooltipBound = true;
+
+    area.addEventListener('mousemove', function (e) {
+      var target = e.target;
+      if (!target || target.tagName !== 'CANVAS') {
+        var canvases = area.querySelectorAll('canvas');
+        for (var i = 0; i < canvases.length; i++) {
+          var r = canvases[i].getBoundingClientRect();
+          if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) {
+            target = canvases[i];
+            break;
+          }
+        }
       }
+      if (!target || target.tagName !== 'CANVAS') {
+        tooltip.classList.remove('is-visible');
+        return;
+      }
+
+      var rect = target.getBoundingClientRect();
+      var mx = e.clientX - rect.left;
+      var html = '';
+
+      if (target._hitPoints) {
+        var pts = target._hitPoints;
+        var nearest = pts[0], minDist = 1e9;
+        for (var i = 0; i < pts.length; i++) {
+          var d = Math.abs(mx - pts[i].sx);
+          if (d < minDist) { minDist = d; nearest = pts[i]; }
+        }
+        var dStr = (nearest.date || '').slice(5);
+        html = '#' + (nearest.handIdx + 1) + ' | ' + dStr + '<br>' +
+               '<span class="tt-label">Profit:</span> <span class="tt-val" style="color:#ef4444">' + (nearest.profit >= 0 ? '+' : '') + Utils.safeFixed(nearest.profit, 1) + ' BB</span><br>' +
+               '<span class="tt-label">w/o Rake:</span> <span class="tt-val" style="color:#14b8a6">' + (nearest.profitRake >= 0 ? '+' : '') + Utils.safeFixed(nearest.profitRake, 1) + ' BB</span>';
+
+        if (target._staticSnapshot) {
+          var ctx2 = target.getContext('2d');
+          ctx2.putImageData(target._staticSnapshot, 0, 0);
+          ctx2.strokeStyle = 'rgba(255,255,255,0.18)'; ctx2.lineWidth = 1; ctx2.setLineDash([4, 4]);
+          ctx2.beginPath();
+          ctx2.moveTo(nearest.sx, 20);
+          ctx2.lineTo(nearest.sx, 300 - 36);
+          ctx2.stroke();
+          ctx2.setLineDash([]);
+        }
+      } else if (target._hitBars) {
+        var bars = target._hitBars;
+        var hit = null;
+        for (var i = 0; i < bars.length; i++) {
+          if (mx >= bars[i].x && mx <= bars[i].x + bars[i].w) { hit = bars[i]; break; }
+        }
+        if (hit) {
+          if (hit.position !== undefined) {
+            html = '<span class="tt-val">' + hit.position + '</span> | ' + hit.hands + ' hands<br>' +
+                   '<span class="tt-label">Profit:</span> <span class="tt-val" style="color:' + (hit.profit >= 0 ? '#14b8a6' : '#ef4444') + '">' + (hit.profit >= 0 ? '+' : '') + Utils.safeFixed(hit.profit, 1) + ' BB</span>';
+          } else {
+            var dStr2 = (hit.date || '').slice(5);
+            html = dStr2 + ' | ' + hit.hands + ' hands<br>' +
+                   '<span class="tt-label">Session:</span> <span class="tt-val" style="color:' + (hit.profit >= 0 ? '#14b8a6' : '#ef4444') + '">' + (hit.profit >= 0 ? '+' : '') + Utils.safeFixed(hit.profit, 1) + ' BB</span><br>' +
+                   '<span class="tt-label">累计:</span> <span class="tt-val" style="color:#d4a853">' + (hit.cumProfit >= 0 ? '+' : '') + Utils.safeFixed(hit.cumProfit, 1) + ' BB</span>';
+          }
+        }
+      }
+
+      if (html) {
+        tooltip.innerHTML = html;
+        tooltip.classList.add('is-visible');
+        var tx = e.clientX + 14, ty = e.clientY - 10;
+        if (tx + 190 > window.innerWidth) tx = e.clientX - 190;
+        if (ty < 10) ty = e.clientY + 20;
+        tooltip.style.left = tx + 'px';
+        tooltip.style.top = ty + 'px';
+      } else {
+        tooltip.classList.remove('is-visible');
+      }
+    });
+
+    area.addEventListener('mouseleave', function () {
+      tooltip.classList.remove('is-visible');
+    });
+  },
+
+  // [V7.3.2] Session 手牌累计盈利图
+  _renderSessionHandChart(sessionId) {
+    var allHands = HandRepo.getAll();
+    var hands = allHands.filter(function (h) { return h.sessionId === sessionId && h.pBB != null; });
+    if (hands.length < 2) return;
+    hands.sort(function (a, b) { return (a.date || "").localeCompare(b.date || ""); });
+
+    var ssa = document.getElementById("statsArea");
+    if (!ssa) return;
+    var container = ssa.querySelector("#sessionHandChartContainer") || document.createElement("div");
+    container.id = "sessionHandChartContainer";
+    container.style.marginTop = "16px";
+    if (!container.parentElement) ssa.appendChild(container);
+
+    var titleEl = container.querySelector(".chart-title") || document.createElement("div");
+    titleEl.className = "chart-title";
+    titleEl.textContent = "Session 累计走势 Cumulative";
+    if (!titleEl.parentElement) container.appendChild(titleEl);
+
+    var canvas = container.querySelector("canvas") || document.createElement("canvas");
+    if (!canvas.parentElement) container.appendChild(canvas);
+    var dpr = window.devicePixelRatio || 1;
+    var W = container.clientWidth;
+    var H = 200;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    canvas.style.width = W + "px"; canvas.style.height = H + "px";
+    var ctx = canvas.getContext("2d");
+    ctx.scale(dpr, dpr);
+
+    ctx.fillStyle = "#0f0f0f";
+    ctx.fillRect(0, 0, W, H);
+
+    var pad = { top: 16, right: 20, bottom: 32, left: 52 };
+    var pw = W - pad.left - pad.right;
+    var ph = H - pad.top - pad.bottom;
+
+    var cumProfit = 0;
+    var points = [];
+    var step = hands.length > 500 ? Math.ceil(hands.length / 400) : 1;
+    for (var i = 0; i < hands.length; i++) {
+      cumProfit += hands[i].pBB;
+      if (i % step === 0 || i === hands.length - 1) {
+        points.push({ x: i, y: cumProfit });
+      }
+    }
+
+    var allY = points.map(function (p) { return p.y; });
+    var minY = Math.min.apply(null, allY);
+    var maxY = Math.max.apply(null, allY);
+    var absY = Math.max(Math.abs(minY), Math.abs(maxY), 5);
+    var zeroY = pad.top + ph / 2;
+
+    var ySteps = 4;
+    ctx.strokeStyle = "rgba(255,255,255,0.04)"; ctx.lineWidth = 0.5;
+    ctx.fillStyle = "#909090"; ctx.font = "9px SF Mono, monospace"; ctx.textAlign = "right";
+    for (var i = 0; i <= ySteps; i++) {
+      var gy = pad.top + (ph / ySteps) * i;
+      var gv = absY * (1 - (i / ySteps) * 2);
+      ctx.beginPath(); ctx.moveTo(pad.left, gy); ctx.lineTo(W - pad.right, gy); ctx.stroke();
+      ctx.fillText(Math.round(gv) + "", pad.left - 6, gy + 3);
+    }
+
+    ctx.strokeStyle = "rgba(255,255,255,0.08)"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pad.left, zeroY); ctx.lineTo(W - pad.right, zeroY); ctx.stroke();
+
+    var maxX = hands.length - 1;
+    var scaleX = function (x) { return pad.left + (x / maxX) * pw; };
+    var scaleY = function (v) { return zeroY - (v / absY) * (ph / 2); };
+
+    if (points.length >= 2) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(scaleX(points[0].x), zeroY);
+      for (var i = 0; i < points.length; i++) {
+        ctx.lineTo(scaleX(points[i].x), scaleY(points[i].y));
+      }
+      ctx.lineTo(scaleX(points[points.length - 1].x), zeroY);
+      ctx.closePath();
+      ctx.fillStyle = "rgba(239,68,68,0.08)";
+      ctx.fill();
+      ctx.restore();
+
+      ctx.strokeStyle = "#ef4444"; ctx.lineWidth = 2; ctx.setLineDash([]);
+      ctx.beginPath();
+      for (var i = 0; i < points.length; i++) {
+        var lx = scaleX(points[i].x), ly = scaleY(points[i].y);
+        if (i === 0) ctx.moveTo(lx, ly); else ctx.lineTo(lx, ly);
+      }
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = "#909090"; ctx.font = "8px SF Mono, monospace"; ctx.textAlign = "center";
+    var xLabelCount = Math.min(4, hands.length);
+    var xStep = Math.max(1, Math.floor(hands.length / xLabelCount));
+    for (var i = 0; i < hands.length; i += xStep) {
+      ctx.fillText("#" + (i + 1), scaleX(i), pad.top + ph + 12);
+    }
+
+    ctx.strokeStyle = "rgba(255,255,255,0.06)"; ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.moveTo(pad.left, pad.top + ph); ctx.lineTo(W - pad.right, pad.top + ph); ctx.stroke();
+
+    // [V7.3.2] hit-test 数据 + hover tooltip
+    canvas._hitPoints = points.map(function (p, i) {
+      return { sx: scaleX(p.x), sy: scaleY(p.y), handIdx: p.x, profit: p.y, date: hands[p.x].date };
+    });
+    if (!container._tipBound) {
+      container._tipBound = true;
+      var tip = document.getElementById('chartTooltip');
+      if (!tip) { tip = document.createElement('div'); tip.id = 'chartTooltip'; tip.className = 'chart-tooltip'; document.body.appendChild(tip); }
+      container.addEventListener('mousemove', function (e) {
+        var rect = canvas.getBoundingClientRect();
+        var mx = e.clientX - rect.left;
+        var pts = canvas._hitPoints;
+        if (!pts) { tip.classList.remove('is-visible'); return; }
+        var nearest = pts[0], minDist = 1e9;
+        for (var i = 0; i < pts.length; i++) {
+          var d = Math.abs(mx - pts[i].sx);
+          if (d < minDist) { minDist = d; nearest = pts[i]; }
+        }
+        var dStr = (nearest.date || '').slice(5);
+        tip.innerHTML = '#' + (nearest.handIdx + 1) + ' | ' + dStr + '<br><span class="tt-label">Profit:</span> <span class="tt-val" style="color:' + (nearest.profit >= 0 ? '#14b8a6' : '#ef4444') + '">' + (nearest.profit >= 0 ? '+' : '') + Utils.safeFixed(nearest.profit, 1) + ' BB</span>';
+        tip.classList.add('is-visible');
+        var tx = e.clientX + 14, ty = e.clientY - 10;
+        if (tx + 180 > window.innerWidth) tx = e.clientX - 180;
+        if (ty < 10) ty = e.clientY + 20;
+        tip.style.left = tx + 'px'; tip.style.top = ty + 'px';
+      });
+      container.addEventListener('mouseleave', function () { tip.classList.remove('is-visible'); });
+    }
+  },
+
+  // ========== 累计盈利线图 ==========
+  _renderCumulativeProfitChart(area) {
+    var container = area.querySelector('#cumulativeProfitContainer') || document.createElement('div');
+    container.id = 'cumulativeProfitContainer';
+    container.style.marginBottom = '20px';
+    if (!container.parentElement) area.appendChild(container);
+
+    var titleEl = container.querySelector('.chart-title') || document.createElement('div');
+    titleEl.className = 'chart-title';
+    titleEl.textContent = '累计盈利 Cumulative Profit';
+    if (!titleEl.parentElement) container.appendChild(titleEl);
+
+    var allHands = HandRepo.getAll();
+    if (allHands.length < 2) {
+      container.innerHTML = '<div class="chart-title">累计盈利 Cumulative Profit</div><div class="text-muted" style="text-align:center;padding:20px 0;font-size:0.8em">Need 2+ hands to show chart</div>';
       return;
     }
-    canvas.style.display = 'block';
-    var placeholderEl = document.querySelector('.chart-placeholder');
-    if (placeholderEl) placeholderEl.remove();
-    const dpr = window.devicePixelRatio || 1;
-    const W = canvas.parentElement.clientWidth - 32;
-    const H = 200;
+
+    var sorted = allHands.slice().sort(function (a, b) { return (a.date || '').localeCompare(b.date || ''); });
+
+    var cumProfit = 0, cumProfitRake = 0;
+    var points = [], pointsRake = [];
+    var step = sorted.length > 1000 ? Math.ceil(sorted.length / 800) : 1;
+    for (var i = 0; i < sorted.length; i++) {
+      var pbb = sorted[i].pBB || 0;
+      var rake = sorted[i].pBB > 0 ? ((sorted[i].rake || 0) + (sorted[i].jackpot || 0)) : 0;
+      cumProfit += pbb;
+      cumProfitRake += pbb + rake;
+      if (i % step === 0 || i === sorted.length - 1) {
+        points.push({ x: i, y: cumProfit });
+        pointsRake.push({ x: i, y: cumProfitRake });
+      }
+    }
+
+    var canvas = container.querySelector('canvas') || document.createElement('canvas');
+    if (!canvas.parentElement) container.appendChild(canvas);
+    var dpr = window.devicePixelRatio || 1;
+    var W = container.clientWidth;
+    var H = 300;
     canvas.width = W * dpr; canvas.height = H * dpr;
     canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
-    const ctx = canvas.getContext('2d'); ctx.scale(dpr, dpr);
-    const pad = { top: 20, right: 16, bottom: 40, left: 48 };
-    const pw = W - pad.left - pad.right;
-    const ph = H - pad.top - pad.bottom;
-    const profits = sessions.map(function (s) { return s.profit; });
-    const maxP = Math.max(Math.abs(Math.max.apply(null, profits)), Math.abs(Math.min.apply(null, profits)), 10);
-    ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = '#141b24'; ctx.fillRect(0, 0, W, H);
-    ctx.strokeStyle = '#334155'; ctx.lineWidth = 0.5;
-    ctx.fillStyle = '#a8afba'; ctx.font = '9px -apple-system,sans-serif'; ctx.textAlign = 'right';
-    const ySteps = 4;
-    for (let i = 0; i <= ySteps; i++) {
-      const y = pad.top + (ph / ySteps) * i;
-      const val = maxP * (1 - (i / ySteps) * 2);
-      ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
-      if (i === 2) {
-        ctx.strokeStyle = '#475569'; ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
-        ctx.strokeStyle = '#334155'; ctx.lineWidth = 0.5;
-      }
-      ctx.fillText(Math.round(val) + '', pad.left - 6, y + 3);
+    var ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    ctx.fillStyle = '#0f0f0f';
+    ctx.fillRect(0, 0, W, H);
+
+    var pad = { top: 20, right: 20, bottom: 36, left: 56 };
+    var pw = W - pad.left - pad.right;
+    var ph = H - pad.top - pad.bottom;
+
+    var allY = points.concat(pointsRake).map(function (p) { return p.y; });
+    var minY = Math.min.apply(null, allY);
+    var maxY = Math.max.apply(null, allY);
+    var absY = Math.max(Math.abs(minY), Math.abs(maxY), 10);
+    var zeroY = pad.top + ph / 2;
+
+    var ySteps = 5;
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 0.5;
+    ctx.fillStyle = '#909090'; ctx.font = '9px SF Mono, monospace'; ctx.textAlign = 'right';
+    for (var i = 0; i <= ySteps; i++) {
+      var gy = pad.top + (ph / ySteps) * i;
+      var gv = absY * (1 - (i / ySteps) * 2);
+      ctx.beginPath(); ctx.moveTo(pad.left, gy); ctx.lineTo(W - pad.right, gy); ctx.stroke();
+      ctx.fillText(Math.round(gv) + '', pad.left - 6, gy + 3);
     }
-    const barW = Math.max(6, Math.min(22, (pw / sessions.length) * 0.7));
-    const gap = pw / sessions.length;
-    sessions.forEach(function (s, i) {
-      const x = pad.left + gap * i + (gap - barW) / 2;
-      const h = (Math.abs(s.profit) / maxP) * (ph / 2);
-      const y = s.profit >= 0 ? pad.top + ph / 2 - h : pad.top + ph / 2;
-      ctx.fillStyle = s.profit >= 0 ? '#6baf7e' : '#c06060';
-      ctx.fillRect(x, y, barW, Math.max(1, h));
-      if (i % 3 === 0 || i === sessions.length - 1) {
-        ctx.fillStyle = '#a8afba'; ctx.font = '8px -apple-system,sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText(s.date.slice(5) || s.date, x + barW / 2, pad.top + ph + 16);
-      }
-    });
-    if (sessions.length >= 3) {
-      ctx.strokeStyle = '#d4a853'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pad.left, zeroY); ctx.lineTo(W - pad.right, zeroY); ctx.stroke();
+
+    var maxX = sorted.length - 1;
+    var scaleX = function (x) { return pad.left + (x / maxX) * pw; };
+    var scaleY = function (v) { return zeroY - (v / absY) * (ph / 2); };
+
+    var drawLine = function (pts, color, fillColor) {
+      if (pts.length < 2) return;
+      ctx.save();
       ctx.beginPath();
-      for (let i = 1; i < sessions.length - 1; i++) {
-        const avg = (sessions[i - 1].profit + sessions[i].profit + sessions[i + 1].profit) / 3;
-        const x = pad.left + gap * i + gap / 2;
-        const y = pad.top + ph / 2 - (avg / maxP) * (ph / 2);
-        if (i === 1) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      ctx.moveTo(scaleX(pts[0].x), zeroY);
+      for (var i = 0; i < pts.length; i++) {
+        ctx.lineTo(scaleX(pts[i].x), scaleY(pts[i].y));
       }
-      ctx.stroke(); ctx.setLineDash([]);
-      ctx.fillStyle = '#d4a853'; ctx.font = '8px -apple-system,sans-serif'; ctx.textAlign = 'left';
-      ctx.fillText('━ 3场滑动平均', pad.left, pad.top + 10);
+      ctx.lineTo(scaleX(pts[pts.length - 1].x), zeroY);
+      ctx.closePath();
+      ctx.fillStyle = fillColor;
+      ctx.fill();
+      ctx.restore();
+      ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.setLineDash([]);
+      ctx.beginPath();
+      for (var i = 0; i < pts.length; i++) {
+        var lx = scaleX(pts[i].x), ly = scaleY(pts[i].y);
+        if (i === 0) ctx.moveTo(lx, ly); else ctx.lineTo(lx, ly);
+      }
+      ctx.stroke();
+    };
+
+    drawLine(pointsRake, '#14b8a6', 'rgba(20,184,166,0.08)');
+    drawLine(points, '#ef4444', 'rgba(239,68,68,0.08)');
+
+    ctx.fillStyle = '#ef4444'; ctx.font = '9px SF Mono, monospace'; ctx.textAlign = 'left';
+    ctx.fillRect(pad.left, pad.top - 10, 10, 2);
+    ctx.fillText('Profit', pad.left + 14, pad.top - 4);
+    ctx.fillStyle = '#14b8a6';
+    ctx.fillRect(pad.left + 70, pad.top - 10, 10, 2);
+    ctx.fillText('Profit w/o Rake', pad.left + 84, pad.top - 4);
+
+    var xLabelCount = Math.min(6, sorted.length);
+    var xStep = Math.max(1, Math.floor(sorted.length / xLabelCount));
+    ctx.fillStyle = '#909090'; ctx.font = '8px SF Mono, monospace'; ctx.textAlign = 'center';
+    for (var i = 0; i < sorted.length; i += xStep) {
+      ctx.fillText((sorted[i].date || '').slice(5), scaleX(i), pad.top + ph + 14);
     }
-    ctx.strokeStyle = '#334155'; ctx.lineWidth = 0.5;
+    ctx.fillText((sorted[sorted.length - 1].date || '').slice(5), scaleX(sorted.length - 1), pad.top + ph + 14);
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.moveTo(pad.left, pad.top + ph); ctx.lineTo(W - pad.right, pad.top + ph); ctx.stroke();
+
+    // [V7.3.1] 存储 hit-test 数据 + 静态快照（用于 crosshair）
+    canvas._hitPoints = points.map(function (p, i) {
+      return { sx: scaleX(p.x), sy: scaleY(p.y), handIdx: p.x, profit: p.y, profitRake: pointsRake[i].y, date: sorted[p.x].date };
+    });
+    canvas._staticSnapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  },
+
+  // ========== Session 柱状 + 累计叠加 ==========
+  _renderSessionBarChart(area) {
+    var container = area.querySelector('#sessionBarContainer') || document.createElement('div');
+    container.id = 'sessionBarContainer';
+    container.style.marginBottom = '20px';
+    if (!container.parentElement) area.appendChild(container);
+
+    var titleEl = container.querySelector('.chart-title') || document.createElement('div');
+    titleEl.className = 'chart-title';
+    titleEl.textContent = 'Session 盈亏 + 累计趋势';
+    if (!titleEl.parentElement) container.appendChild(titleEl);
+
+    var sessions = Utils.sortByDateKey(this.getSessions()).slice(-25);
+    if (sessions.length < 2) {
+      container.innerHTML = '<div class="chart-title">Session 盈亏 + 累计趋势</div><div class="text-muted" style="text-align:center;padding:20px 0;font-size:0.8em">Need 2+ sessions to show chart</div>';
+      return;
+    }
+
+    var canvas = container.querySelector('canvas') || document.createElement('canvas');
+    if (!canvas.parentElement) container.appendChild(canvas);
+    var dpr = window.devicePixelRatio || 1;
+    var W = container.clientWidth;
+    var H = 280;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    var ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    ctx.fillStyle = '#0f0f0f';
+    ctx.fillRect(0, 0, W, H);
+
+    var pad = { top: 24, right: 20, bottom: 40, left: 52 };
+    var pw = W - pad.left - pad.right;
+    var ph = H - pad.top - pad.bottom;
+
+    var cumSum = 0;
+    var cumValues = sessions.map(function (s) { cumSum += s.profit; return cumSum; });
+    var profits = sessions.map(function (s) { return s.profit; });
+    var allVals = profits.concat(cumValues);
+    var maxVal = Math.max.apply(null, allVals);
+    var minVal = Math.min.apply(null, allVals);
+    var symAbs = Math.max(Math.abs(minVal), Math.abs(maxVal), 10);
+    var zY = pad.top + ph / 2;
+    var sY = function (v) { return zY - (v / symAbs) * (ph / 2); };
+
+    var ySteps = 4;
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 0.5;
+    ctx.fillStyle = '#909090'; ctx.font = '9px SF Mono, monospace'; ctx.textAlign = 'right';
+    for (var i = 0; i <= ySteps; i++) {
+      var gy = pad.top + (ph / ySteps) * i;
+      var gv = symAbs * (1 - (i / ySteps) * 2);
+      ctx.beginPath(); ctx.moveTo(pad.left, gy); ctx.lineTo(W - pad.right, gy); ctx.stroke();
+      ctx.fillText(Math.round(gv) + '', pad.left - 6, gy + 3);
+    }
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pad.left, zY); ctx.lineTo(W - pad.right, zY); ctx.stroke();
+
+    var barGap = pw / sessions.length;
+    var barW = barGap * 0.55;
+    for (var i = 0; i < sessions.length; i++) {
+      var bx = pad.left + barGap * i + (barGap - barW) / 2;
+      var bTop = sY(sessions[i].profit);
+      var bBot = zY;
+      var h = bBot - bTop;
+      var absH = Math.abs(h);
+      if (absH < 1) absH = 1;
+      ctx.fillStyle = sessions[i].profit >= 0 ? 'rgba(20,184,166,0.65)' : 'rgba(239,68,68,0.55)';
+      ctx.fillRect(bx, Math.min(bTop, bBot), barW, absH);
+    }
+
+    ctx.strokeStyle = '#d4a853'; ctx.lineWidth = 2; ctx.setLineDash([]);
+    ctx.shadowColor = 'rgba(212,168,83,0.35)'; ctx.shadowBlur = 3;
+    ctx.beginPath();
+    for (var i = 0; i < sessions.length; i++) {
+      var clx = pad.left + barGap * i + barGap / 2;
+      var cly = sY(cumValues[i]);
+      if (i === 0) ctx.moveTo(clx, cly); else ctx.lineTo(clx, cly);
+    }
+    ctx.stroke();
+    ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
+
+    ctx.fillStyle = '#d4a853'; ctx.font = '9px SF Mono, monospace'; ctx.textAlign = 'left';
+    ctx.fillRect(pad.left + 4, pad.top - 10, 10, 2);
+    ctx.fillText('Cumulative', pad.left + 18, pad.top - 4);
+
+    ctx.fillStyle = '#909090'; ctx.font = '8px SF Mono, monospace'; ctx.textAlign = 'center';
+    var xStep = Math.max(1, Math.floor(sessions.length / 8));
+    for (var i = 0; i < sessions.length; i += xStep) {
+      ctx.fillText((sessions[i].date || '').slice(5), pad.left + barGap * i + barGap / 2, pad.top + ph + 14);
+    }
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.moveTo(pad.left, pad.top + ph); ctx.lineTo(W - pad.right, pad.top + ph); ctx.stroke();
+
+    // [V7.3.1] 存储 hit-test 数据
+    canvas._hitBars = sessions.map(function (s, i) {
+      return { x: pad.left + barGap * i + (barGap - barW) / 2, w: barW, profit: s.profit, cumProfit: cumValues[i], date: s.date, hands: s.hands };
+    });
+  },
+
+  // ========== 位置盈亏柱状图 ==========
+  _renderPositionProfitChart(area) {
+    var container = area.querySelector('#positionProfitContainer') || document.createElement('div');
+    container.id = 'positionProfitContainer';
+    container.style.marginBottom = '12px';
+    if (!container.parentElement) area.appendChild(container);
+
+    var titleEl = container.querySelector('.chart-title') || document.createElement('div');
+    titleEl.className = 'chart-title';
+    titleEl.textContent = '位置盈亏 Position Profit (BB)';
+    if (!titleEl.parentElement) container.appendChild(titleEl);
+
+    var posData = _aggregatePositionProfit();
+    var positions = ['EP', 'MP', 'CO', 'BTN', 'SB', 'BB'];
+    var hasData = positions.some(function (p) { return posData[p].hands > 0; });
+    if (!hasData) {
+      container.innerHTML = '<div class="chart-title">位置盈亏 Position Profit (BB)</div><div class="text-muted" style="text-align:center;padding:16px 0;font-size:0.8em">No position data available</div>';
+      return;
+    }
+
+    var canvas = container.querySelector('canvas') || document.createElement('canvas');
+    if (!canvas.parentElement) container.appendChild(canvas);
+    var dpr = window.devicePixelRatio || 1;
+    var W = container.clientWidth;
+    var H = 200;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    var ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    ctx.fillStyle = '#0f0f0f';
+    ctx.fillRect(0, 0, W, H);
+
+    var pad = { top: 16, right: 20, bottom: 32, left: 52 };
+    var pw = W - pad.left - pad.right;
+    var ph = H - pad.top - pad.bottom;
+
+    var values = positions.map(function (p) { return posData[p].profit; });
+    var maxV = Math.max.apply(null, values.concat([0]));
+    var minV = Math.min.apply(null, values.concat([0]));
+    var symA = Math.max(Math.abs(minV), Math.abs(maxV), 1);
+    var zY = pad.top + ph / 2;
+    var sY = function (v) { return zY - (v / symA) * (ph / 2); };
+
+    var ySteps = 4;
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 0.5;
+    ctx.fillStyle = '#909090'; ctx.font = '9px SF Mono, monospace'; ctx.textAlign = 'right';
+    for (var i = 0; i <= ySteps; i++) {
+      var gy = pad.top + (ph / ySteps) * i;
+      var gv = symA * (1 - (i / ySteps) * 2);
+      ctx.beginPath(); ctx.moveTo(pad.left, gy); ctx.lineTo(W - pad.right, gy); ctx.stroke();
+      ctx.fillText(Math.round(gv) + '', pad.left - 6, gy + 3);
+    }
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pad.left, zY); ctx.lineTo(W - pad.right, zY); ctx.stroke();
+
+    var barGap = pw / positions.length;
+    var barW = barGap * 0.5;
+    for (var i = 0; i < positions.length; i++) {
+      var bx = pad.left + barGap * i + (barGap - barW) / 2;
+      var val = posData[positions[i]].profit;
+      var bTop = sY(val);
+      var bBot = zY;
+      var h = bBot - bTop;
+      var absH = Math.abs(h);
+      if (absH < 0.5) absH = 1;
+      ctx.fillStyle = val >= 0 ? 'rgba(20,184,166,0.65)' : 'rgba(239,68,68,0.55)';
+      ctx.fillRect(bx, Math.min(bTop, bBot), barW, absH);
+      ctx.fillStyle = '#b0b0b0'; ctx.font = '10px SF Mono, monospace'; ctx.textAlign = 'center';
+      ctx.fillText(positions[i], pad.left + barGap * i + barGap / 2, pad.top + ph + 14);
+    }
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 0.5;
     ctx.beginPath(); ctx.moveTo(pad.left, pad.top + ph); ctx.lineTo(W - pad.right, pad.top + ph); ctx.stroke();
   },
-  renderTiltLogs() {
+
+
+    renderTiltLogs() {
     const logs = TiltLogRepo.getAll();
     const container = document.getElementById('tiltLogList');
     if (!container) return;

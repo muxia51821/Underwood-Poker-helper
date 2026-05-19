@@ -26,7 +26,8 @@
           <button class="app__settings-option is-active" id="soundOption">🔊 声音</button
           ><button class="app__settings-option is-active" id="vibrateOption">📳 振动</button
           ><button class="app__settings-option" id="testNotifyOption">🔔 测试通知</button
-          ><button class="app__settings-option" id="colorSchemeOption" title="切换配色方案">🎨 V11</button>
+          ><button class="app__settings-option" id="colorSchemeOption" title="切换配色方案 (Pale / Nimbus / Ember)">🎨 配色</button
+          ><button class="app__settings-option" id="shareSiteBtn">🌐 分享</button>
         </div>
       </div>
       <h1 class="app__title">
@@ -425,20 +426,7 @@
             <div class="card">
               <div class="card__title">Total Stats</div>
               <div id="totalStatsArea"><div class="text-muted">暂无数据</div></div>
-              <canvas
-                id="totalProfitChart"
-                width="600"
-                height="300"
-                style="
-                  display: none;
-                  width: 100%;
-                  max-width: 440px;
-                  height: auto;
-                  margin: 10px 0;
-                  border-radius: 8px;
-                  background: #0f172a;
-                "
-              ></canvas>
+              <div id="chartsArea" class="charts-area"></div>
             </div>
             <div class="card">
               <div class="card__title">错误追踪 Error Tracking</div>
@@ -784,7 +772,6 @@ OTR河牌 牌面：    行动：</textarea
                     <button id="exportBtn" class="app__settings-option">导出文件</button>
                     <button id="importBtn" class="app__settings-option">导入文件</button>
                     <input type="file" id="importFileInput" accept=".json" style="display: none" />
-                    <button id="shareSiteBtn" class="app__settings-option">分享网站</button>
                     <button id="clipboardExportBtn" class="app__settings-option">复制备份</button>
                     <button id="clipboardImportBtn" class="app__settings-option">粘贴备份</button>
                     <button id="csvExportBtn" class="app__settings-option">导出CSV</button>

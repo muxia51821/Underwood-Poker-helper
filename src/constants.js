@@ -2,8 +2,8 @@
 /* ==================== 核心配置 ==================== */
 export const CONSTANTS = {
   STORAGE_PREFIX: 'pa_',
-  VERSION: '7.2.2',
-  SESSION_GAP_HOURS: 3,  // [V6.14.0]
+  VERSION: '7.3.3',
+  SESSION_GAP_HOURS: 1,  // [V7.3.2] 从 3h 改为 1h，线下 Live 手动创建不受影响
   DEV: true,
   SITE_URL: 'https://mxpoker.netlify.app/',
   DEFAULT_WORK_MIN: 20,

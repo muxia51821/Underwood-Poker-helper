@@ -34,6 +34,20 @@
 - **改完代码后**：检查版本号 → 备份到 `牌桌助手历史迭代版本/indexVx.x.x.html` → 更新 `版本更新说明.md` → 更新本文状态 → `npm run build` → `npm run dev`（详见 [[post-change-checklist]]）
 - **每两个版本执行一次 `/simplify`**：检查代码重复、死代码、可合并逻辑、过时注释，保持代码库整洁
 
+## 技能使用规则
+
+### skill-creator
+- **触发**：仅在用户明确说"创建技能"/"新建skill"/"帮我写一个skill"时调用
+- **精简模式**（默认）：理解需求 → 写 SKILL.md 草稿 → 用户审核 → 修改 → 完成。禁止自动生成 eval 测试用例、benchmark 对比、description optimization、eval viewer、subagent 跑测试
+- **上限**：讨论限制在 3 轮内，SKILL.md 控制在 200 行内
+- **Python 脚本**：禁止运行 `scripts/` 下的任何 Python 脚本，除非用户明确要求
+
+### find-skills
+- **触发**：仅在用户明确说"找技能"/"有没有技能"/"搜索技能"/"有什么插件"时调用
+- **禁止自动触发**：用户问"怎么做X"时不要自动调 find-skills，用已有能力直接回答
+- **推荐前验证**：安装量 ≥1000、来源可信（vercel-labs/anthropics/microsoft 等）
+- **禁止主动建议安装**：只推荐用户问到的领域，不顺手推荐无关技能
+
 ## 输出
 
 - 给出代码前先输出中文计划（目标、涉及文件、核心步骤）。除非用户说"直接给代码"，计划中不放大段代码块
@@ -45,7 +59,7 @@
 
 ## UI 导航
 
-四 Tab：计时 → 赔率 → 锦标赛 → 复盘。复盘下四子 Tab：Hand → Session → Weekly → Villain。SRP 表和行动线表用 `<details>` 懒加载。
+三 Tab：Timer → Odds → Review。复盘下四子 Tab：Hand → Session → Weekly → Villain。SRP 表和行动线表用 `<details>` 懒加载。Tournament 内容迁入 Odds 底部折叠区。
 
 ## 文件结构
 
@@ -81,7 +95,7 @@ docs/                  # 架构文档
 
 ## 状态
 
-- **最新稳定版**：V7.1.0
+- **最新稳定版**：V7.3.3
 - **Git 基线**：V6.19.9（规则：当前稳定版往前退两个版本 commit 为基线）
 - **已知缺陷**：无
 
