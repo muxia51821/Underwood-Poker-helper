@@ -348,10 +348,18 @@ export const Utils = {
       handEl.style.display = 'none';
     }
   },
+  // [V7.4.4] 使用 IndexedDB 感知的存储配额检测（localStorage 仅存小配置，不反映真实容量）
   checkStorageQuota: function (additionalBytes) {
-    var used = JSON.stringify(localStorage).length;
-    var limit = (CONSTANTS.MAX_STORAGE_MB || 4) * 1024 * 1024;
-    return used + additionalBytes < limit;
+    // 优先用浏览器标准 API（反映 IndexedDB 配额）
+    if (navigator.storage && navigator.storage.estimate) {
+      return navigator.storage.estimate().then(function (est) {
+        var used = est.usage || 0;
+        var quota = est.quota || 0;
+        return quota > 0 && (used + additionalBytes) < quota;
+      }).catch(function () { return true; });
+    }
+    // 降级：不做严格限制（IndexedDB 由浏览器自动管理）
+    return Promise.resolve(true);
   },
   // [V6.9.1] 模板填充：克隆 template → 用 data 填充 [data-bind] 元素
   fillTemplate: function (tmplEl, data, htmlFields) {
@@ -406,6 +414,65 @@ export const Utils = {
     var color = pBB >= 0 ? '#4ade80' : '#f87171';
     var sign = pBB >= 0 ? '+' : '';
     return '<span style="color:' + color + '">' + sign + Utils.safeFixed(pBB, 1) + ' BB</span>';
+  },
+  // [V7.4.7] 牌面分类（统一入口，替代 3 处重复副本）
+  classifyBoard: function (boardCards) {
+    if (!boardCards) return 'dry_low';
+    // 兼容两种格式：空格分隔 "Ts Td 5c" 或紧凑 "TsTd5c"
+    var str = String(boardCards);
+    var cards = str.indexOf(' ') !== -1 ? str.split(' ') : (str.length >= 6 ? [str.substring(0,2), str.substring(2,4), str.substring(4,6)] : []);
+    if (cards.length < 3) return 'dry_low';
+    var ranks = cards.map(function (c) { return c.charAt(0); });
+    var suits = cards.map(function (c) { return c.charAt(c.length - 1); });
+    var rankOrder = 'AKQJT98765432';
+    var rankIdx = ranks.map(function (r) { return rankOrder.indexOf(r); }).sort(function (a, b) { return a - b; });
+    var highCard = ranks[0];
+    // [V7.4.9] 三条面检测（三张同 rank，非公对）
+    var isTrips = ranks[0] === ranks[1] && ranks[1] === ranks[2];
+    if (isTrips) return 'trips_board';
+    var isPaired = ranks[0] === ranks[1] || ranks[1] === ranks[2] || ranks[0] === ranks[2];
+    if (isPaired) {
+      var pairRank = ranks[0] === ranks[1] ? ranks[0] : ranks[2];
+      return 'AKQJT'.indexOf(pairRank) !== -1 ? 'paired_high' : 'paired_low';
+    }
+    var suitCounts = {};
+    suits.forEach(function (s) { suitCounts[s] = (suitCounts[s] || 0) + 1; });
+    var maxSuit = Math.max.apply(null, Object.values(suitCounts));
+    var isMonotone = maxSuit === 3;
+    var isTwoTone = maxSuit === 2;
+    var gaps = [];
+    for (var i = 0; i < rankIdx.length - 1; i++) { gaps.push(rankIdx[i + 1] - rankIdx[i] - 1); }
+    var maxGap = Math.max.apply(null, gaps);
+    // [V7.4.9] 天顺面检测（三张连续，如 789）
+    var isMadeStraight = gaps.length === 2 && gaps[0] === 0 && gaps[1] === 0;
+    if (isMadeStraight) return 'made_straight';
+    var isStraighty = maxGap <= 2 && gaps.filter(function (g) { return g <= 1; }).length >= 2;
+    if (isMonotone) return 'monotone';
+    if ('AKQJT'.indexOf(highCard) !== -1) {
+      if (isTwoTone && isStraighty) return 'flushy_straighty';
+      if (isStraighty) return 'straighty';
+      if (isTwoTone) return 'flushy_dry';
+      return 'dryAHigh';
+    }
+    if (isTwoTone && isStraighty) return 'flushy_straighty';
+    if (isStraighty) return 'straighty';
+    if (isTwoTone) return 'flushy_dry';
+    return 'dry_low';
+  },
+  // [V7.4.7] 行动线提取（统一入口）
+  extractActionLine: function (desc, prefix) {
+    if (!desc) return '';
+    try {
+      var re = new RegExp(prefix + '[^行]*行动：(.+)$', 'm');
+      var m = desc.match(re);
+      if (!m) return '';
+      return m[1].trim().split(/\s+/).map(function (t) {
+        if (/^B/i.test(t)) { var bb = t.match(/[\d.]+/); return 'B' + (bb ? bb[0] : ''); }
+        if (/^C/i.test(t)) return 'C'; if (/^X/i.test(t)) return 'X';
+        if (/^F/i.test(t)) return 'F'; if (/^R/i.test(t)) return 'R';
+        return t;
+      }).join('-');
+    } catch (e) { return ''; }
   },
 };
 // #endregion

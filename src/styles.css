@@ -71,8 +71,8 @@ body{font-family:"Segoe UI Variable Text","SF Pro Text",-apple-system,BlinkMacSy
 .filter-row{display:flex;gap:8px;align-items:center;margin:10px 0;flex-wrap:wrap}
 .filter-row .select{width:auto;flex:1}
 .table-container{max-height:250px;overflow-y:auto;margin-top:8px}
-.session-table{width:100%;border-collapse:collapse;font-size:0.7em;color:#fafafa}
-.session-table td,.session-table th{padding:6px 6px;border-bottom:1px solid rgba(255,255,255,0.06);text-align:center}
+.session-table{width:100%;border-collapse:collapse;font-size:0.82em;color:#fafafa}
+.session-table td,.session-table th{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.06);text-align:center}
 .session-table th{color:#b0b0b0;position:sticky;top:0;background:#0f0f0f}
 .session-table tbody tr:nth-child(even){background:rgba(255,255,255,0.015)}
 .session-table tbody tr:hover{background:rgba(90,158,143,.05)}
@@ -86,7 +86,7 @@ details{margin-top:8px}details summary{font-size:0.78em;color:#b0b0b0;cursor:poi
 .srp-filters{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}
 .srp-filters .select{min-width:0;font-size:0.7em;padding:5px 4px}
 @media(max-width:420px){.srp-filters{grid-template-columns:repeat(2,1fr)}}
-.srp-table{width:100%;border-collapse:collapse;font-size:0.7em;margin-top:6px}
+.srp-table{width:100%;border-collapse:collapse;font-size:0.8em;margin-top:6px}
 .srp-table td,.srp-table th{padding:4px 6px;border-bottom:1px solid rgba(255,255,255,0.06);text-align:center}
 .srp-table th{background:#0f0f0f;color:#b0b0b0}.srp-table tr.is-current{background:#5a9e8f;color:#fff}
 .srp-table tbody tr:nth-child(even){background:rgba(255,255,255,0.015)}
@@ -97,9 +97,8 @@ details{margin-top:8px}details summary{font-size:0.78em;color:#b0b0b0;cursor:poi
 .sub-panel{display:none}.sub-panel.is-visible{display:block}
 .textarea{resize:vertical}
 .card-visual{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
-.card-badge{background:#0f0f0f;border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:1px 4px;font-family:monospace;white-space:nowrap;font-size:0.7em}
-.card-badge.black{color:#fafafa}
-.card-badge.red{color:#e0556a}
+.card-badge{background:#0f0f0f;border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:2px 5px;font-family:monospace;white-space:nowrap;font-size:0.85em}
+.card-badge.black{color:#1a1a1a;background:#e8e8e8;border-color:rgba(0,0,0,0.12)}.card-badge.red{color:#cc2233;background:#e8e8e8;border-color:rgba(180,40,40,0.15)}
 .suit-red{color:#e0556a}.suit-black{color:#e8e8ec}
 .player-cards{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-bottom:8px}
 .tilt-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,0.95);z-index:100;display:none;flex-direction:column;justify-content:center;align-items:center;padding:20px;text-align:center}
@@ -304,6 +303,146 @@ body.color-ember .multi-way-select{background:#282828}
 body.color-ember .warning-bar a{color:#fff}
 body.color-ember .storage-health-detail{border-color:#282828}
 body.color-ember .gg-drop-active{background:rgba(90,158,143,.1)}
+/* [V7.3.4] Neon Deck — 科技扑克风格：微弱点阵+卡片辉光+花色装饰+扫描线 */
+body.color-neon{
+  background:#0a0f0a;
+  background-image:
+    radial-gradient(circle,#2a3a2a 1px,transparent 1px);
+  background-size:24px 24px;
+  background-position:0 0
+}
+body.color-neon .app__title{
+  color:#5a9e8f;
+  position:relative;
+  text-shadow:0 0 20px rgba(90,158,143,.3)
+}
+body.color-neon .app__title::before{content:'♠ '}
+body.color-neon .app__title::after{content:' ♥'}
+body.color-neon .card{
+  background:rgba(10,15,10,.85);
+  border:1px solid rgba(90,158,143,.15);
+  box-shadow:0 0 20px rgba(90,158,143,.05),inset 0 0 20px rgba(90,158,143,.02);
+  border-radius:12px;
+  padding:16px;
+  backdrop-filter:blur(8px)
+}
+body.color-neon .card:hover{
+  border-color:rgba(90,158,143,.25);
+  box-shadow:0 0 30px rgba(90,158,143,.08),inset 0 0 20px rgba(90,158,143,.03)
+}
+body.color-neon .nav{
+  background:rgba(10,15,10,.9);
+  border:1px solid rgba(90,158,143,.12);
+  backdrop-filter:blur(8px)
+}
+body.color-neon .nav__btn{color:#7a8a7a}
+body.color-neon .nav__btn:hover{color:#c8d8c8;background:rgba(90,158,143,.08)}
+body.color-neon .nav__btn--active{
+  background:#5a9e8f;
+  color:#0a0f0a;
+  box-shadow:0 0 16px rgba(90,158,143,.4),0 0 40px rgba(90,158,143,.15)
+}
+body.color-neon .subnav{background:rgba(10,15,10,.9);border:1px solid rgba(90,158,143,.12)}
+body.color-neon .subnav__btn{color:#7a8a7a}
+body.color-neon .subnav__btn:hover{color:#c8d8c8;background:rgba(90,158,143,.08)}
+body.color-neon .subnav__btn--active{
+  background:#5a9e8f;
+  color:#0a0f0a;
+  box-shadow:0 0 12px rgba(90,158,143,.3)
+}
+body.color-neon .input,body.color-neon .select,body.color-neon .textarea{
+  background:rgba(10,15,10,.8);
+  border-color:rgba(90,158,143,.15);
+  color:#c8d8c8
+}
+body.color-neon .input:focus,body.color-neon .select:focus,body.color-neon .textarea:focus{
+  border-color:#5a9e8f;
+  box-shadow:0 0 12px rgba(90,158,143,.2);
+  outline:none
+}
+body.color-neon .btn{font-size:.9em;font-weight:600;padding:10px;height:auto}
+body.color-neon .btn:hover{box-shadow:0 0 16px rgba(90,158,143,.3);background:#6db5a5}
+body.color-neon .btn:focus-visible{outline:none}
+body.color-neon .btn--secondary{background:rgba(90,158,143,.08);color:#c8d8c8}
+body.color-neon .btn--secondary:hover{background:rgba(90,158,143,.15)}
+body.color-neon .btn--mini{background:rgba(90,158,143,.08);color:#9aaa9a}
+body.color-neon .btn--mini:hover{background:rgba(90,158,143,.15);color:#c8d8c8}
+body.color-neon .btn--mini:focus-visible{outline:none}
+body.color-neon .field{color:#9aaa9a}
+body.color-neon .card__title{color:#c8d8c8}
+body.color-neon .text-muted{color:#7a8a7a}
+body.color-neon .highlight{color:#d4a853;text-shadow:0 0 8px rgba(212,168,83,.2)}
+body.color-neon .result{background:rgba(10,15,10,.8);border:1px solid rgba(90,158,143,.1)}
+body.color-neon .timer__display{color:#c8d8c8;text-shadow:0 0 24px rgba(90,158,143,.15)}
+body.color-neon .timer__display--long-break{color:#d4a853;text-shadow:0 0 32px rgba(212,168,83,.3)}
+body.color-neon .stats__item{
+  background:rgba(10,15,10,.9);
+  border:1px solid rgba(90,158,143,.08);
+  position:relative;
+  overflow:hidden
+}
+body.color-neon .stats__item::after{
+  content:'';
+  position:absolute;
+  top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(90,158,143,.1),transparent)
+}
+body.color-neon .stats__label{color:#9aaa9a}
+body.color-neon .session-table,.body.color-neon .log-table,.body.color-neon .srp-table{color:#c8d8c8}
+body.color-neon .session-table td,.body.color-neon .session-table th,
+body.color-neon .log-table td,.body.color-neon .log-table th,
+body.color-neon .srp-table td,.body.color-neon .srp-table th,
+body.color-neon .cheatsheet td,.body.color-neon .cheatsheet th{
+  border-bottom-color:rgba(90,158,143,.06)
+}
+body.color-neon .session-table th{background:rgba(10,15,10,.9);color:#9aaa9a}
+body.color-neon .log-table th{color:#9aaa9a}
+body.color-neon .srp-table th{background:rgba(10,15,10,.9);color:#9aaa9a}
+body.color-neon .cheatsheet th{background:rgba(10,15,10,.9);color:#9aaa9a}
+body.color-neon .session-table tbody tr:nth-child(even),
+body.color-neon .log-table tbody tr:nth-child(even),
+body.color-neon .srp-table tbody tr:nth-child(even),
+body.color-neon .cheatsheet tbody tr:nth-child(even){
+  background:rgba(90,158,143,.02)
+}
+body.color-neon .session-table tbody tr:hover,
+body.color-neon .log-table tbody tr:hover{
+  background:rgba(90,158,143,.06)
+}
+body.color-neon .stats-section-title{
+  color:#c8d8c8;
+  text-shadow:0 0 8px rgba(90,158,143,.2);
+  background:linear-gradient(90deg,transparent,rgba(90,158,143,.04),transparent);
+  border-color:rgba(90,158,143,.12)
+}
+body.color-neon details summary{color:#9aaa9a;border-color:rgba(90,158,143,.06)}
+body.color-neon .app__settings-btn{background:rgba(10,15,10,.9);border-color:rgba(90,158,143,.12);color:#7a8a7a}
+body.color-neon .app__settings-menu{background:rgba(10,15,10,.95);border-color:rgba(90,158,143,.15);border-radius:12px;backdrop-filter:blur(12px)}
+body.color-neon .app__settings-option{background:rgba(90,158,143,.06);color:#9aaa9a}
+body.color-neon .app__settings-option:hover{background:rgba(90,158,143,.15)}
+body.color-neon .app__settings-option.is-active{background:rgba(10,15,10,.9);color:#6baf7e;border:1px solid rgba(90,158,143,.15)}
+body.color-neon .radio-group label{background:rgba(10,15,10,.9);border-color:rgba(90,158,143,.1)}
+body.color-neon .rec-card{background:rgba(10,15,10,.9);border:1px solid rgba(90,158,143,.1);border-left:2px solid #5a9e8f}
+body.color-neon .toast{background:rgba(10,15,10,.95);border:1px solid rgba(90,158,143,.15);color:#c8d8c8;backdrop-filter:blur(8px)}
+body.color-neon .version-tag{color:#7a8a7a}
+body.color-neon .toggle-btn{background:rgba(90,158,143,.06);color:#9aaa9a}
+body.color-neon .toggle-btn:hover{background:rgba(90,158,143,.15)}
+body.color-neon .toggle-btn.is-active{background:#5a9e8f;color:#0a0f0a}
+body.color-neon .multi-way-select{background:rgba(10,15,10,.8);border-color:rgba(90,158,143,.15);color:#9aaa9a}
+body.color-neon .bet-sizes .btn--mini{background:rgba(10,15,10,.9);border-color:rgba(90,158,143,.12)}
+body.color-neon .pagination-bar button{background:rgba(90,158,143,.06);color:#9aaa9a}
+body.color-neon .pagination-bar button:hover{background:rgba(90,158,143,.15)}
+body.color-neon .share-dialog{background:rgba(10,15,10,.95);border:1px solid rgba(90,158,143,.15)}
+body.color-neon .share-dialog__url{background:rgba(10,15,10,.8)}
+body.color-neon .tooltip-content{background:rgba(10,15,10,.95);border:1px solid rgba(90,158,143,.15)}
+body.color-neon .charts-area canvas{filter:drop-shadow(0 0 12px rgba(90,158,143,.08))}
+body.color-neon .timer__reset-btn{background:rgba(90,158,143,.06);color:#9aaa9a;border:1px solid rgba(90,158,143,.1)}
+body.color-neon .timer__reset-btn:hover{background:rgba(90,158,143,.15)}
+body.color-neon .odds-toolbar-btn{color:#7a8a7a}
+body.color-neon .gg-drop-active{background:rgba(90,158,143,.1);border-color:#5a9e8f!important}
+body.color-neon .mistake-tag{background:rgba(90,158,143,.08);color:#c8d8c8}
+body.color-neon .storage-health-detail{background:rgba(10,15,10,.9);border-color:rgba(90,158,143,.12)}
+/* #endregion Neon */
 /* [V7.3.0] 图表区域 */
 .charts-area {
   display: flex;
@@ -345,4 +484,31 @@ body.color-ember .gg-drop-active{background:rgba(90,158,143,.1)}
 .chart-tooltip.is-visible { opacity: 1; }
 .chart-tooltip .tt-label { color: #909090; font-size: 0.9em; }
 .chart-tooltip .tt-val { font-weight: 600; }
+/* [V7.4.1] GTO Quiz */
+.quiz-card{padding:8px 0}
+.quiz-controls{display:flex;gap:8px;margin-bottom:10px}
+.quiz-select{flex:1;font-size:0.75em;padding:6px 8px;background:#0f0f0f;border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#b0b0b0}
+.quiz-board{text-align:center;font-size:2em;font-weight:700;color:#fafafa;margin:12px 0;font-family:"SF Mono",monospace;letter-spacing:2px}
+.quiz-category{text-align:center;font-size:0.8em;color:#909090;margin-bottom:4px}
+.quiz-context{text-align:center;font-size:0.75em;color:#909090;margin-bottom:12px}
+.quiz-actions{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.quiz-actions .btn--mini{flex:1;min-width:70px;text-align:center;font-size:0.85em;height:36px}
+.quiz-actions .btn--mini.is-chosen{background:#5a9e8f;color:#0f0f0f}
+.quiz-result{margin-top:10px;padding:10px;background:rgba(10,15,10,.8);border-radius:10px;border:1px solid rgba(255,255,255,0.06);font-size:0.8em;line-height:1.6}
+.quiz-result .qr-verdict{font-weight:bold;margin-bottom:6px}
+.quiz-result .qr-bar{display:flex;align-items:center;gap:6px;margin:3px 0;font-family:"SF Mono",monospace;font-size:0.85em}
+.quiz-result .qr-bar .qr-label{min-width:65px;color:#b0b0b0}
+.quiz-result .qr-bar .qr-pct{min-width:30px;text-align:right;color:#fafafa}
+.quiz-stats{font-size:0.75em;color:#909090;text-align:center;margin-top:8px}
+.quiz-stats .qs-row{display:flex;justify-content:space-between;margin:2px 0}
+.quiz-stats .qs-bar{flex:1;height:6px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;margin:0 8px}
+.quiz-stats .qs-bar-fill{height:100%;border-radius:3px;transition:width .3s}
+/* [V7.6.2] 错题集 */
+.quiz-error-group{margin-bottom:12px}
+.quiz-error-item{position:relative;display:flex;align-items:center;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.04);overflow:hidden}
+.quiz-error-meta{flex:1;min-width:0;padding:0 8px}
+.quiz-error-delete-btn{position:absolute;right:-60px;top:0;bottom:0;width:48px;background:rgba(248,81,73,0.15);color:#f85149;border:none;cursor:pointer;font-size:1em;transition:right .2s;display:flex;align-items:center;justify-content:center}
+.quiz-error-item.swiped .quiz-error-delete-btn{right:0}
+.quiz-error-item:hover .quiz-error-delete-btn{right:0}
+.quiz-error-quiz{padding:8px;background:rgba(255,255,255,0.02);border-radius:8px}
 /* #endregion */

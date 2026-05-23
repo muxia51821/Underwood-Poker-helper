@@ -1,7 +1,7 @@
 import { CONSTANTS } from '../constants.js';
 import { Utils, PubSub } from '../utils.js';
 import { Store, SessionRepo, WeeklyRepo, TiltLogRepo } from '../store/store.js';
-import { srpData } from '../data/srpData.js';
+import { srpData, ACTION_SHORT } from '../data/srpData.js';
 import { underBluff, overBluff } from '../data/actionLines.js';
 
 import { DataSync } from './dataSync.js';
@@ -11,6 +11,7 @@ import { Odds } from './odds.js';
 import { Review } from './review.js';
 import { initGGImport } from './ggImport.js';
 import { HandPicker } from './handPicker.js';  // [V6.15.0]
+import { Discover } from './discover.js';      // [V7.4.6]
 
 export const App = {
           sound: true,
@@ -61,6 +62,7 @@ export const App = {
             Odds.init();
 
             Review.init();
+            Discover.init();  // [V7.4.7] 初始化扫描状态
             TiltRescue.init();
             DataSync.init();
 
@@ -80,15 +82,18 @@ export const App = {
               el.style.display = 'block';
             });
 
-            // 5.0 懒加载 SRP 表
+            // [V7.7.0] 懒加载 GTO 频率速查表
             const srpDetails = document.getElementById('srpDetails');
             if (srpDetails) {
               srpDetails.addEventListener('toggle', function () {
                 if (this.open && !App._srpLoaded) {
                   App.renderSRPTable();
-                  document.querySelectorAll('.srp-filters select').forEach(function (sel) {
-                    sel.addEventListener('change', App.renderSRPTable);
-                  });
+                  var filterScenario = document.getElementById('filterScenario');
+                  var filterHigh = document.getElementById('filterHigh');
+                  var filterCategory = document.getElementById('filterCategory');
+                  if (filterScenario) filterScenario.addEventListener('change', App.renderSRPTable);
+                  if (filterHigh) filterHigh.addEventListener('change', App.renderSRPTable);
+                  if (filterCategory) filterCategory.addEventListener('change', App.renderSRPTable);
                   App._srpLoaded = true;
                 }
               });
@@ -136,7 +141,17 @@ export const App = {
             // [V6.19.7] 遮罩层点击背景关闭
             document.querySelectorAll('.tilt-overlay, .share-overlay').forEach(function (ov) {
               ov.addEventListener('click', function (e) {
-                if (e.target === ov) ov.classList.remove('is-active');
+                if (e.target === ov) {
+                  ov.classList.remove('is-active');
+                  // [V7.3.3] 点击遮罩关闭 tilt 时重置 locked + 清理计时器
+                  if (ov.id === 'tiltOverlay') {
+                    TiltRescue.locked = false;
+                    if (TiltRescue.countdownTimer) {
+                      clearInterval(TiltRescue.countdownTimer);
+                      TiltRescue.countdownTimer = null;
+                    }
+                  }
+                }
               });
             });
             // [V6.9.3] GG手牌导入（独立模块）
@@ -246,18 +261,40 @@ export const App = {
             }
           },
           // [V6.9.1] 渲染 SB vs BB SRP 翻牌策略表
+          // [V7.7.0] GTO 频率速查表渲染
           renderSRPTable() {
-            var high = document.getElementById('filterHigh') ? document.getElementById('filterHigh').value : 'all';
-            var suit = document.getElementById('filterSuit') ? document.getElementById('filterSuit').value : 'all';
-            var connect = document.getElementById('filterConnect') ? document.getElementById('filterConnect').value : 'all';
-            var pair = document.getElementById('filterPair') ? document.getElementById('filterPair').value : 'all';
+            var scenario = document.getElementById('filterScenario') ? document.getElementById('filterScenario').value : 'SBvsBB';
+            var highFilter = document.getElementById('filterHigh') ? document.getElementById('filterHigh').value : 'all';
+            var catFilter = document.getElementById('filterCategory') ? document.getElementById('filterCategory').value : 'all';
+            var catLabels = {
+              dryAHigh: '干燥A高', flushy_dry: '双花干燥', straighty: '听顺面',
+              flushy_straighty: '双花听顺', paired_high: '公对高', monotone: '天花面',
+              dry_low: '低牌干燥', paired_low: '公对低', made_straight: '天顺面', trips_board: '三条面',
+            };
+            function _freqColor(f) {
+              if (f >= 35) return '#6baf7e';
+              if (f >= 13) return '#d4a853';
+              return '#c06060';
+            }
+            function _freqBarHtml(freq, color) {
+              return '<span style="display:inline-block;width:48px;height:5px;background:rgba(255,255,255,0.06);border-radius:3px;vertical-align:middle;margin:0 4px">' +
+                '<span style="display:block;height:100%;width:' + Math.round(freq) + '%;background:' + color + ';border-radius:3px"></span></span>';
+            }
             var rows = [];
             srpData.forEach(function (d) {
-              if (high !== 'all' && d.high !== high) return;
-              if (suit !== 'all' && d.suit !== suit) return;
-              if (connect !== 'all' && d.connect !== connect) return;
-              if (pair !== 'all' && d.pair !== pair) return;
-              rows.push('<tr><td>' + Utils.escapeHtml(d.flop) + '</td><td>' + Utils.escapeHtml(d.high) + '</td><td>' + Utils.escapeHtml(d.suit) + '</td><td>' + Utils.escapeHtml(d.connect) + '</td><td>' + Utils.escapeHtml(d.pair) + '</td><td>' + Utils.escapeHtml(d.size) + '</td></tr>');
+              if (d.scenario !== scenario) return;
+              if (highFilter !== 'all' && d.high !== highFilter) return;
+              if (catFilter !== 'all' && d.category !== catFilter) return;
+              var dom = d.dominant, sec = d.secondary;
+              var domShort = ACTION_SHORT[dom.key] || { code: '?' };
+              var secShort = ACTION_SHORT[sec.key] || { code: '?' };
+              var domColor = _freqColor(dom.freq), secColor = _freqColor(sec.freq);
+              rows.push('<tr>' +
+                '<td>' + Utils.renderCardBadges(d.flop) + '</td>' +
+                '<td style="font-size:0.85em">' + (catLabels[d.category] || d.category) + '</td>' +
+                '<td><span style="color:' + domColor + ';font-weight:600">' + domShort.code + '</span> <span style="font-size:0.85em">' + Utils.safeFixed(dom.freq, 1) + '%</span>' + _freqBarHtml(dom.freq, domColor) + '</td>' +
+                '<td><span style="color:' + secColor + ';font-weight:600">' + secShort.code + '</span> <span style="font-size:0.85em">' + Utils.safeFixed(sec.freq, 1) + '%</span>' + _freqBarHtml(sec.freq, secColor) + '</td>' +
+                '</tr>');
             });
             document.getElementById('srpBody').innerHTML = rows.join('');
           },
@@ -339,16 +376,17 @@ export const App = {
               vb.classList.toggle('is-active', this.vibrateOn);
               Store.settings.save({ sound: this.sound, vibrate: this.vibrateOn });
             });
-            // [V7.2.3] 三配色方案切换: Pale → Nimbus → Ember
+            // [V7.3.4] 四配色方案切换: Pale → Nimbus → Ember → Neon
             var csBtn = document.getElementById('colorSchemeOption');
-            var schemes = ['pale', 'nimbus', 'ember'];
-            var labels = { pale: '🎨 Nimbus', nimbus: '🎨 Ember', ember: '🎨 Pale' };
-            var classes = { nimbus: 'color-nimbus', ember: 'color-ember' };
+            var schemes = ['pale', 'nimbus', 'ember', 'neon'];
+            var labels = { pale: '🎨 Nimbus', nimbus: '🎨 Ember', ember: '🎨 Neon', neon: '🎨 Pale' };
+            var classes = { nimbus: 'color-nimbus', ember: 'color-ember', neon: 'color-neon' };
             var savedScheme = localStorage.getItem('pa_colorScheme') || 'pale';
+            var allClasses = ['color-nimbus', 'color-ember', 'color-neon'];
             if (savedScheme !== 'pale') { document.body.classList.add(classes[savedScheme]); }
             csBtn.textContent = labels[savedScheme];
             csBtn.addEventListener('click', function () {
-              document.body.classList.remove('color-nimbus', 'color-ember');
+              allClasses.forEach(function (c) { document.body.classList.remove(c); });
               var currentIdx = schemes.indexOf(localStorage.getItem('pa_colorScheme') || 'pale');
               var nextScheme = schemes[(currentIdx + 1) % schemes.length];
               if (nextScheme !== 'pale') { document.body.classList.add(classes[nextScheme]); }
@@ -403,6 +441,9 @@ export const App = {
                 Review.populateHandSessionSelect();
                 Review.renderHandReviews();
                 HandPicker.render();  // [V6.16.0]
+              }
+              if (b.dataset.sub === 'discover') {
+                Review.renderDiscover();
               }
               if (b.dataset.sub === 'weekly') {
                 Review.generateWeeklyStats();

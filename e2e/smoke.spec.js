@@ -22,7 +22,7 @@ test('页面加载无 Console 报错', async ({ page }) => {
   await expect(page.locator('#storageHealth')).toBeAttached();
 
   // 切换到四个主 Tab，触发各模块 init
-  for (const tab of ['timer', 'odds', 'tournament', 'review']) {
+  for (const tab of ['timer', 'odds', 'review']) {
     await page.click(`[data-tab="${tab}"]`);
     await page.waitForTimeout(200);
   }

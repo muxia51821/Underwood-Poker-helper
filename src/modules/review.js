@@ -3,8 +3,160 @@ import { CONSTANTS } from '../constants.js';
 import { Utils } from '../utils.js';
 import { Store, SessionRepo, HandRepo, WeeklyRepo, TiltLogRepo } from '../store/store.js';
 import { analyze, getStatColor, STAT_TOOLTIPS, STAT_DEFINITIONS } from './statsEngine.js';  // [V6.18.4]
+import { Discover } from './discover.js';  // [V7.4.6]
+import { QuizTrainer } from './quizTrainer.js';  // [V7.4.7]
 import { openGGImportForSession } from './ggImport.js';  // [V6.14.0]
 import { HandPicker } from './handPicker.js';  // [V6.15.0]
+
+// [V7.5.1] 位置对抗速查 — 10 种 6-max 对抗策略要点
+var POSITION_ADVICE = {
+  UTGvsBB: '📌 UTG vs BB（UTG开池，BB防守）\n• UTG范围很窄（约10-12%），翻后不利位置，C-bet频率中等（50-60%），常用1/3-1/2底池。\n• BB防守范围宽，翻后可激进过牌-加注。\n• UTG应多用强牌过牌-加注，弱牌过牌-弃牌。\n• BB面对小注要高频防守，用顶对/听牌过牌-加注。',
+  UTGvsBTN: '📌 UTG vs BTN（UTG开池，BTN防守）\n• UTG范围强但翻后不利位置，BTN有位置优势。\n• UTG的C-bet频率较低（40-50%），多用小注，且需更多过牌。\n• BTN防守范围偏强，3-bet多为价值牌，翻后多利用位置偷池。\n• UTG应用强牌过牌-加注惩罚BTN过度诈唬。\n• BTN面对UTG过牌时可用中等牌下注，被过牌-加注时多弃牌。',
+  MPvsCO: '📌 MP vs CO（MP开池，CO防守）\n• MP范围中等偏紧（约12-15%），CO范围中等偏宽。\n• 双方位置接近，MP略处劣势。\n• MP应保持较高C-bet频率（约60%），尺寸可1/3-1/2。\n• CO可用宽范围跟注，翻后多利用位置加注施压。',
+  COvsBTN: '📌 CO vs BTN（CO开池，BTN防守）\n• CO范围中等偏宽（约20-25%），BTN范围极宽且有位置。\n• BTN可大量3-bet诈唬，因为CO范围较宽。\n• CO面对3-bet需用强牌跟注或4-bet，弱牌弃牌。\n• 翻后CO若未获位置，注意控制底池；BTN应高频持续下注。',
+  BTNvsBB: '📌 BTN vs BB（BTN偷盲，BB防守）\n• BTN开池范围极宽（40-50%），翻后有利位置，C-bet频率极高（70-80%），常用1/3底池小注。\n• BB防守范围极宽（几乎任何两张牌），常用过牌-加注反击。\n• BTN可用薄价值下注，被过牌-加注后听牌可继续，弱牌弃。\n• BB面对小注要多跟注，用顶对/听牌激进过牌-加注，混合3-bet诈唬。',
+  SBvsBB: '📌 SB vs BB（SB补齐，BB防守）\n• SB已投入0.5BB，翻后最不利位置，避免平跟过多，多用加注或弃牌。\n• SB开池范围应极化（强牌+诈唬），平跟范围窄。\n• BB可利用位置优势，面对SB小注时高频防守，面对SB加注时弃弱牌。\n• 翻后SB宜采用过牌-弃牌或过牌-加注两极策略，避免被动跟注。',
+  SBvsBTN: '📌 SB vs BTN（SB防守BTN开池）\n• BTN开池极宽，SB处于最不利位置且已投入0.5BB。\n• SB应紧缩防守范围，多用3-bet或弃牌，避免平跟。\n• SB的3-bet范围应包含价值牌（JJ+、AQ+）和诈唬（如A5s、K6s）。\n• BTN面对SB的3-bet可用宽范围跟注，利用位置偷池。',
+  UTGvsCO: '📌 UTG vs CO（UTG开池，CO防守）\n• UTG范围强，CO有位置优势但范围比BTN窄。\n• UTG的C-bet频率略高于UTGvsBTN（约55%），尺寸偏小。\n• CO可用中等范围跟注，翻后用位置施压。\n• UTG需用顶对以上价值下注，弱牌多过牌。',
+  MPvsBTN: '📌 MP vs BTN（MP开池，BTN防守）\n• MP范围中等，BTN有位置优势且范围宽。\n• MP的C-bet频率约60%，需在不利位置控制底池。\n• BTN可频繁3-bet诈唬，尤其当MP范围偏弱时。\n• MP面对3-bet需谨慎，仅用强牌继续。',
+  COvsBB: '📌 CO vs BB（CO偷盲，BB防守）\n• CO开池范围较宽（约25%），BB防守极宽。\n• CO有位置优势，C-bet频率高（65-75%）。\n• BB可用宽范围防守，并常用过牌-加注反击。\n• CO被过牌-加注后，听牌可跟注，弱牌弃牌。'
+};
+
+// [V7.5.1] 渲染位置对抗速查按钮组
+function _renderPosAdviceButtons() {
+  var group = document.getElementById('posAdviceGroup');
+  if (!group || group.children.length) return;
+  var keys = Object.keys(POSITION_ADVICE);
+  keys.forEach(function (k) {
+    var btn = document.createElement('button');
+    btn.className = 'toggle-btn pos-advice-btn';
+    btn.textContent = k;
+    btn.dataset.adviceKey = k;
+    btn.style.cssText = 'font-size:0.8em;padding:3px 8px';
+    group.appendChild(btn);
+  });
+}
+function _applyPosAdvice(scenarioKey) {
+  var textEl = document.getElementById('posAdviceText');
+  var btns = document.querySelectorAll('.pos-advice-btn');
+  btns.forEach(function (b) { b.classList.remove('is-active'); });
+  if (scenarioKey && POSITION_ADVICE[scenarioKey]) {
+    var matched = document.querySelector('.pos-advice-btn[data-advice-key="' + scenarioKey + '"]');
+    if (matched) matched.classList.add('is-active');
+    if (textEl) textEl.innerHTML = POSITION_ADVICE[scenarioKey].replace(/\n/g, '<br>');
+  } else {
+    if (textEl) textEl.textContent = '请选择对抗类型查看策略要点。';
+  }
+}
+
+// [V7.6.0] Monte Carlo 资金波动模拟
+function _runMonteCarlo(pBBs, simHands) {
+  var n = pBBs.length;
+  var rounds = 10000;
+  var results = new Array(rounds);
+  for (var r = 0; r < rounds; r++) {
+    var sum = 0;
+    for (var i = 0; i < simHands; i++) {
+      sum += pBBs[Math.floor(Math.random() * n)];
+    }
+    results[r] = sum;
+  }
+  results.sort(function (a, b) { return a - b; });
+  return results;
+}
+function _renderMonteCarlo() {
+  var allHands = HandRepo.getAll();
+  var pBBs = [];
+  for (var i = 0; i < allHands.length; i++) {
+    var v = allHands[i].pBB;
+    if (typeof v === 'number' && isFinite(v)) pBBs.push(v);
+  }
+  if (pBBs.length < 30) {
+    var ca = document.getElementById('mcChartArea');
+    if (ca) ca.innerHTML = '<div class="text-muted">需要至少 30 手牌数据才能模拟</div>';
+    var pel = document.getElementById('mcPercentiles');
+    if (pel) pel.innerHTML = '';
+    var sel = document.getElementById('mcSummary');
+    if (sel) sel.textContent = '';
+    return;
+  }
+  var activeBtn = document.querySelector('.mc-hand-btn.is-active');
+  var simHands = activeBtn ? parseInt(activeBtn.dataset.mcHands) : 1000;
+  var results = _runMonteCarlo(pBBs, simHands);
+  // 直方图 Canvas
+  var chartArea = document.getElementById('mcChartArea');
+  if (!chartArea) return;
+  var canvas = chartArea.querySelector('canvas') || document.createElement('canvas');
+  if (!canvas.parentElement) chartArea.appendChild(canvas);
+  var W = chartArea.clientWidth || 600;
+  var H = 180;
+  var dpr = window.devicePixelRatio || 1;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  var ctx = canvas.getContext('2d');
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+  var minR = results[0], maxR = results[9999];
+  var binCount = 30;
+  var binWidth = (maxR - minR) / binCount || 1;
+  var bins = new Array(binCount);
+  for (var b = 0; b < binCount; b++) bins[b] = 0;
+  for (var r2 = 0; r2 < 10000; r2++) {
+    var bidx = Math.min(binCount - 1, Math.floor((results[r2] - minR) / binWidth));
+    bins[bidx]++;
+  }
+  var maxBin = Math.max.apply(null, bins);
+  var pad = { top: 8, right: 8, bottom: 24, left: 50 };
+  var pw = W - pad.left - pad.right;
+  var ph = H - pad.top - pad.bottom;
+  // 零线
+  if (minR < 0 && maxR > 0) {
+    var zeroX = pad.left + ((0 - minR) / (maxR - minR)) * pw;
+    ctx.strokeStyle = '#888';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(zeroX, pad.top);
+    ctx.lineTo(zeroX, pad.top + ph);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  // 柱子
+  for (var b2 = 0; b2 < binCount; b2++) {
+    var x = pad.left + (b2 / binCount) * pw;
+    var barW = pw / binCount - 1;
+    var barH = (bins[b2] / maxBin) * ph;
+    var y = pad.top + ph - barH;
+    var binCenter = minR + (b2 + 0.5) * binWidth;
+    ctx.fillStyle = binCenter >= 0 ? 'rgba(46,160,67,0.7)' : 'rgba(248,81,73,0.7)';
+    ctx.fillRect(x, y, barW, barH);
+  }
+  // X 轴标签
+  ctx.fillStyle = '#8b949e';
+  ctx.font = '10px system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  for (var l = 0; l <= 5; l++) {
+    var val = minR + (l / 5) * (maxR - minR);
+    var lx = pad.left + (l / 5) * pw;
+    ctx.fillText(Math.round(val), lx, pad.top + ph + 14);
+  }
+  // 百分位
+  var p5 = results[500], p25 = results[2500], p50 = results[5000], p75 = results[7500], p95 = results[9500];
+  var probWin = Math.round(results.filter(function (v) { return v > 0; }).length / 100);
+  var pctEl = document.getElementById('mcPercentiles');
+  if (pctEl) {
+    pctEl.innerHTML = '<div class="stats__item"><div class="stats__label">P5 最差</div><div class="stats__value text-lose">' + Utils.safeFixed(p5, 1) + ' BB</div></div>' +
+      '<div class="stats__item"><div class="stats__label">P25 较差</div><div class="stats__value ' + (p25 >= 0 ? 'text-win' : 'text-lose') + '">' + Utils.safeFixed(p25, 1) + ' BB</div></div>' +
+      '<div class="stats__item"><div class="stats__label">P50 中位</div><div class="stats__value ' + (p50 >= 0 ? 'text-win' : 'text-lose') + '">' + Utils.safeFixed(p50, 1) + ' BB</div></div>' +
+      '<div class="stats__item"><div class="stats__label">P75 较好</div><div class="stats__value ' + (p75 >= 0 ? 'text-win' : 'text-lose') + '">' + Utils.safeFixed(p75, 1) + ' BB</div></div>' +
+      '<div class="stats__item"><div class="stats__label">P95 最佳</div><div class="stats__value ' + (p95 >= 0 ? 'text-win' : 'text-lose') + '">' + Utils.safeFixed(p95, 1) + ' BB</div></div>';
+  }
+  var sumEl = document.getElementById('mcSummary');
+  if (sumEl) {
+    sumEl.textContent = '按当前赢率，接下来 ' + simHands + ' 手你有 ' + probWin + '% 概率盈利。' + (p50 >= 0 ? ' 中位预期 +' + Utils.safeFixed(p50, 1) + ' BB。' : ' 中位预期 ' + Utils.safeFixed(p50, 1) + ' BB。');
+  }
+}
 
 // [V7.0.0] 对手统计缓存 — 避免排序/筛选时重复聚合全量手牌
 var _oppStatsCache = null;
@@ -213,6 +365,28 @@ export const Review = {
     document.getElementById('sessDate').value = Utils.getLocalDate();
     Utils.initToggleGroup('sessMistakeGroup');
     Utils.initToggleGroup('handMistakeGroup');
+    // [V7.5.1] 位置对抗速查按钮点击委托
+    document.getElementById('reviewPanel').addEventListener('click', function (e) {
+      var btn = e.target.closest('.pos-advice-btn');
+      if (!btn) return;
+      _applyPosAdvice(btn.dataset.adviceKey);
+    });
+    // [V7.6.0] Monte Carlo 手数切换委托
+    document.getElementById('reviewPanel').addEventListener('click', function (e) {
+      var btn = e.target.closest('.mc-hand-btn');
+      if (!btn) return;
+      document.querySelectorAll('.mc-hand-btn').forEach(function (b) { b.classList.remove('is-active'); });
+      btn.classList.add('is-active');
+      _renderMonteCarlo();
+    });
+    // [V7.6.1] Heatmap 视图切换委托
+    document.getElementById('reviewPanel').addEventListener('click', function (e) {
+      var btn = e.target.closest('.hm-view-btn');
+      if (!btn) return;
+      document.querySelectorAll('.hm-view-btn').forEach(function (b) { b.classList.remove('is-active'); });
+      btn.classList.add('is-active');
+      _renderDiscoverHeatmap();
+    });
     document.getElementById('sessionBody').addEventListener('click', (e) => {
       const delBtn = e.target.closest('[data-delete-id]');
       if (delBtn) this.deleteSession(delBtn.dataset.deleteId);
@@ -474,8 +648,25 @@ export const Review = {
     window.scrollTo({ top: document.getElementById('addSessionBtn').offsetTop - 100, behavior: 'smooth' });
   },
   deleteSession(id) {
-    // confirmDelete is provided by app.js shell
-    this._confirmDelete(() => this.getSessions(), (d) => this.saveSessions(d), () => this.renderAll(), 'id', id);
+    var self = this;
+    var sessions = self.getSessions();
+    var session = sessions.find(function (s) { return s.id === id; });
+    var label = session ? (session.date || '') + ' ' + (session.level || '') : id;
+    if (!confirm('删除 Session "' + label + '"？\n\n该 Session 下的手牌将一并删除（Picks 精选手牌除外）。')) return;
+    // 删除 Session
+    self.saveSessions(sessions.filter(function (s) { return s.id !== id; }));
+    // 级联删除手牌（保留 marked = true 的 Picks）
+    var hands = HandRepo.getAll();
+    var deletedCount = 0;
+    hands = hands.filter(function (h) {
+      if (h.sessionId === id && !h.marked) { deletedCount++; return false; }
+      return true;
+    });
+    if (deletedCount) {
+      HandRepo.saveAll(hands);
+      Utils.showToast('已删除 ' + deletedCount + ' 手关联手牌');
+    }
+    self.renderAll();
   },
   renderSessions() {
     var filter = document.getElementById('filterLevel').value;
@@ -571,6 +762,7 @@ export const Review = {
       } else { lh = '暂无Live数据'; }
       tlsEl2.innerHTML = lh;
     }
+    _renderMonteCarlo();
   },
   // [V6.18.1] 向后兼容，重定向到 Total 面板
   updateStats() {
@@ -613,6 +805,12 @@ export const Review = {
   // [V7.3.0] 图表渲染 — 累计盈利 + Session柱状 + 位置盈亏
   _chartRAF: null,
   renderCharts() {
+    // [V7.6.5] 图表指纹：手牌数和数据不变则跳过重绘
+    var allHands = HandRepo.getAll();
+    var lastId = allHands.length ? (allHands[allHands.length - 1].id || '') : '';
+    var fp = allHands.length + '|' + lastId;
+    if (this._chartFp === fp) return;
+    this._chartFp = fp;
     var self = this;
     if (self._chartRAF) cancelAnimationFrame(self._chartRAF);
     self._chartRAF = requestAnimationFrame(function () {
@@ -887,6 +1085,7 @@ export const Review = {
     if (!canvas.parentElement) container.appendChild(canvas);
     var dpr = window.devicePixelRatio || 1;
     var W = container.clientWidth;
+    if (W < 10) { console.warn('Chart container width too small (' + W + 'px), skipping render'); return; }
     var H = 300;
     canvas.width = W * dpr; canvas.height = H * dpr;
     canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
@@ -1447,7 +1646,7 @@ export const Review = {
     if (custom) mistakes.push(custom);
     const mistakeStr = mistakes.join(', ') || '';
     if (!desc && !reflection) { Utils.showToast('请至少填写一项内容'); return; }
-    const r = { sessionId: sid || null, date: Utils.getLocalDatetime(), potType, board, desc, mistake: mistakeStr, reflection, pBB: null };
+    const r = { sessionId: sid || null, date: Utils.getLocalDatetime(), potType, board, desc, mistake: mistakeStr, reflection, pBB: null, preflopScenario: document.getElementById('handPreflopScenario').value || null };
     const reviews = this.getHandReviews();
     if (this.handEditingId) {
       const idx = reviews.findIndex(function (x) { return x.id === this.handEditingId; }.bind(this));
@@ -1472,6 +1671,7 @@ export const Review = {
     this.handEditingId = id;
     document.getElementById('handPotType').value = r.potType || '';
     document.getElementById('handBoard').value = r.board || '';
+    document.getElementById('handPreflopScenario').value = r.preflopScenario || '';
     document.getElementById('handSessionSelect').value = r.sessionId || '';
     document.getElementById('handDesc').value = r.desc || '';
     document.getElementById('handDesc').dispatchEvent(new Event('input'));
@@ -1487,6 +1687,9 @@ export const Review = {
     document.getElementById('saveHandBtn').textContent = '💾 更新手局';
     document.getElementById('saveHandBtn').style.background = '#0ea5e9';
     window.scrollTo({ top: document.getElementById('saveHandBtn').offsetTop - 100, behavior: 'smooth' });
+    // [V7.5.1] 位置对抗速查自动匹配
+    _renderPosAdviceButtons();
+    _applyPosAdvice(r.preflopScenario);
   },
   handPageSize: 50, handCurrentPage: 1,
   _selectedHandIds: new Set(),
@@ -1772,4 +1975,563 @@ export const Review = {
     };
     reader.readAsText(file);
   },
+  // [V7.4.6] Discover — 自动模式发现渲染
+  renderDiscover() {
+    var findings = Discover.scan();
+    var container = document.getElementById('discoverFindings');
+    if (!container) return;
+    var self = this;
+    if (!findings.length) {
+      container.innerHTML = '<div class="card"><div class="card__title">🔍 Discover</div><div class="text-muted" style="padding:40px 0">暂无值得关注的模式<br>导入 50+ 手牌后自动分析</div></div>';
+      return;
+    }
+    // [V7.4.8] 读取 Quiz 进度用于标记弱项/已掌握
+    var quizStages = {};
+    try { QuizTrainer.getStages().forEach(function (s) { quizStages[s.key] = s.accuracy; }); } catch(e) {}
+    var typeLabels = { profit_anomaly: '💰 盈亏异常', self_contradiction: '📊 自我矛盾', gto_deviation: '🎯 偏离 GTO' };
+    var typeColors = { profit_anomaly: '#c06060', self_contradiction: '#d4a853', gto_deviation: '#5a9e8f' };
+    container.innerHTML = '<div class="card"><div class="card__title">🔍 Discover</div>' +
+      '<div style="font-size:0.85em;color:#909090;margin-bottom:12px">基于 ' + Discover._state.scanHandCount + ' 手牌自动分析，发现 ' + findings.length + ' 条模式</div>' +
+      findings.map(function (f) {
+        var typeColor = typeColors[f.type] || '#909090';
+        var badges = f.improved ? ' <span style="color:#6baf7e">✅ 已改善</span>' : '';
+        // [V7.4.8] Quiz 进度标记
+        var quizAcc = quizStages[f.category];
+        if (quizAcc !== undefined && quizAcc < 50) badges += ' <span style="color:#c06060">🔴 弱项 ' + quizAcc + '%</span>';
+        else if (quizAcc !== undefined && quizAcc > 80) badges += ' <span style="color:#6baf7e">✅ 已掌握</span>';
+        // 针对训练按钮
+        var quizBtn = f.category ? ' <button class="btn--mini" data-discover-quiz="' + (f.scenario || 'other') + '|' + f.category + '" style="font-size:0.85em">🎯 针对训练</button>' : '';
+        return '<div class="card" style="padding:14px 16px;margin-bottom:8px">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
+          '<span style="color:' + typeColor + ';font-weight:bold">' + (typeLabels[f.type] || f.type) + badges + '</span>' +
+          '<span style="font-size:0.85em;color:#909090">' + f.handCount + ' 手</span></div>' +
+          '<div style="font-size:0.95em;margin-bottom:6px">' + Utils.escapeHtml(f.title) + '</div>' +
+          (f.localFreq !== undefined ? '<div style="font-size:0.85em;color:#909090;margin-bottom:4px">CBet ' + f.localFreq + '% vs 场景平均 ' + f.globalFreq + '%' + (f.gtoRef !== '—' ? ' · ' + f.gtoRef : '') + '</div>' : '') +
+          (f.avgProfit !== undefined ? '<div style="font-size:0.85em;color:' + (parseFloat(f.avgProfit) < 0 ? '#c06060' : '#909090') + ';margin-bottom:4px">平均盈亏 ' + f.avgProfit + ' BB</div>' : '') +
+          '<div style="margin-top:6px"><button class="btn--mini" data-discover-hands="' + f.id + '" style="font-size:0.85em">👁️ 查看手牌</button>' + quizBtn + '</div>' +
+          '<div id="discoverDetail-' + f.id + '" style="display:none;margin-top:10px"></div>' +
+          '</div>';
+      }).join('') + '</div>';
+    // [V7.4.7] Quiz 随 Discover 一起初始化（仅首次）
+    if (!self._quizReady) {
+      try { QuizTrainer.init(); _bindQuizUI(); self._quizReady = true; } catch (e) { console.warn('Quiz init failed:', e); }
+    }
+    _bindDiscoverQuiz();
+
+    // 点击查看手牌 → 展开列表（仅绑定一次）
+    if (!container.dataset.discoverBound) {
+      container.dataset.discoverBound = '1';
+      container.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-discover-hands]');
+      if (!btn) return;
+      var fid = btn.dataset.discoverHands;
+      var detail = document.getElementById('discoverDetail-' + fid);
+      if (detail.style.display === 'block') { detail.style.display = 'none'; return; }
+      var f = findings.find(function (x) { return x.id === fid; });
+      if (!f) return;
+      var hands = Discover.getHandsByIds(f.handIds || []);
+      var sessMap = {};
+      SessionRepo.getAll().forEach(function (s) { sessMap[s.id] = s; });
+      detail.style.display = 'block';
+      detail.innerHTML = '<table class="session-table" style="font-size:0.75em"><thead><tr><th>Time</th><th>Type</th><th>Session</th><th>Hand</th><th>Profit</th></tr></thead><tbody>' +
+        hands.map(function (h) {
+          var profitStr = h.pBB != null ? (h.pBB >= 0 ? '+' : '') + Utils.safeFixed(h.pBB, 1) + ' BB' : '--';
+          var sess = h.sessionId ? sessMap[h.sessionId] : null;
+          var sDate = sess ? (sess.date || '') + ' ' + (sess.level || '') : '--';
+          var heroM = h.desc ? h.desc.match(/Hero[^\n\[]*\[([^\]]+)\]/) : null;
+          var handHtml = heroM && heroM[1] ? Utils.renderCardBadges(heroM[1]) : '--';
+          return '<tr data-discover-hand="' + h.id + '" style="cursor:pointer"><td>' + Utils.formatHandDate(h.date) + '</td><td>' + Utils.escapeHtml(h.potType || '--') + '</td><td>' + Utils.escapeHtml(sDate) + '</td><td>' + handHtml + '</td><td style="color:' + (h.pBB >= 0 ? '#6baf7e' : '#c06060') + '">' + profitStr + '</td></tr>';
+        }).join('') + '</tbody></table>';
+      // 手牌行点击跳转
+      detail.querySelectorAll('[data-discover-hand]').forEach(function (row) {
+        row.addEventListener('click', function () {
+          var handId = this.dataset.discoverHand;
+          var handTab = document.querySelector('[data-sub="hand"]');
+          if (handTab) handTab.click();
+          setTimeout(function () {
+            var allReviews = Utils.sortByDateKey(self.getHandReviews());
+            for (var i = 0; i < allReviews.length; i++) {
+              if (allReviews[i].id === handId) {
+                self.handCurrentPage = Math.floor(i / self.handPageSize) + 1;
+                self.renderHandReviews();
+                break;
+              }
+            }
+            setTimeout(function () { self.editHandReview(handId); }, 150);
+          }, 150);
+        });
+      });
+    });
+    }  // end if (!container.dataset.discoverBound)
+    _renderDiscoverHeatmap();  // [V7.6.1]
+  },
 };
+
+// [V7.6.1] Discover 热力图渲染
+var CAT_LABELS_SHORT = {
+  dryAHigh: '干燥A高', paired_high: '公对高', paired_low: '公对低',
+  flushy_dry: '双花干燥', straighty: '听顺面', flushy_straighty: '双花听顺',
+  monotone: '天花面', dry_low: '低牌干燥', made_straight: '天顺面', trips_board: '三条面'
+};
+function _heatmapProfitColor(val, maxAbs) {
+  var ratio = Math.max(-1, Math.min(1, val / (maxAbs || 1)));
+  if (ratio >= 0) return 'rgba(46,160,67,' + (0.15 + ratio * 0.7).toFixed(2) + ')';
+  return 'rgba(248,81,73,' + (0.15 + Math.abs(ratio) * 0.7).toFixed(2) + ')';
+}
+function _heatmapDevColor(val, maxAbs) {
+  var ratio = Math.max(-1, Math.min(1, val / (maxAbs || 1)));
+  if (ratio >= 0) return 'rgba(248,81,73,' + (0.15 + ratio * 0.7).toFixed(2) + ')';
+  return 'rgba(88,166,255,' + (0.15 + Math.abs(ratio) * 0.7).toFixed(2) + ')';
+}
+function _renderDiscoverHeatmap() {
+  var card = document.getElementById('discoverHeatmapCard');
+  if (!card) return;
+  var data = Discover.getHeatmapData();
+  if (!data || !data.categories.length || !data.scenarios.length) {
+    card.style.display = 'none'; return;
+  }
+  card.style.display = '';
+  var activeBtn = document.querySelector('.hm-view-btn.is-active');
+  var view = activeBtn ? activeBtn.dataset.hmView : 'profit';
+  _drawHeatmap(data, view);
+}
+function _drawHeatmap(data, view) {
+  var container = document.getElementById('discoverHeatmapChart');
+  if (!container) return;
+  var categories = data.categories;
+  var scenarios = data.scenarios;
+  var cells = data.cells;
+  var cellH = 40, leftPad = 82, topPad = 36;
+  var W = container.clientWidth || 600;
+  var H = topPad + scenarios.length * cellH + 12;
+  var dpr = window.devicePixelRatio || 1;
+  var canvas = container.querySelector('canvas') || document.createElement('canvas');
+  if (!canvas.parentElement) container.appendChild(canvas);
+  var prevW = canvas._prevW, prevH = canvas._prevH;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  var ctx = canvas.getContext('2d');
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+  canvas._prevW = W; canvas._prevH = H;
+  // 收集值范围
+  var values = [];
+  for (var rr = 0; rr < scenarios.length; rr++) {
+    for (var cc = 0; cc < categories.length; cc++) {
+      var ck = categories[cc] + '|' + scenarios[rr];
+      var cv = cells[ck];
+      if (!cv || cv.handCount < 5) continue;
+      if (view === 'profit') { values.push(cv.avgProfit); }
+      else if (cv.gtoAvgCbet != null) { values.push(cv.cbetFreq - cv.gtoAvgCbet); }
+    }
+  }
+  var maxAbs = 1;
+  for (var vi = 0; vi < values.length; vi++) {
+    if (Math.abs(values[vi]) > maxAbs) maxAbs = Math.abs(values[vi]);
+  }
+  // 格子
+  var cellW = (W - leftPad) / categories.length;
+  var hitCells = [];
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  for (var r = 0; r < scenarios.length; r++) {
+    for (var c = 0; c < categories.length; c++) {
+      var key = categories[c] + '|' + scenarios[r];
+      var cell = cells[key];
+      var x = leftPad + c * cellW, y = topPad + r * cellH;
+      var fillColor = '#1e1e1e', textStr = '';
+      if (cell && cell.handCount >= 5) {
+        if (view === 'profit') {
+          fillColor = _heatmapProfitColor(cell.avgProfit, maxAbs);
+          textStr = (cell.avgProfit >= 0 ? '+' : '') + Utils.safeFixed(cell.avgProfit, 1);
+        } else {
+          if (cell.gtoAvgCbet != null) {
+            var dev = cell.cbetFreq - cell.gtoAvgCbet;
+            fillColor = _heatmapDevColor(dev, maxAbs);
+            textStr = (dev >= 0 ? '+' : '') + dev + '%';
+          } else { fillColor = '#1e1e1e'; textStr = 'N/A'; }
+        }
+      } else { textStr = cell && cell.handCount > 0 ? '(' + cell.handCount + ')' : ''; }
+      ctx.fillStyle = fillColor;
+      ctx.fillRect(x + 1, y + 1, cellW - 2, cellH - 2);
+      ctx.fillStyle = cell && cell.handCount >= 5 ? '#fff' : '#666';
+      ctx.font = '10px system-ui, sans-serif';
+      ctx.fillText(textStr, x + cellW / 2, y + cellH / 2);
+      hitCells.push({ x: x, y: y, w: cellW, h: cellH, category: categories[c], scenario: scenarios[r], cell: cell, view: view });
+    }
+  }
+  // X 轴标签
+  ctx.fillStyle = '#8b949e';
+  ctx.font = '9px system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  for (var c2 = 0; c2 < categories.length; c2++) {
+    ctx.fillText(CAT_LABELS_SHORT[categories[c2]] || categories[c2], leftPad + c2 * cellW + cellW / 2, topPad - 10);
+  }
+  // Y 轴标签
+  ctx.textAlign = 'right';
+  for (var r2 = 0; r2 < scenarios.length; r2++) {
+    ctx.fillText(scenarios[r2], leftPad - 6, topPad + r2 * cellH + cellH / 2);
+  }
+  canvas._hitCells = hitCells;
+  canvas._heatmapSnapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  // hover tooltip（仅绑定一次）
+  if (!canvas._heatmapBound) {
+    canvas._heatmapBound = true;
+    var tt = document.createElement('div');
+    tt.className = 'chart-tooltip'; tt.id = 'heatmapTooltip';
+    container.style.position = 'relative';
+    container.appendChild(tt);
+    canvas.addEventListener('mousemove', function (e) {
+      var hc = canvas._hitCells;
+      if (!hc || !canvas._heatmapSnapshot) return;
+      var rect = canvas.getBoundingClientRect();
+      var mx = (e.clientX - rect.left), my = (e.clientY - rect.top);
+      // 恢复快照
+      var ctx2 = canvas.getContext('2d');
+      ctx2.setTransform(1, 0, 0, 1, 0, 0);
+      ctx2.scale(dpr, dpr);
+      ctx2.putImageData(canvas._heatmapSnapshot, 0, 0);
+      for (var i = 0; i < hc.length; i++) {
+        var h = hc[i];
+        if (mx >= h.x && mx <= h.x + h.w && my >= h.y && my <= h.y + h.h) {
+          ctx2.strokeStyle = '#fff'; ctx2.lineWidth = 2;
+          ctx2.strokeRect(h.x + 1, h.y + 1, h.w - 2, h.h - 2);
+          var cd = h.cell;
+          var html = '<b>' + (CAT_LABELS_SHORT[h.category] || h.category) + ' &times; ' + h.scenario + '</b><br>';
+          if (cd && cd.handCount >= 5) {
+            html += '手数: ' + cd.handCount + '<br>盈亏: ' + (cd.avgProfit >= 0 ? '+' : '') + Utils.safeFixed(cd.avgProfit, 1) + ' BB/手<br>CBet: ' + cd.cbetFreq + '%';
+            if (cd.gtoAvgCbet != null) html += ' (GTO ' + cd.gtoAvgCbet + '%)';
+          } else { html += '数据不足 (' + (cd ? cd.handCount : 0) + ' 手)'; }
+          tt.innerHTML = html; tt.style.display = 'block';
+          tt.style.left = Math.min(mx + 14, W - 160) + 'px';
+          tt.style.top = Math.max(0, my - 60) + 'px';
+          canvas.style.cursor = 'pointer';
+          return;
+        }
+      }
+      tt.style.display = 'none'; canvas.style.cursor = 'default';
+    });
+    canvas.addEventListener('mouseleave', function () {
+      tt.style.display = 'none';
+      if (canvas._heatmapSnapshot) {
+        var ctx3 = canvas.getContext('2d');
+        ctx3.setTransform(1, 0, 0, 1, 0, 0);
+        ctx3.scale(dpr, dpr);
+        ctx3.putImageData(canvas._heatmapSnapshot, 0, 0);
+      }
+    });
+  }
+  // 图例
+  var legEl = document.getElementById('discoverHeatmapLegend');
+  if (legEl) {
+    if (view === 'profit') legEl.innerHTML = '<span style="color:#f85149">■</span> 亏损 &larr; <span style="color:#8b949e">■</span> 持平 &rarr; <span style="color:#2ea043">■</span> 盈利 &nbsp; BB/手';
+    else legEl.innerHTML = '<span style="color:#58a6ff">■</span> 低于GTO &larr; <span style="color:#8b949e">■</span> 吻合GTO &rarr; <span style="color:#f85149">■</span> 高于GTO &nbsp; 偏离% &nbsp; <span style="color:#555">灰色=N/A</span>';
+  }
+}
+
+// [V7.4.7] GTO Quiz UI 绑定（从 odds.js 迁入 Discover 面板）
+function _bindQuizUI() {
+  var scenarioSel = document.getElementById('quizScenario');
+  var stageSel = document.getElementById('quizStage');
+  var questionDiv = document.getElementById('quizQuestion');
+  var boardEl = document.getElementById('quizBoard');
+  var catEl = document.getElementById('quizCategory');
+  var ctxEl = document.getElementById('quizContext');
+  var actionsEl = document.getElementById('quizActions');
+  var submitBtn = document.getElementById('quizSubmitBtn');
+  var resultEl = document.getElementById('quizResult');
+  var nextBtn = document.getElementById('quizNextBtn');
+  var statsEl = document.getElementById('quizStats');
+  if (!scenarioSel || !stageSel) return; // Quiz HTML 未加载
+  var chosenAction = null;
+  var scenarios = QuizTrainer.getScenarios();
+  scenarioSel.innerHTML = scenarios.map(function (s) { return '<option value="' + s.key + '">' + s.label.split(' —')[0] + '</option>'; }).join('');
+  scenarioSel.value = QuizTrainer._scenario;
+  scenarioSel.addEventListener('change', function () { QuizTrainer.setScenario(this.value); _renderStages(); _nextQuestion(); });
+  function _renderStages() {
+    var stages = QuizTrainer.getStages();
+    stageSel.innerHTML = '<option value="">🎲 随机出题</option>' + stages.map(function (s) { return '<option value="' + s.key + '">' + s.name + ' (' + s.accuracy + '%)</option>'; }).join('');
+  }
+  stageSel.addEventListener('change', function () { _nextQuestion(); });
+  function _nextQuestion() {
+    chosenAction = null;
+    var q = QuizTrainer.next(stageSel.value || null);
+    if (!q) { questionDiv.style.display = 'none'; return; }
+    questionDiv.style.display = 'block';
+    boardEl.innerHTML = q.boardDisplay; catEl.textContent = q.category.name;
+    ctxEl.textContent = '作为 ' + q.hero + ' vs ' + q.villain + '，你应该？';
+    actionsEl.innerHTML = q.actions.map(function (a) { return '<button class="btn--mini quiz-act-btn" data-action="' + a.key + '">' + a.label + '</button>'; }).join('');
+    resultEl.style.display = 'none'; nextBtn.style.display = 'none'; submitBtn.style.display = 'block';
+    actionsEl.querySelectorAll('.quiz-act-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () { actionsEl.querySelectorAll('.quiz-act-btn').forEach(function (b) { b.classList.remove('is-chosen'); }); btn.classList.add('is-chosen'); chosenAction = btn.dataset.action; });
+    });
+  }
+  submitBtn.addEventListener('click', function () {
+    if (!chosenAction) return;
+    var result = QuizTrainer.answer(chosenAction);
+    if (!result) return;
+    resultEl.style.display = 'block';
+    // [V7.6.3] 三色反馈：绿=正确 黄=可接受 红=错误
+    var rColor = result.color === 'green' ? '#6baf7e' : result.color === 'yellow' ? '#d4a853' : '#c06060';
+    resultEl.innerHTML = '<div class="qr-verdict" style="color:' + rColor + '">' + Utils.escapeHtml(result.message) + '</div><div style="font-size:0.85em;color:#8b949e;margin-top:4px">你选了 ' + Utils.escapeHtml(result.chosenLabel) + '</div><div style="margin-top:6px">GTO 频率分布：</div>' + result.freqBars.map(function (b) { return '<div class="qr-bar"><span class="qr-label">' + b.label + '</span><span style="flex:1;color:#909090;font-size:0.8em">' + b.bar + '</span><span class="qr-pct">' + b.freq + '%</span></div>'; }).join('');
+    submitBtn.style.display = 'none'; nextBtn.style.display = 'block'; _renderStats();
+  });
+  nextBtn.addEventListener('click', function () { _nextQuestion(); });
+  function _renderStats() {
+    var stats = QuizTrainer.getStats(); var stages = QuizTrainer.getStages();
+    statsEl.innerHTML = '<div class="qs-row"><span>总体</span><span style="color:#6baf7e">' + stats.ok + '✓</span><span style="color:#c06060">' + stats.fail + '✗</span><span>' + stats.accuracy + '%</span></div>' + stages.map(function (s) { var total = s.ok + s.fail || 1; var pct = s.ok / total * 100; return '<div class="qs-row"><span>' + s.name + '</span><div class="qs-bar"><div class="qs-bar-fill" style="width:' + pct + '%;background:' + (pct > 80 ? '#6baf7e' : pct > 50 ? '#d4a853' : '#c06060') + '"></div></div><span>' + Math.round(pct) + '%</span></div>'; }).join('');
+    _renderErrorList();
+  }
+  _renderStages(); _nextQuestion(); _renderStats();
+}
+
+// [V7.5.0] 发现→训练：同时设置场景 + 牌面阶段
+function _bindDiscoverQuiz() {
+  document.querySelectorAll('[data-discover-quiz]').forEach(function (btn) {
+    if (btn.dataset.quizBound) return;
+    btn.dataset.quizBound = '1';
+    btn.addEventListener('click', function () {
+      var parts = (this.dataset.discoverQuiz || 'other|').split('|');
+      var sc = parts[0], cat = parts[1] || '';
+      var quizDetails = document.getElementById('discoverQuizDetails');
+      if (quizDetails) quizDetails.open = true;
+      // 设置场景
+      var scenarioSel = document.getElementById('quizScenario');
+      if (scenarioSel && sc) { scenarioSel.value = sc; scenarioSel.dispatchEvent(new Event('change')); }
+      // 设置牌面阶段
+      var stageSel = document.getElementById('quizStage');
+      if (stageSel) {
+        for (var i = 0; i < stageSel.options.length; i++) {
+          if (stageSel.options[i].value === cat) { stageSel.value = cat; break; }
+        }
+        stageSel.dispatchEvent(new Event('change'));
+      }
+    });
+  });
+}
+
+// [V7.6.2] 错题集 UI
+function _renderErrorList() {
+  var listEl = document.getElementById('quizErrorList');
+  var countEl = document.getElementById('quizErrorCount');
+  var actionsEl = document.getElementById('quizErrorActions');
+  if (!listEl) return;
+  var errors = QuizTrainer.getErrors();
+  if (countEl) countEl.textContent = '(' + errors.length + ')';
+  if (!errors.length) {
+    // 空状态：显示统计摘要
+    var stats = QuizTrainer.getStats();
+    var stages = QuizTrainer.getStages();
+    var weakStages = stages.filter(function (s) { return s.total > 0 && s.accuracy < 50; });
+    var html = '<div style="padding:12px 0;color:#8b949e;font-size:0.85em">';
+    if (stats.total > 0) {
+      html += '暂无错题，继续保持！<br>当前总准确率：' + stats.accuracy + '%（' + stats.ok + '/' + stats.total + '）';
+      if (weakStages.length) {
+        html += '<br>薄弱环节：' + weakStages.map(function (s) { return '<span style="color:#c06060">' + s.name + ' ' + s.accuracy + '%</span>'; }).join('、');
+      }
+    } else {
+      html += '暂无错题，开始训练吧！';
+    }
+    html += '</div>';
+    listEl.innerHTML = html;
+    if (actionsEl) actionsEl.style.display = 'none';
+    return;
+  }
+  if (actionsEl) actionsEl.style.display = '';
+  // 按 category 分组排序
+  var CAT_ORDER = ['dryAHigh', 'flushy_dry', 'straighty', 'flushy_straighty', 'paired_high', 'monotone', 'dry_low', 'paired_low', 'made_straight', 'trips_board'];
+  var groups = {};
+  errors.forEach(function (e) {
+    var cat = e.category || 'unknown';
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(e);
+  });
+  var catKeys = Object.keys(groups).sort(function (a, b) {
+    return (CAT_ORDER.indexOf(a) >= 0 ? CAT_ORDER.indexOf(a) : 99) - (CAT_ORDER.indexOf(b) >= 0 ? CAT_ORDER.indexOf(b) : 99);
+  });
+  // 获取 Discover 热力图数据用于联动
+  var heatmapData = null;
+  try { heatmapData = Discover.getHeatmapData(); } catch (e) {}
+  var html = '';
+  catKeys.forEach(function (cat) {
+    var items = groups[cat];
+    items.sort(function (a, b) { return b.timestamp - a.timestamp; });
+    var catLabel = (CAT_LABELS_SHORT[cat] || cat);
+    html += '<div class="quiz-error-group"><div style="font-size:0.75em;color:#8b949e;margin-bottom:4px;text-transform:uppercase">' + catLabel + ' (' + items.length + ')</div>';
+    items.forEach(function (e) {
+      var timeStr = _formatRelativeTime(e.timestamp);
+      // Discover 联动数据
+      var discoverLine = '';
+      if (heatmapData) {
+        var cellKey = e.category + '|' + e.scenario;
+        var cell = heatmapData.cells[cellKey];
+        if (cell && cell.handCount >= 5) {
+          discoverLine = '<div style="font-size:0.7em;color:#6b7280;margin-top:2px">实战 ' + cell.handCount + ' 手，平均 ' + (cell.avgProfit >= 0 ? '+' : '') + Utils.safeFixed(cell.avgProfit, 1) + ' BB/手</div>';
+        }
+      }
+      html += '<div class="quiz-error-item" data-error-id="' + e.id + '">' +
+        '<div style="flex-shrink:0;margin-right:8px">' + (e.questionDisplay ? e.questionDisplay.boardDisplay : Utils.renderCardBadges(e.boardCode)) + '</div>' +
+        '<div class="quiz-error-meta">' +
+        '<div style="font-size:0.85em">你选了 <span style="color:#c06060">' + Utils.escapeHtml(e.userAnswerLabel) + '</span> → GTO推荐 <span style="color:#6baf7e">' + Utils.escapeHtml(e.correctAnswerLabel) + '</span></div>' +
+        '<div style="font-size:0.7em;color:#6b7280">' + timeStr + (e.scenario ? ' · ' + e.scenario : '') + '</div>' +
+        discoverLine +
+        '</div>' +
+        '<button class="btn--mini error-retry-btn" data-error-id="' + e.id + '" style="flex-shrink:0;margin-left:4px">重新作答</button>' +
+        '<button class="quiz-error-delete-btn" data-error-id="' + e.id + '" data-delete="' + e.id + '">✕</button>' +
+        '<div class="quiz-error-quiz" id="errorQuiz-' + e.id + '" style="display:none;width:100%;margin-top:8px"></div>' +
+        '</div>';
+    });
+    html += '</div>';
+  });
+  listEl.innerHTML = html;
+  _bindErrorActions(listEl);
+}
+
+function _bindErrorActions(listEl) {
+  if (listEl.dataset.errorBound) return;
+  listEl.dataset.errorBound = '1';
+  // 点击委托
+  listEl.addEventListener('click', function (e) {
+    var retryBtn = e.target.closest('.error-retry-btn');
+    var deleteBtn = e.target.closest('.quiz-error-delete-btn');
+    if (retryBtn) {
+      var id = retryBtn.dataset.errorId;
+      _startErrorRetry(id);
+      return;
+    }
+    if (deleteBtn) {
+      var id2 = deleteBtn.dataset.delete;
+      QuizTrainer.removeError(id2);
+      _renderErrorList();
+      return;
+    }
+  });
+  // 清空按钮
+  var clearBtn = document.getElementById('quizErrorClearBtn');
+  if (clearBtn && !clearBtn.dataset.bound) {
+    clearBtn.dataset.bound = '1';
+    clearBtn.addEventListener('click', function () {
+      QuizTrainer.clearErrors();
+      _renderErrorList();
+    });
+  }
+  // [V7.6.2] 移动端左滑删除
+  listEl.addEventListener('touchstart', function (e) {
+    var item = e.target.closest('.quiz-error-item');
+    if (!item) return;
+    item._touchStartX = e.touches[0].clientX;
+    item._touchStartY = e.touches[0].clientY;
+  });
+  listEl.addEventListener('touchend', function (e) {
+    var item = e.target.closest('.quiz-error-item');
+    if (!item) return;
+    var dx = (e.changedTouches[0].clientX - (item._touchStartX || 0));
+    var dy = Math.abs(e.changedTouches[0].clientY - (item._touchStartY || 0));
+    if (dx < -40 && dy < 20) {
+      // 先收起其他已滑开的
+      listEl.querySelectorAll('.quiz-error-item.swiped').forEach(function (el) {
+        if (el !== item) el.classList.remove('swiped');
+      });
+      item.classList.add('swiped');
+    } else if (dx > 20 || Math.abs(dx) < 5) {
+      item.classList.remove('swiped');
+    }
+  });
+  // PC端悬停显示删除按钮
+  listEl.addEventListener('mouseover', function (e) {
+    var item = e.target.closest('.quiz-error-item');
+    if (item) item._hovered = true;
+  });
+  listEl.addEventListener('mouseout', function (e) {
+    var item = e.target.closest('.quiz-error-item');
+    if (item && item._hovered) { item._hovered = false; item.classList.remove('swiped'); }
+  });
+}
+
+function _startErrorRetry(errorId) {
+  var errors = QuizTrainer.getErrors();
+  var errorRec = errors.find(function (e) { return e.id === errorId; });
+  if (!errorRec) return;
+  // 收起其他已展开的错题答题区
+  document.querySelectorAll('.quiz-error-quiz').forEach(function (el) {
+    el.style.display = 'none';
+    el.innerHTML = '';
+  });
+  var quizContainer = document.getElementById('errorQuiz-' + errorId);
+  if (!quizContainer) return;
+  quizContainer.style.display = 'block';
+  // 设置场景
+  QuizTrainer.setScenario(errorRec.scenario);
+  var scenarioSel = document.getElementById('quizScenario');
+  if (scenarioSel) { scenarioSel.value = errorRec.scenario; }
+  // 生成指定 boardCode 的题目
+  var q = QuizTrainer.next(null, errorRec.boardCode);
+  if (!q) { quizContainer.innerHTML = '<div class="text-muted">题目数据不可用</div>'; return; }
+  // 渲染答题区
+  var actionsHtml = q.actions.map(function (a) {
+    return '<button class="toggle-btn error-action-btn" data-action="' + a.key + '">' + a.label + '</button>';
+  }).join('');
+  quizContainer.innerHTML =
+    '<div style="font-size:0.9em;margin-bottom:6px">' + q.boardDisplay + ' <span style="color:#8b949e">' + q.category.name + '</span></div>' +
+    '<div style="font-size:0.8em;color:#8b949e;margin-bottom:8px">' + q.context + '</div>' +
+    '<div class="quiz-actions">' + actionsHtml + '</div>' +
+    '<button class="btn error-submit-btn" style="margin-top:8px">提交</button>' +
+    '<div class="quiz-result error-result-area" style="display:none;margin-top:8px"></div>' +
+    '<button class="btn btn--secondary error-next-btn" style="display:none;margin-top:4px">下一题 →</button>';
+  // 绑定事件
+  var chosenAction = null;
+  quizContainer.querySelectorAll('.error-action-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      quizContainer.querySelectorAll('.error-action-btn').forEach(function (b) { b.classList.remove('is-active'); });
+      btn.classList.add('is-active');
+      chosenAction = btn.dataset.action;
+    });
+  });
+  quizContainer.querySelector('.error-submit-btn').addEventListener('click', function () {
+    if (!chosenAction) return;
+    var result = QuizTrainer.answer(chosenAction);
+    if (!result) return;
+    var resultArea = quizContainer.querySelector('.error-result-area');
+    var submitBtn = quizContainer.querySelector('.error-submit-btn');
+    var nextBtn = quizContainer.querySelector('.error-next-btn');
+    resultArea.style.display = 'block';
+    // [V7.6.3] 三色反馈
+    var erColor = result.color === 'green' ? '#6baf7e' : result.color === 'yellow' ? '#d4a853' : '#c06060';
+    resultArea.innerHTML = '<div class="qr-verdict" style="color:' + erColor + '">' + Utils.escapeHtml(result.message) + '</div>' +
+      '<div style="font-size:0.85em;color:#8b949e;margin-top:4px">你选了 ' + Utils.escapeHtml(result.chosenLabel) + '</div>' +
+      '<div style="margin-top:6px">' + result.freqBars.map(function (fb) {
+        return '<div class="qr-bar"><span class="qr-label">' + fb.label + '</span><span class="qr-pct">' + fb.freq + '%</span><span style="color:#8b949e">' + fb.bar + '</span></div>';
+      }).join('') + '</div>';
+    submitBtn.style.display = 'none';
+    nextBtn.style.display = '';
+    if (result.result === 'correct') {
+      resultArea.innerHTML += '<div style="color:#6baf7e;font-size:0.85em;margin-top:4px">✅ 答对了！已从错题集移除最早的一条记录</div>';
+      var remaining = QuizTrainer.getErrors().filter(function (e) { return e.boardCode === errorRec.boardCode && e.scenario === errorRec.scenario; });
+      if (!remaining.length) {
+        setTimeout(function () {
+          quizContainer.style.display = 'none';
+          _renderErrorList();
+        }, 1500);
+      }
+    } else if (result.result === 'acceptable') {
+      resultArea.innerHTML += '<div style="color:#d4a853;font-size:0.85em;margin-top:4px">⚠️ 可接受但不计入正确，错题记录保留不变</div>';
+    }
+  });
+  quizContainer.querySelector('.error-next-btn').addEventListener('click', function () {
+    quizContainer.style.display = 'none';
+    quizContainer.innerHTML = '';
+    _renderErrorList();
+  });
+}
+
+// [V7.6.2] 相对时间格式化
+function _formatRelativeTime(ts) {
+  var diff = Date.now() - ts;
+  if (diff < 60000) return '刚刚';
+  if (diff < 3600000) return Math.floor(diff / 60000) + ' 分钟前';
+  if (diff < 86400000) return Math.floor(diff / 3600000) + ' 小时前';
+  if (diff < 604800000) return Math.floor(diff / 86400000) + ' 天前';
+  var d = new Date(ts);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
