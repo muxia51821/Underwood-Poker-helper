@@ -19,7 +19,7 @@
 | Notifications | Disabled | Enabled |
 | Storage | IndexedDB + localStorage | 同左 |
 
-## Module Map (22 ES modules, ~6300 lines)
+## Module Map (26 ES modules, ~9000 lines)
 
 ```
 src/
@@ -43,14 +43,21 @@ src/
     tournament.js    # 占位桩
     tiltRescue.js    # 情绪急救（PubSub → Review）
     dataSync.js      # 剪切板导入导出 + CSV
-    review.js        # 复盘系统（~1290行：Session/Hand/Weekly/Villain + 分页 + 统计 + 图表 + 对手合并）
+    review.js        # 复盘系统（~2500行：Session/Hand/Discover/Weekly/Overall/Villain + 分页 + 统计 + 图表 + 对手合并 + 热力图 + Monte Carlo）
     ggImport.js      # GG 导入（解析/去重/覆盖/文件拖拽/Session 自动分组）
     statsEngine.js   # 声明式统计引擎（~900行：36 指标 + 范围阈值 + 优化建议 + context 缓存）
     handPicker.js    # 手牌精选（☆ 标记 + Picks 卡片 + Hand/Session 跳转）
+    discover.js      # 自动模式发现（盈亏异常/自我矛盾/偏离GTO + 热力图数据）
+    quizTrainer.js   # GTO 频率判断训练器（双阈值判分 + 错题集 + 掌握追踪 + 轮转出题）
 
   data/
-    srpData.js       # SB vs BB SRP 翻牌策略速查表
+    srpData.js       # GTO 策略速查表（从 gtoRaw 自动生成，import Utils + gtoRaw）
     actionLines.js   # underBluff + overBluff 行动线表
+    strategy/
+      gtoBaseline.js # L1 极端阈值自动编译（>90%/<5%）+ getGTOReference()
+      gtoRaw/        # Solver 原始输出
+        BTNvsBB_SRP_flop.js  # BTNvsBB 翻牌频率（183 boards）
+        SBvsBB_SRP_flop.js   # SBvsBB 翻牌频率（183 boards）
 
 public/
   sw.js              # Service Worker（cache-first + notificationclick）
@@ -68,15 +75,19 @@ main.js
   ├── modules/app.js         → constants, utils, store, srpData, actionLines, 全部子模块
   ├── modules/timer.js       → constants, utils, store, [beep/vibrate/notify from app]
   ├── modules/odds.js        → constants, utils
-  ├── modules/review.js      → constants, utils, store, statsEngine, ggImport, handPicker
+  ├── modules/review.js      → constants, utils, store, statsEngine, ggImport, handPicker, discover, quizTrainer
   ├── modules/statsEngine.js → constants
   ├── modules/handPicker.js  → constants, utils, store, review
   ├── modules/ggImport.js    → constants, utils, store, review
+  ├── modules/discover.js    → constants, utils, store, gtoBaseline
+  ├── modules/quizTrainer.js → constants, utils, gtoRaw (BTNvsBB + SBvsBB)
   ├── modules/tiltRescue.js  → constants, utils, store, PubSub
   ├── modules/dataSync.js    → utils, store
   ├── modules/tournament.js  (zero deps)
-  ├── data/srpData.js        (zero deps)
+  ├── data/srpData.js        → utils, gtoRaw (BTNvsBB + SBvsBB)
   ├── data/actionLines.js    (zero deps)
+  ├── data/strategy/gtoBaseline.js → gtoRaw (BTNvsBB + SBvsBB)
+  ├── data/strategy/gtoRaw/*.js    (zero deps)
   └── selfTests.js           → parsers/ggParser (DEV only，构建时剔除)
 ```
 
@@ -164,10 +175,17 @@ opponentAliases:   { oId: "昵称", ... }
 opponentLiveFlags: { oId: true, ... }
 opponentMerges:    { canonicalHash: [oId1, oId2, ...] }
 sessions:          [ { id, date, level, duration, hands, profit, tilt, mistake, remark } ]
-handReviews:       [ { id, sessionId, date, potType, board, desc, mistake, reflection, pBB,
-                       gg?, ggId?, oId?, oCards?, rake, jackpot, marked } ]
+handReviews:       [ { id, sessionId, date, potType, board, boardCode, boardCategory,
+                       preflopScenario, actionLineOTF, actionLineOTT, actionLineOTR,
+                       desc, mistake, reflection, pBB,
+                       gg?, ggId?, oId?, oCards?, oHash?, rake, jackpot, marked } ]
 weeklyReviews:     [ { week: 'YYYY-Www', weakness, plan } ]
 tiltLogs:          [ { date, time, trigger, intensity, note } ]
+// Quiz & Discover (localStorage)
+pa_quizState:      { scenario, records: { boardCode: { cat, picks } }, stageStats: { cat: { ok, fail } } }
+pa_quiz_errors:    [ { id, type, scenario, boardCode, category, userAnswer, correctAnswer, gtoFreqs, timestamp } ]
+pa_quiz_mastery:   { "scenario|boardCode": { consecutiveCorrect, totalAttempts, lastResult, mastered } }
+pa_discoverState:  { findings, scanHandCount, archive }
 ```
 
 IndexedDB: `pa_store` v1, 4 ObjectStores (`handReviews`/`sessions`/`weeklyReviews`/`tiltLogs`).
@@ -176,21 +194,25 @@ IndexedDB: `pa_store` v1, 4 ObjectStores (`handReviews`/`sessions`/`weeklyReview
 ## UI Navigation
 
 ```
-计时 ──── 赔率 ──── 锦标赛 ──── 复盘 ─────────────────────────────
-番茄钟    底池赔率  (外链)     Hand│Session│Weekly│Villain
-今日统计  隐含赔率             ┌─Picks (手牌精选卡片)
-错误日志  随机数               ├─Hand History (筛选/分页)
-                               ├─GG 导入
-                               └─SRP表 / 行动线表 (<details>)
+Timer ──── Odds ──── Review ──────────────────────────────────────────
+番茄钟    底池赔率  Hand│Discover│Session│Weekly│Overall│Villain
+今日统计  隐含赔率  ┌─Picks (手牌精选卡片)
+日志      随机数    ├─Hand Review (筛选/分页/编辑)
+          GTO速查   ├─Discover (自动发现 + 热力图 + Quiz训练 + 错题集)
+          隐含赔率  ├─GG 导入
+          Outs参考  └─行动线速查 / 位置对抗速查 (<details>)
+          ――――――――
+          Tournament GTO (外链)
 ```
 
-四主 Tab（`.nav`），复盘下四子 Tab（`.subnav`，data-sub 驱动）。
-Hand 面板内含 Picks 精选卡片（有标记手牌时显示）。
-SRP 表 / 行动线表 `<details>` 懒加载。
+三主 Tab（`.nav`），复盘下六子 Tab（`.subnav`，data-sub 驱动）。
+GTO 翻牌频率速查表在 Odds 面板 `<details>` 懒加载（场景选择 + 高牌 + 牌面类型三过滤器）。
+Discover 面板整合：自动模式发现 + Canvas 热力图 + Quiz 训练器 + 错题集。
 存储健康指示器：页面标题旁圆点，🟢 IndexedDB / 🟡 localStorage / 🔴 异常。
 
-## Performance Optimizations (V7.0)
+## Performance Optimizations
 
+### V7.0
 - **Context Cache**: `statsEngine.js` → `_contextCache` (Map)，`createHandContext()` 按 `hand.id` 缓存，跨面板复用
 - **Analyze Fingerprint**: 首尾手牌 ID + 数量 + 过滤条件→ 共享结果；`HandRepo.saveAll()` 自动清缓存
 - **Render Fingerprint**: Villain/Opponent 面板数据不变则跳过 DOM 重建
@@ -201,6 +223,52 @@ SRP 表 / 行动线表 `<details>` 懒加载。
 - **AudioContext Reuse**: `beep()` 缓存单实例
 - **EscapeHtml Reuse**: 复用单 div 元素
 - **Session Map O(1)**: `sessionsMap.get()` 替代 `sessions.find()`
+
+### V7.6+
+- **Chart Fingerprint** (V7.6.5): `renderCharts()` 手牌数+最后 ID 不变则跳过 Canvas 重绘
+- **Discover Scan Lock** (V7.6.5): `try-finally` 确保 `_scanning` 异常时释放，防止永久锁死
+- **Discover Scan Cache** (V7.4.7): 手牌总数未变 + 已有结果时直接返回缓存，避免重复扫描
+- **SRP Data Dedup** (V7.7.0): 818 行硬编码→35 行生成脚本，-783 行代码，构建产物 -10kB
+
+### GTO Strategy Quick-Lookup
+
+```
+SRP Details <details> toggle (Odds Panel)
+  → App.renderSRPTable()
+      → srpData.js (import gtoRaw BTNvsBB + SBvsBB, auto-derive 367 entries)
+      → read filterScenario / filterHigh / filterCategory values
+      → filter + render table (card-badges + frequency mini-bars + action codes)
+```
+
+### Quiz Trainer Flow
+
+```
+QuizTrainer.next(stageKey?, targetBoardCode?)
+  → load scenario data from gtoRaw
+  → V7.6.4+: _pickFromErrors (错题优先) → _pickFromPool (轮转+降权)
+  → return { boardCode, boardDisplay, category, actions }
+
+QuizTrainer.answer(actionKey)
+  → V7.6.3: dual-threshold (≥35% correct / 13-35% acceptable / <13% wrong)
+  → update pa_quizState.stageStats + pa_quizState.records
+  → V7.6.2: wrong → save to pa_quiz_errors; correct → removeOldestError
+  → V7.6.4: update pa_quiz_mastery (consecutiveCorrect + mastered flag)
+```
+
+### Discover Auto-Analysis
+
+```
+Discover.scan()
+  → filter hands (boardCategory + actionLineOTF + Hero preflop fold)
+  → group by category × scenario
+  → detect: profit_anomaly (< -0.5BB) / self_contradiction (CBet deviation >10pp) / gto_deviation
+  → try-finally release _scanning lock
+  → cache: skip re-scan if hand count unchanged
+
+Discover.getHeatmapData()
+  → return full category×scenario grid (not just anomalies)
+  → each cell: handCount, avgProfit, cbetFreq, gtoAvgCbet
+```
 
 ## Constraints (Hard Rules)
 

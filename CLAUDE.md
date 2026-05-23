@@ -100,12 +100,11 @@ src/
     discover.js        # 自动模式发现（盈亏异常/自我矛盾/偏离 GTO）
     quizTrainer.js     # GTO 频率判断训练器
   data/
-    srpData.js
+    srpData.js          # GTO 策略速查表（从 gtoRaw 自动生成，import Utils + gtoRaw）
     actionLines.js
     strategy/
       gtoRaw/          # Solver 原始输出（BTNvsBB/SBvsBB flop 频率）
       gtoBaseline.js   # L1 极端阈值自动编译
-      srpData.js       # 策略速查表（gtoRaw 派生视图）
   selfTests.js
 public/sw.js           # Service Worker（独立文件，Blob 降级）
 e2e/                   # Playwright 端到端冒烟测试
@@ -119,12 +118,12 @@ docs/                  # 架构文档
 
 ## 状态
 
-- **最新稳定版**：V7.5.1
-- **Git 基线**：V7.3.0（规则：当前稳定版往前退两个版本 commit 为基线）
+- **最新稳定版**：V7.7.1
+- **Git 基线**：V7.5.1（规则：当前稳定版往前退两个版本 commit 为基线）
 - **已知缺陷**：无
 
 ## 参考
 
 - 架构/数据流/Schema：`docs/ARCHITECTURE.md`
 - 版本历史：`牌桌助手历史迭代版本/版本更新说明.md`
-- Memory：[[gg-parser-lessons]] [[indexeddb-migration-lessons]] [[vite-css-import-pitfall]] [[over-analysis-lesson]] [[code-patching-lessons]] [[post-change-checklist]] [[self-review-workflow]] [[json-import-pitfall]] [[canvas-chart-lessons]] [[e2e-testing-lesson]]
+- Memory：[[gg-parser-lessons]] [[indexeddb-migration-lessons]] [[vite-css-import-pitfall]] [[over-analysis-lesson]] [[code-patching-lessons]] [[post-change-checklist]] [[self-review-workflow]] [[json-import-pitfall]] [[canvas-chart-lessons]] [[e2e-testing-lesson]] [[data-dedup-lessons]]

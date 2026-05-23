@@ -1981,6 +1981,10 @@ export const Review = {
     var container = document.getElementById('discoverFindings');
     if (!container) return;
     var self = this;
+    // [V7.7.2] Quiz 始终初始化（不依赖手牌导入）
+    if (!self._quizReady) {
+      try { QuizTrainer.init(); _bindQuizUI(); self._quizReady = true; } catch (e) { console.warn('Quiz init failed:', e); }
+    }
     if (!findings.length) {
       container.innerHTML = '<div class="card"><div class="card__title">🔍 Discover</div><div class="text-muted" style="padding:40px 0">暂无值得关注的模式<br>导入 50+ 手牌后自动分析</div></div>';
       return;
@@ -2000,7 +2004,7 @@ export const Review = {
         if (quizAcc !== undefined && quizAcc < 50) badges += ' <span style="color:#c06060">🔴 弱项 ' + quizAcc + '%</span>';
         else if (quizAcc !== undefined && quizAcc > 80) badges += ' <span style="color:#6baf7e">✅ 已掌握</span>';
         // 针对训练按钮
-        var quizBtn = f.category ? ' <button class="btn--mini" data-discover-quiz="' + (f.scenario || 'other') + '|' + f.category + '" style="font-size:0.85em">🎯 针对训练</button>' : '';
+        var quizBtn = f.category ? ' <button class="btn--mini" data-discover-quiz="' + (f.scenario || 'other') + '|' + f.category + '" style="font-size:0.85em">🎯 Quiz</button>' : '';
         return '<div class="card" style="padding:14px 16px;margin-bottom:8px">' +
           '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
           '<span style="color:' + typeColor + ';font-weight:bold">' + (typeLabels[f.type] || f.type) + badges + '</span>' +
@@ -2012,10 +2016,6 @@ export const Review = {
           '<div id="discoverDetail-' + f.id + '" style="display:none;margin-top:10px"></div>' +
           '</div>';
       }).join('') + '</div>';
-    // [V7.4.7] Quiz 随 Discover 一起初始化（仅首次）
-    if (!self._quizReady) {
-      try { QuizTrainer.init(); _bindQuizUI(); self._quizReady = true; } catch (e) { console.warn('Quiz init failed:', e); }
-    }
     _bindDiscoverQuiz();
 
     // 点击查看手牌 → 展开列表（仅绑定一次）
