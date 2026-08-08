@@ -64,11 +64,13 @@ docs/ARCHITECTURE.md           — 架构文档 · Architecture docs
 |------|------|
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 架构 / 数据流 / Schema / 性能优化 |
 | [牌桌助手历史迭代版本/版本更新说明.md](牌桌助手历史迭代版本/版本更新说明.md) | 全版本 Changelog |
-| [CLAUDE.md](CLAUDE.md) | 开发约定 / 技能规则 / 编码规范 |
+| [AGENTS.md](AGENTS.md) | Agent 开发约定 / 技能规则 / 编码规范 |
 
 ---
 
 ## 部署 · Deployment
 
-- **线上** · Online: [mxpoker.netlify.app](https://mxpoker.netlify.app/)
+- **主入口候选** · Primary candidate: [mxpoker.netlify.app](https://mxpoker.netlify.app/)
+- **备用入口** · Backup target: [GitHub Pages](https://muxia51821.github.io/Underwood-Poker-helper/)
+- **部署基线** · Deployment evidence: [docs/deployment-baseline.md](docs/deployment-baseline.md)
 - **离线** · Offline: 双击 `dist/index.html` 即可使用

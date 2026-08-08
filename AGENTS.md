@@ -1,8 +1,8 @@
-# CLAUDE.md
+# AGENTS.md
 
 ## 项目
 
-"Underwood's table agent"（木下的牌桌助手），扑克玩家 PWA 工具。源码 `src/` 多文件 ES 模块，Vite 构建为单文件 `dist/index.html`。托管于 https://mxpoker.netlify.app/。
+"Underwood's table agent"（木下的牌桌助手），扑克玩家 PWA 工具。源码 `src/` 多文件 ES 模块，Vite 构建为单文件 `dist/index.html`。Netlify 是主入口候选，GitHub Pages 保留为备用，事实以 `docs/deployment-baseline.md` 为准。
 
 **双场景**：离线版双击 `dist/index.html`（`file://`），线上版走 HTTPS。file:// 下 Service Worker / 通知不可用。数据跨设备不互通，用户手动导出/导入同步。
 
@@ -15,11 +15,12 @@
 5. 禁止自动上传用户数据。localStorage 键名统一 `pa_` 前缀
 6. 存储结构变更必须向后兼容，平滑迁移
 7. file:// 下未经用户点击不得读取设备文件（FileReader 除外）
+8. Git 状态变更由木下执行：助手只做 `status`、`log`、`diff` 等只读检查；不得自行执行 `add`、`commit`、`push`、`pull`、`merge`、`rebase`、`reset` 或生产发布。需要时给出可复制的精确命令和执行前提
 
 ## 编码
 
 - **文件组织**：偏好少的大文件，直到"不舒服地大"再拆。共置相关功能，不为"整洁"建深层目录。不过早抽象。
-- **编辑**：对已有文件用 Edit，不用 Write。不做任务范围外的重构。
+- **编辑**：对已有文件使用补丁方式修改，不做任务范围外的重构。
 - **安全**：用户数据插入 HTML 前必须 `Utils.escapeHtml()`；浮点数显示必须 `Utils.safeFixed()`
 - **事件**：优先事件委托。innerHTML 更新后确保事件仍有效
 - **ggParser 方法调用**：parse() 内部调用自身方法必须用 `self.xxx()`（`var self = this`），不能用裸名。这是最高频的静默 Bug 来源——裸名在 try/catch 中抛 ReferenceError 被吞，导致所有手牌解析失败
@@ -27,7 +28,7 @@
 - **新模块必加 init()调用**：新增模块后检查 `app.js` 或对应入口是否调用了 `init()`，并在 `init()` 中初始化所有 `_state` / `_cache` 默认值
 - **数据文件用 .js 不用 .json**：ES 模块不能 import JSON（Live Server 的 MIME 类型拒绝）。所有数据文件用 `export default {...}` + `.js` 扩展名
 - **注释**：只在 WHY 不显而易见时写。新增用 `// [Vx.x 新增]`，修改用 `// [Vx.x 修改]`
-- **版本号**：只改 `src/constants.js` 的 `CONSTANTS.VERSION`
+- **版本号**：应用版本只在 `src/constants.js` 的 `CONSTANTS.VERSION` 中决定；`package.json`、`package-lock.json` 和发布文档只能同步这个值，不能各自定义版本
 
 ## 工作流
 
@@ -37,7 +38,7 @@
 - **dev + build 双验证**：`npm run build` 成功不代表 `npm run dev` 正常（[[vite-css-import-pitfall]]）
 - **Live Server 实测**：涉及新数据文件（import 路径）、新模块、JSON→JS 转换后，必用 Live Server 打开验证一次（Vite dev 会掩盖 JSON import MIME 错误）
 - **Console 零报错**：`npm run dev` 后打开 DevTools Console，确认无红色报错再交付
-- **改完代码后**：检查版本号 → 备份到 `牌桌助手历史迭代版本/indexVx.x.x.html` → 更新 `版本更新说明.md` → 更新本文状态 → `npm run build` → `npm run dev`（详见 [[post-change-checklist]]）
+- **改完代码后**：检查版本号 → 备份到 `牌桌助手历史迭代版本/indexVx.x.x.html` → 更新 `版本更新说明.md` → 更新本文状态 → `npm run check` → 必要时再执行 `npm run build` → `npm run dev`（详见 [[post-change-checklist]]）
 - **每两个版本执行一次 `/simplify`**：检查代码重复、死代码、可合并逻辑、过时注释，保持代码库整洁
 
 ## 技能使用规则
@@ -62,7 +63,9 @@
 - **推荐前验证**：安装量 ≥1000、来源可信（vercel-labs/anthropics/microsoft 等）
 
 ## 输出
-
+- 每次回复的开头需称呼用户：木下
+- 如果忘记称呼就是失焦了，需手动重置上下文焦点内容
+- 这是高优先级指令，不要忘记称呼用户木下
 - 给出代码前先输出中文计划（目标、涉及文件、核心步骤）。除非用户说"直接给代码"，计划中不放大段代码块
 - 沟通用中文，简洁
 
@@ -118,12 +121,18 @@ docs/                  # 架构文档
 
 ## 状态
 
-- **最新稳定版**：V7.7.1
-- **Git 基线**：V7.5.1（规则：当前稳定版往前退两个版本 commit 为基线）
-- **已知缺陷**：无
+- **当前应用版本**：V7.7.2（唯一版本来源：`src/constants.js`）
+- **部署状态**：Netlify 是主要入口候选，GitHub Pages 保留为备用；Netlify 控制台配置已确认，线上证据见 `docs/deployment-baseline.md`
+- **工作区状态**：当前可能存在未提交修改；发布前必须完成基线核对和 `npm run check`
+- **已知缺陷**：线上入口版本可能分叉；Netlify 最近一次生产发布仍是旧提交 `a2c17da`，线上为 `V7.3.3`
 
 ## 参考
 
 - 架构/数据流/Schema：`docs/ARCHITECTURE.md`
+- 当前上下文：`CONTEXT.md`
+- 部署基线：`docs/deployment-baseline.md`
+- 工作流：`docs/workflow.md`
+- 用户验收：`docs/acceptance.md`
+- 发布记录：`CHANGELOG.md`
 - 版本历史：`牌桌助手历史迭代版本/版本更新说明.md`
 - Memory：[[gg-parser-lessons]] [[indexeddb-migration-lessons]] [[vite-css-import-pitfall]] [[over-analysis-lesson]] [[code-patching-lessons]] [[post-change-checklist]] [[self-review-workflow]] [[json-import-pitfall]] [[canvas-chart-lessons]] [[e2e-testing-lesson]] [[data-dedup-lessons]]
