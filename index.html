@@ -20,166 +20,183 @@
   <body>
     <div id="healthWarningBar" class="warning-bar" style="display: none"></div>
     <div class="app">
-      <div class="app__settings">
-        <button class="app__settings-btn" id="settingsBtn" aria-label="提醒设置">⚙️</button>
-        <div class="app__settings-menu" id="settingsMenu">
-          <button class="app__settings-option is-active" id="soundOption">🔊 声音</button
-          ><button class="app__settings-option is-active" id="vibrateOption">📳 振动</button
-          ><button class="app__settings-option" id="testNotifyOption">🔔 测试通知</button
-          ><button class="app__settings-option" id="colorSchemeOption" title="切换配色方案 (Pale / Nimbus / Ember)">🎨 配色</button
-          ><button class="app__settings-option" id="shareSiteBtn">🌐 分享</button>
+      <aside class="app__sidebar" aria-label="应用导航">
+        <div class="app__settings">
+          <button class="app__settings-btn" id="settingsBtn" aria-label="提醒设置">Settings</button>
+          <div class="app__settings-menu" id="settingsMenu">
+            <button class="app__settings-option is-active" id="soundOption">Sound</button
+            ><button class="app__settings-option is-active" id="vibrateOption">Vibration</button
+            ><button class="app__settings-option" id="testNotifyOption">Test notification</button
+            ><button class="app__settings-option" id="colorSchemeOption" title="切换配色方案 (Pale / Nimbus / Ember)">Theme</button
+            ><button class="app__settings-option" id="shareSiteBtn">Share</button>
+          </div>
         </div>
-      </div>
-      <h1 class="app__title">
-        ♠️Underwood's table agent♥️<span class="version-tag"></span
-        ><span id="storageHealth" class="storage-health" title="存储状态"></span>
-      </h1>
-      <nav class="nav">
-        <button class="nav__btn nav__btn--active" data-tab="timer">⏱️ Timer</button
-        ><button class="nav__btn" data-tab="odds">🎯 Odds</button
-        ><button class="nav__btn" data-tab="review">📋 Review</button>
-      </nav>
+        <h1 class="app__title">
+          Underwood's Table Agent<span class="version-tag"></span
+          ><span id="storageHealth" class="storage-health" title="存储状态"></span>
+        </h1>
+        <nav class="nav">
+          <button class="nav__btn nav__btn--active" data-tab="timer">Timer</button
+          ><button class="nav__btn" data-tab="odds">Odds</button
+          ><button class="nav__btn" data-tab="review">Review</button>
+        </nav>
+      </aside>
       <main class="main" data-active-tab="timer">
         <section id="timerPanel" class="panel is-visible">
-          <div class="card">
-            <div class="card__title">🧍 站立提醒</div>
-            <div id="phaseBdg" class="timer__phase timer__phase--work">💼 工作中</div>
-            <div id="timerDisplay" class="timer__display">25:00</div>
-            <div class="row" style="margin: 10px 0">
-              <label class="field"
-                >🔵 专注(分)<input
-                  type="number"
-                  id="workMin"
-                  class="input"
-                  value="20"
-                  min="1"
-                  max="120"
-                  step="1"
-                  required /></label
-              ><label class="field"
-                >🟢 站立(分)<input
-                  type="number"
-                  id="breakMin"
-                  class="input"
-                  value="2"
-                  min="1"
-                  max="30"
-                  step="1"
-                  required
-              /></label>
+          <!-- [V7.7.2 修改] PC-first Timer workspace -->
+          <header class="timer-workspace__header">
+            <div>
+              <div class="timer-workspace__eyebrow">Focus Timer</div>
+              <h2 class="timer-workspace__title">专注与站立循环</h2>
+              <p class="timer-workspace__description">用清晰的工作与休息节奏保持注意力，也让身体定时离开座位。</p>
             </div>
-            <details style="margin-bottom: 10px" id="longBreakDetails">
-              <summary style="font-size: 0.8em; color: #94a3b8; cursor: pointer">
-                🔄 休息 <span id="longBreakSummary"></span>
-              </summary>
-              <div
-                style="
-                  display: flex;
-                  align-items: center;
-                  gap: 6px;
-                  flex-wrap: wrap;
-                  background: #0f172a;
-                  border-radius: 10px;
-                  padding: 8px 10px;
-                  margin-top: 6px;
-                "
-              >
-                <label
-                  style="
-                    display: flex;
-                    align-items: center;
-                    gap: 4px;
-                    font-size: 0.8em;
-                    color: #cbd5e1;
-                    cursor: pointer;
-                    white-space: nowrap;
-                  "
-                  ><input type="checkbox" id="longBreakCheck" /> 🔄 长休息</label
-                ><label style="font-size: 0.75em; color: #94a3b8; white-space: nowrap"
-                  >每
-                  <input
-                    type="number"
-                    id="longBreakInterval"
-                    class="input"
-                    value="4"
-                    min="1"
-                    max="10"
-                    step="1"
-                    style="
-                      width: 42px;
-                      padding: 2px 4px;
-                      font-size: 0.95em;
-                      text-align: center;
-                      display: inline-block;
-                    "
-                  />
-                  次</label
-                ><label style="font-size: 0.75em; color: #94a3b8; white-space: nowrap"
-                  >休
-                  <input
-                    type="number"
-                    id="longBreakMin"
-                    class="input"
-                    value="15"
-                    min="5"
-                    max="60"
-                    step="1"
-                    style="
-                      width: 42px;
-                      padding: 2px 4px;
-                      font-size: 0.95em;
-                      text-align: center;
-                      display: inline-block;
-                    "
-                  />
-                  分</label
-                ><span id="cycleCount" style="font-size: 0.75em; color: #64748b; margin-left: auto"
-                  >0/4</span
-                >
-              </div>
-            </details>
-            <div class="timer__stats">
-              <div class="timer__stats-label">🧘 今日已站立</div>
-              <div id="todayCount" class="timer__stats-number">0</div>
-              <div style="font-size: 0.7em; color: #94a3b8">次</div>
-              <button id="resetCountBtn" class="timer__reset-btn">↺ 重置</button>
-            </div>
-            <div class="row" style="gap: 8px">
-              <button id="startBtn" class="btn">▶ 开始</button
-              ><button id="resetTimerBtn" class="btn btn--secondary">↺ 重置</button>
-            </div>
-            <button
-              id="skipBreakBtn"
-              class="btn"
-              style="display: none; background: #0ea5e9; margin-top: 6px"
-            >
-              ⏭ 跳过休息，开始专注
+            <button id="emergencyBtn" class="btn btn--emergency timer-rescue">
+              暂停 30 秒冷静
             </button>
-            <div class="text-muted">循环提醒 · 站坐交替更健康</div>
-            <div id="logToggle" class="log__toggle"><span id="logArrow">▶</span> 今日记录</div>
-            <div id="logWrap" style="display: none; max-height: 200px; overflow-y: auto">
-              <table class="log-table" id="logTbl">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>工作开始</th>
-                    <th>工作结束</th>
-                    <th>站立开始</th>
-                    <th>站立结束</th>
-                    <th>工作</th>
-                    <th>站立</th>
-                  </tr>
-                </thead>
-                <tbody id="logBody"></tbody>
-              </table>
-              <button id="clearLogBtn" class="btn--mini btn--danger" style="margin-top: 8px">
-                🗑️ 清除今日记录
+          </header>
+          <div class="timer-workspace">
+            <section class="timer-stage" aria-label="当前计时阶段">
+              <div id="phaseBdg" class="timer__phase timer__phase--work" aria-live="polite">
+                专注中
+              </div>
+              <div id="timerDisplay" class="timer__display" role="timer" aria-label="剩余时间">
+                25:00
+              </div>
+              <div class="timer-stage__actions">
+                <button id="startBtn" class="btn timer-stage__primary" aria-pressed="false">
+                  开始专注
+                </button>
+                <button id="resetTimerBtn" class="btn btn--secondary timer-stage__secondary">
+                  重新开始
+                </button>
+              </div>
+              <button
+                id="skipBreakBtn"
+                class="btn timer-stage__skip"
+                style="display: none"
+              >
+                跳过休息，开始专注
               </button>
-            </div>
+            </section>
+
+            <aside class="timer-rail" aria-label="今日摘要与周期设置">
+              <section class="timer-surface timer-summary">
+                <div class="timer-surface__title">今日进度</div>
+                <div class="timer-summary__grid">
+                  <div class="timer__stats">
+                    <div class="timer__stats-label">站立次数</div>
+                    <div id="todayCount" class="timer__stats-number">0</div>
+                    <div class="timer-summary__unit">次</div>
+                    <button id="resetCountBtn" class="timer__reset-btn">重置次数</button>
+                  </div>
+                  <div class="timer-cycle">
+                    <div class="timer__stats-label">当前循环</div>
+                    <div id="cycleCount" class="timer-cycle__value">0/4</div>
+                    <div class="timer-summary__unit">次专注</div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="timer-surface timer-settings">
+                <div class="timer-surface__title">周期设置</div>
+                <div class="timer-settings__grid">
+                  <label class="field timer-settings__field">
+                    专注时长（分钟）
+                    <input
+                      type="number"
+                      id="workMin"
+                      class="input"
+                      value="20"
+                      min="1"
+                      max="120"
+                      step="1"
+                      required
+                    />
+                  </label>
+                  <label class="field timer-settings__field">
+                    站立时长（分钟）
+                    <input
+                      type="number"
+                      id="breakMin"
+                      class="input"
+                      value="2"
+                      min="1"
+                      max="30"
+                      step="1"
+                      required
+                    />
+                  </label>
+                </div>
+                <details id="longBreakDetails" class="timer-long-break">
+                  <summary>长休息 <span id="longBreakSummary"></span></summary>
+                  <div class="timer-long-break__controls">
+                    <label class="timer-long-break__toggle">
+                      <input type="checkbox" id="longBreakCheck" />
+                      启用长休息
+                    </label>
+                    <label class="timer-long-break__field">
+                      每
+                      <input
+                        type="number"
+                        id="longBreakInterval"
+                        class="input"
+                        value="4"
+                        min="1"
+                        max="10"
+                        step="1"
+                      />
+                      次
+                    </label>
+                    <label class="timer-long-break__field">
+                      休息
+                      <input
+                        type="number"
+                        id="longBreakMin"
+                        class="input"
+                        value="15"
+                        min="5"
+                        max="60"
+                        step="1"
+                      />
+                      分钟
+                    </label>
+                  </div>
+                </details>
+              </section>
+            </aside>
+
+            <section class="timer-surface timer-log" aria-label="今日日志">
+              <button
+                type="button"
+                id="logToggle"
+                class="log__toggle"
+                aria-expanded="false"
+                aria-controls="logWrap"
+              >
+                <span id="logArrow">+</span>
+                今日活动记录
+              </button>
+              <div id="logWrap" style="display: none; max-height: 240px; overflow-y: auto">
+                <table class="log-table" id="logTbl">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>专注开始</th>
+                      <th>专注结束</th>
+                      <th>站立开始</th>
+                      <th>站立结束</th>
+                      <th>专注</th>
+                      <th>站立</th>
+                    </tr>
+                  </thead>
+                  <tbody id="logBody"></tbody>
+                </table>
+                <button id="clearLogBtn" class="btn--mini btn--danger timer-log__clear">
+                  清除今日记录
+                </button>
+              </div>
+            </section>
           </div>
-          <button id="emergencyBtn" class="btn btn--emergency" style="margin-top: 16px">
-            🆘 暂停30秒 (冷静)
-          </button>
         </section>
         <section id="oddsPanel" class="panel">
           <div class="card">
@@ -417,25 +434,43 @@
           </div>
         </section>
         <section id="reviewPanel" class="panel">
-          <nav class="subnav" id="reviewSubNav">
-            <button class="subnav__btn subnav__btn--active" data-sub="hand">Hand</button
-            ><button class="subnav__btn" data-sub="discover">Discover</button
-            ><button class="subnav__btn" data-sub="session">Session</button
-            ><button class="subnav__btn" data-sub="weekly">Weekly</button
-            ><button class="subnav__btn" data-sub="total">Overall</button
-            ><button class="subnav__btn" data-sub="opponent">Villain</button>
+          <!-- [V7.7.2 修改] Review desktop analysis workspace -->
+          <header class="review-workspace__header">
+            <div class="review-workspace__eyebrow">Analysis workspace</div>
+            <h2>Review 工作台</h2>
+            <p>在同一工作区整理手牌、关联 Session、发现模式并进入针对性训练。</p>
+          </header>
+          <nav class="subnav review-rail" id="reviewSubNav" aria-label="Review 工作流">
+            <div class="review-rail__group">
+              <div class="review-rail__label">复盘</div>
+              <button class="subnav__btn subnav__btn--active" data-sub="hand">手牌</button>
+              <button class="subnav__btn" data-sub="session">Session</button>
+            </div>
+            <div class="review-rail__group">
+              <div class="review-rail__label">学习</div>
+              <button class="subnav__btn" data-sub="discover">Discover 与 Quiz</button>
+            </div>
+            <div class="review-rail__group">
+              <div class="review-rail__label">报告</div>
+              <button class="subnav__btn" data-sub="weekly">周报</button>
+              <button class="subnav__btn" data-sub="total">总览</button>
+            </div>
+            <div class="review-rail__group">
+              <div class="review-rail__label">对手</div>
+              <button class="subnav__btn" data-sub="opponent">对手画像</button>
+            </div>
           </nav>
           <div id="subTotal" class="sub-panel">
-            <div class="card">
-              <div class="card__title">Total Stats</div>
-              <div id="totalStatsArea"><div class="text-muted">暂无数据</div></div>
+            <div class="card total-overview-pane">
+              <div class="card__title">总体统计</div>
+              <div id="totalStatsArea"><div class="empty-state">暂无数据</div></div>
               <div id="chartsArea" class="charts-area"></div>
             </div>
-            <div class="card">
-              <div class="card__title">错误追踪 Error Tracking</div>
-              <div id="totalMistakeStats" class="text-muted">暂无错误记录</div>
+            <div class="card total-errors-pane">
+              <div class="card__title">错误追踪</div>
+              <div id="totalMistakeStats" class="empty-state">暂无错误记录</div>
             </div>
-            <div class="card">
+            <div class="card total-simulation-pane">
               <div class="card__title">资金波动模拟</div>
               <div class="row" style="gap:4px;margin-bottom:8px" id="mcBtnGroup">
                 <button class="toggle-btn mc-hand-btn is-active" data-mc-hands="500">500手</button>
@@ -449,8 +484,8 @@
             </div>
           </div>
           <div id="subHand" class="sub-panel is-visible">
-            <div class="card">
-              <div class="card__title">🃏 Hand Review</div>
+            <div class="card hand-detail-pane" id="handDetailPane" tabindex="-1">
+              <div class="card__title">手牌详情与反思</div>
               <div class="row" style="margin-bottom: 8px">
                 <label class="field"
                   >Pot Type<select id="handPotType" class="select">
@@ -526,7 +561,7 @@ OTR河牌 牌面：    行动：</textarea
               </label>
               <details>
                 <summary style="font-size: 0.85em; color: #94a3b8; cursor: pointer">
-                  🧠 思考模板
+                  思考模板
                 </summary>
                 <div class="text-muted" style="margin-top: 8px; line-height: 1.4">
                   <b>我的范围审查：</b><br />• 双方到达River的范围如何？<br />•
@@ -537,7 +572,7 @@ OTR河牌 牌面：    行动：</textarea
                 </div>
               </details>
               <details id="actionLineDetails" style="font-size: 0.75em; margin-top: 8px">
-                <summary style="color: #94a3b8; cursor: pointer">📊 行动线速查</summary>
+                <summary style="color: #94a3b8; cursor: pointer">行动线速查</summary>
                 <table
                   class="srp-table"
                   id="actionLineTable"
@@ -555,7 +590,7 @@ OTR河牌 牌面：    行动：</textarea
                 </table>
               </details>
               <details id="posAdviceDetails" style="font-size:0.75em;margin-top:8px">
-                <summary style="color:#94a3b8;cursor:pointer">📋 位置对抗速查</summary>
+                <summary style="color:#94a3b8;cursor:pointer">位置对抗速查</summary>
                 <div class="pos-advice-group" id="posAdviceGroup" style="margin:8px 0;display:flex;flex-wrap:wrap;gap:4px"></div>
                 <div id="posAdviceText" style="color:#cbd5e1;line-height:1.5;font-size:0.95em">请选择对抗类型查看策略要点。</div>
               </details>
@@ -587,12 +622,12 @@ OTR河牌 牌面：    行动：</textarea
               <label class="field"
                 ><input type="text" id="handMistakeCustom" class="input" placeholder="其他错误类型"
               /></label>
-              <button id="saveHandBtn" class="btn">💾 保存手局</button>
+              <button id="saveHandBtn" class="btn" data-state="create">保存手牌</button>
             </div>
             <!-- [V6.16.0] Picks 手牌精选，位于 Hand History 上方 -->
-            <div class="card" id="picksCard" style="display: none">
+            <div class="card hand-picks-pane" id="picksCard" style="display: none">
               <div class="card__title card__title--flex">
-                <span>⭐ Picks</span>
+                <span>重点手牌</span>
                 <span
                   id="picksCount"
                   style="font-size: 0.7em; color: #64748b; font-weight: normal"
@@ -614,14 +649,13 @@ OTR河牌 牌面：    行动：</textarea
                 </table>
               </div>
             </div>
-            <div class="card">
-              <!-- [V6.16.5] Hand History 默认折叠 -->
-              <details id="handHistoryDetails">
+            <div class="card hand-master-pane">
+              <details id="handHistoryDetails" open>
                 <summary
                   class="card__title card__title--flex"
                   style="cursor: pointer; list-style: none"
                 >
-                  <span>Hand History</span>
+                   <span>手牌列表</span>
                   <span
                     id="handFilteredCount"
                     style="font-size: 0.7em; color: #64748b; font-weight: normal"
@@ -676,27 +710,29 @@ OTR河牌 牌面：    行动：</textarea
                       flex-wrap: wrap;
                     "
                   >
-                    <button id="handSelectAllBtn" class="btn--mini">Select All</button>
+                    <button id="handSelectAllBtn" class="btn--mini">全选</button>
                     <span
                       id="handBatchCount"
                       style="font-size: 0.75em; color: #facc15; white-space: nowrap"
-                      >0 selected</span
+                      >已选 0 手</span
                     >
-                    <button id="handBatchDelBtn" class="btn--mini btn--danger">🗑 Delete</button
+                    <button id="handBatchDelBtn" class="btn--mini btn--danger">删除</button
                     ><select
                       id="handBatchSessionSelect"
                       style="font-size: 0.75em; min-width: 140px"
                     >
-                      <option value="">-- Link to Session --</option></select
-                    ><button id="handBatchLinkBtn" class="btn--mini">🔗 Link</button>
+                      <option value="">-- 关联到 Session --</option></select
+                    ><button id="handBatchLinkBtn" class="btn--mini">关联</button>
                   </div>
                 </div>
               </details>
             </div>
           </div>
           <div id="subDiscover" class="sub-panel">
-            <div id="discoverFindings">导入 50+ 手牌后自动分析…</div>
-            <div class="card" id="discoverHeatmapCard" style="display:none">
+            <div id="discoverFindings" class="learning-insights-pane">
+              <div class="empty-state">导入 50+ 手牌后自动分析</div>
+            </div>
+            <div class="card learning-heatmap-pane" id="discoverHeatmapCard" style="display:none">
               <div class="card__title" style="display:flex;align-items:center;justify-content:space-between">
                 Heatmap
                 <div class="row" style="gap:4px">
@@ -707,14 +743,14 @@ OTR河牌 牌面：    行动：</textarea
               <div id="discoverHeatmapChart"></div>
               <div id="discoverHeatmapLegend" style="font-size:0.7em;margin-top:4px;color:#8b949e"></div>
             </div>
-            <div class="card" id="discoverQuizCard">
+            <div class="card learning-quiz-pane" id="discoverQuizCard">
               <details id="discoverQuizDetails" open>
-                <summary class="card__title">🎯 Quiz</summary>
+                <summary class="card__title">Quiz 训练</summary>
                 <div class="quiz-card">
                   <div class="quiz-controls">
                     <select id="quizScenario" class="quiz-select"></select>
                     <select id="quizStage" class="quiz-select">
-                      <option value="">🎲 随机出题</option>
+                      <option value="">随机出题</option>
                     </select>
                   </div>
                   <div id="quizQuestion" class="quiz-question" style="display:none">
@@ -728,7 +764,7 @@ OTR河牌 牌面：    行动：</textarea
                   </div>
                   <div id="quizStats" class="quiz-stats"></div>
                   <details id="quizErrorsDetails">
-                    <summary class="card__title">📝 错题集 <span id="quizErrorCount">(0)</span></summary>
+                    <summary class="card__title">错题集 <span id="quizErrorCount">(0)</span></summary>
                     <div id="quizErrorList"></div>
                     <div id="quizErrorActions" style="margin-top:8px;display:none">
                       <button id="quizErrorClearBtn" class="btn--mini">清空全部</button>
@@ -739,8 +775,8 @@ OTR河牌 牌面：    行动：</textarea
             </div>
           </div>
           <div id="subSession" class="sub-panel">
-            <div class="card">
-              <div class="card__title">📋 Session 记录</div>
+            <div class="card session-detail-pane" id="sessionDetailPane" tabindex="-1">
+              <div class="card__title">新建或编辑 Session</div>
               <div class="row">
                 <label class="field">日期 <input type="date" id="sessDate" class="input" /></label
                 ><label class="field"
@@ -804,7 +840,7 @@ OTR河牌 牌面：    行动：</textarea
               </div>
               <details style="margin-top: 8px">
                 <summary style="font-size: 0.85em; color: #94a3b8; cursor: pointer">
-                  📋 更多选项（错误类型 · 情绪 · 备注）
+                  更多选项（错误类型 · 情绪 · 备注）
                 </summary>
                 <div class="text-muted" style="text-align: left; margin-top: 6px">
                   Tilt: 9-10完全冷静，7-8轻微波动，5-6明显情绪，3-4影响决策，0-2明显tilt
@@ -826,7 +862,7 @@ OTR河牌 牌面：    行动：</textarea
                 /></label>
                 <div class="card" style="margin-bottom: 12px; background: #0a2a4a">
                   <div class="card__title" style="margin-bottom: 8px; font-size: 0.9em">
-                    😤 情绪急救记录
+                    情绪急救记录
                   </div>
                   <div id="tiltLogList" class="text-muted" style="margin-top: 4px">暂无记录</div>
                 </div>
@@ -835,11 +871,11 @@ OTR河牌 牌面：    行动：</textarea
                 >备注 <input type="text" id="sessRemark" class="input" placeholder="特殊情况..."
               /></label>
               <div class="row" style="margin-top: 12px">
-                <button id="addSessionBtn" class="btn">💾 保存</button
-                ><button id="clearSessionBtn" class="btn btn--secondary">🧹 清空</button>
+                <button id="addSessionBtn" class="btn" data-state="create">保存 Session</button
+                ><button id="clearSessionBtn" class="btn btn--secondary">清空表单</button>
               </div>
             </div>
-            <div class="card">
+            <div class="card session-master-pane">
               <div class="card__title card__title--flex">
                 <span>本场统计 Session Stats</span>
                 <div style="position: relative">
@@ -867,11 +903,10 @@ OTR河牌 牌面：    行动：</textarea
                 ><button id="refreshSessionsBtn" class="btn--mini">刷新</button
                 ><button
                   id="importGGBtn"
-                  class="btn--mini"
-                  style="background: #f97316"
+                  class="btn--mini btn--accent"
                   title="从 GG 牌谱快速导入"
                 >
-                  📥 导入牌谱
+                  导入牌谱
                 </button>
               </div>
               <div class="table-container">
@@ -894,8 +929,8 @@ OTR河牌 牌面：    行动：</textarea
             </div>
           </div>
           <div id="subWeekly" class="sub-panel">
-            <div class="card">
-              <div class="card__title">📆 本周统计</div>
+            <div class="card weekly-overview-pane">
+              <div class="card__title">本周统计</div>
               <div id="weeklyAutoStats"></div>
               <div id="weeklyEngineStats"></div>
               <div
@@ -911,8 +946,8 @@ OTR河牌 牌面：    行动：</textarea
                 "
               ></div>
             </div>
-            <div class="card">
-              <div class="card__title">✍️ 周级复盘</div>
+            <div class="card weekly-editor-pane" id="weeklyEditorPane" tabindex="-1">
+              <div class="card__title">周级复盘</div>
               <label class="field"
                 >结构薄弱环节：<textarea
                   id="weeklyWeakness"
@@ -927,10 +962,10 @@ OTR河牌 牌面：    行动：</textarea
                   rows="3"
                   placeholder="下一周针对性改进措施"
                 ></textarea></label
-              ><button id="saveWeeklyBtn" class="btn">💾 保存本周复盘</button>
+              ><button id="saveWeeklyBtn" class="btn" data-state="create">保存本周复盘</button>
             </div>
-            <div class="card">
-              <div class="card__title">📜 历史周复盘</div>
+            <div class="card weekly-history-pane">
+              <div class="card__title">历史周复盘</div>
               <div class="table-container">
                 <table class="session-table" id="weeklyTable">
                   <thead>
@@ -947,8 +982,8 @@ OTR河牌 牌面：    行动：</textarea
             </div>
           </div>
           <div id="subOpponent" class="sub-panel">
-            <div class="card">
-              <div class="card__title">Opponent Profiles</div>
+            <div class="card opponent-profiles-pane">
+              <div class="card__title">对手画像</div>
               <div
                 id="opponentStatsBar"
                 class="text-muted"
@@ -956,9 +991,9 @@ OTR河牌 牌面：    行动：</textarea
               ></div>
               <div id="opponentList" style="max-height: 400px; overflow-y: auto"></div>
             </div>
-            <div class="card">
-              <div class="card__title">Live Data</div>
-              <div id="totalLiveStats" class="text-muted">暂无Live数据</div>
+            <div class="card opponent-live-pane">
+              <div class="card__title">Live 数据</div>
+              <div id="totalLiveStats" class="empty-state">暂无 Live 数据</div>
             </div>
           </div>
         </section>

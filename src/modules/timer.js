@@ -50,6 +50,13 @@ export const Timer = {
       }
     });
   },
+  // [V7.7.2 新增] Keep the primary Timer action accessible without changing timer semantics.
+  syncPrimaryAction() {
+    const isRunning = !!this.running;
+    this.startBtn.textContent = isRunning ? '暂停计时' : '开始专注';
+    this.startBtn.setAttribute('aria-pressed', String(isRunning));
+    this.startBtn.setAttribute('aria-label', isRunning ? '暂停计时' : '开始专注计时');
+  },
   restoreState() {
     const state = Store.timer.get();
     if (state && state.longBreak) {
@@ -81,7 +88,7 @@ export const Timer = {
         this.breakStart = state.breakStart ? new Date(state.breakStart) : null;
         this.interval = setInterval(() => this.tick(), 1000);
         this.running = true;
-        this.startBtn.textContent = '⏸️ 暂停';
+        this.syncPrimaryAction();
         this.updateDisplay();
         return;
       }
@@ -164,7 +171,7 @@ export const Timer = {
     if (this.running) {
       clearInterval(this.interval);
       this.running = false;
-      this.startBtn.textContent = '▶ 开始';
+      this.syncPrimaryAction();
       this.persistState();
     } else {
       if (Notification.permission === 'default') Notification.requestPermission();
@@ -179,7 +186,7 @@ export const Timer = {
       if (this.phase === 'break' && !this.breakStart) this.breakStart = new Date();
       this.interval = setInterval(() => this.tick(), 1000);
       this.running = true;
-      this.startBtn.textContent = '⏸️ 暂停';
+      this.syncPrimaryAction();
       this.persistState();
     }
   },
@@ -191,7 +198,7 @@ export const Timer = {
     this.endTime = Date.now() + parseInt(this.workInput.value) * 60000;
     this.workStart = null;
     this.breakStart = null;
-    this.startBtn.textContent = '▶ 开始';
+    this.syncPrimaryAction();
     this.persistState();
     this.updateDisplay();
   },
@@ -241,7 +248,7 @@ export const Timer = {
     if (_beep) _beep();
     if (_vibrate) _vibrate();
     if (_notify) _notify(
-      this.phase === 'work' ? '💼 继续专注' : this.isLongBreak ? '🧘 长休息时间' : '🧘 站起来活动',
+      this.phase === 'work' ? '继续专注' : this.isLongBreak ? '长休息时间' : '站起来活动',
       this.phase === 'work' ? '开始新的工作时段' : breakLabel
     );
     this.persistState();
@@ -290,11 +297,13 @@ export const Timer = {
       a = document.getElementById('logArrow');
     if (w.style.display === 'none') {
       w.style.display = 'block';
-      a.textContent = '▼';
+      a.textContent = '−';
+      document.getElementById('logToggle').setAttribute('aria-expanded', 'true');
       this.renderLog();
     } else {
       w.style.display = 'none';
-      a.textContent = '▶';
+      a.textContent = '+';
+      document.getElementById('logToggle').setAttribute('aria-expanded', 'false');
     }
   },
   updateDisplay() {
@@ -303,13 +312,13 @@ export const Timer = {
       : 25 * 60;
     this.display.textContent = String(Math.floor(r / 60)).padStart(2, '0') + ':' + String(r % 60).padStart(2, '0');
     if (this.phase === 'work') {
-      this.phaseBdg.textContent = '💼 工作中';
+      this.phaseBdg.textContent = '专注中';
       this.phaseBdg.className = 'timer__phase timer__phase--work';
     } else if (this.isLongBreak) {
-      this.phaseBdg.textContent = '🧘 长休息';
+      this.phaseBdg.textContent = '长休息';
       this.phaseBdg.className = 'timer__phase timer__phase--rest';
     } else {
-      this.phaseBdg.textContent = '🧘 站立休息';
+      this.phaseBdg.textContent = '站立休息';
       this.phaseBdg.className = 'timer__phase timer__phase--rest';
     }
     if (this.cycleCountEl) {
@@ -319,6 +328,7 @@ export const Timer = {
     this.display.classList.toggle('timer__display--long-break', !!this.isLongBreak);
     document.getElementById('skipBreakBtn').style.display =
       this.phase === 'break' ? 'block' : 'none';
+    this.syncPrimaryAction();
   },
   skipBreak() {
     if (this.phase !== 'break' || !this.running) return;

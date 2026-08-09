@@ -535,9 +535,10 @@ export const Review = {
       const idx = sessions.findIndex(function (x) { return x.id === this.editingId; }.bind(this));
       if (idx !== -1) { s.id = this.editingId; sessions[idx] = s; }
       this.editingId = null;
-      document.getElementById('addSessionBtn').textContent = '💾 保存';
-      document.getElementById('clearSessionBtn').textContent = '🧹 清空';
-      document.getElementById('addSessionBtn').style.background = '';
+      document.getElementById('addSessionBtn').textContent = '保存 Session';
+      document.getElementById('clearSessionBtn').textContent = '清空表单';
+      document.getElementById('addSessionBtn').dataset.state = 'create';
+      document.getElementById('sessionDetailPane').classList.remove('is-editing');
     } else {
       s.id = Utils.generateUUID(); sessions.push(s);
     }
@@ -616,9 +617,10 @@ export const Review = {
     document.getElementById('sessTilt').value = '5';
     document.querySelectorAll('#sessMistakeGroup .toggle-btn').forEach((b) => b.classList.remove('is-active'));
     this.editingId = null;
-    document.getElementById('addSessionBtn').textContent = '💾 保存';
-    document.getElementById('clearSessionBtn').textContent = '🧹 清空';
-    document.getElementById('addSessionBtn').style.background = '';
+    document.getElementById('addSessionBtn').textContent = '保存 Session';
+    document.getElementById('clearSessionBtn').textContent = '清空表单';
+    document.getElementById('addSessionBtn').dataset.state = 'create';
+    document.getElementById('sessionDetailPane').classList.remove('is-editing');
   },
   editSession(id) {
     const sessions = this.getSessions();
@@ -642,10 +644,12 @@ export const Review = {
       const customParts = parts.filter(function (p) { return predefined.indexOf(p) === -1; });
       document.getElementById('sessMistakeCustom').value = customParts.join(', ');
     }
-    document.getElementById('addSessionBtn').textContent = '💾 更新';
-    document.getElementById('clearSessionBtn').textContent = '❌ 取消编辑';
-    document.getElementById('addSessionBtn').style.background = '#0ea5e9';
-    window.scrollTo({ top: document.getElementById('addSessionBtn').offsetTop - 100, behavior: 'smooth' });
+    document.getElementById('addSessionBtn').textContent = '更新 Session';
+    document.getElementById('clearSessionBtn').textContent = '取消编辑';
+    document.getElementById('addSessionBtn').dataset.state = 'edit';
+    var sessionPane = document.getElementById('sessionDetailPane');
+    sessionPane.classList.add('is-editing');
+    sessionPane.focus({ preventScroll: true });
   },
   deleteSession(id) {
     var self = this;
@@ -1567,8 +1571,8 @@ export const Review = {
         var filter = filterBtn.dataset.filter;
         var container = document.getElementById('oppHandFilter-' + oppIdx);
         if (!container) return;
-        container.parentElement.querySelectorAll('.opp-filter-btn').forEach(function (b) { b.style.background = ''; });
-        filterBtn.style.background = '#5a9e8f';
+        container.parentElement.querySelectorAll('.opp-filter-btn').forEach(function (b) { b.classList.remove('is-active'); });
+        filterBtn.classList.add('is-active');
         container.querySelectorAll('.opp-filterable').forEach(function (el) {
           if (filter === 'all') { el.style.display = ''; }
           else if (filter === 'above2') { el.style.display = el.classList.contains('above2') ? '' : 'none'; }
@@ -1682,8 +1686,9 @@ export const Review = {
       const idx = reviews.findIndex(function (x) { return x.id === this.handEditingId; }.bind(this));
       if (idx !== -1) { r.id = this.handEditingId; reviews[idx] = r; }
       this.handEditingId = null;
-      document.getElementById('saveHandBtn').textContent = '💾 保存手局';
-      document.getElementById('saveHandBtn').style.background = '';
+      document.getElementById('saveHandBtn').textContent = '保存手牌';
+      document.getElementById('saveHandBtn').dataset.state = 'create';
+      document.getElementById('handDetailPane').classList.remove('is-editing');
     } else { r.id = Utils.generateUUID(); reviews.push(r); }
     this.saveHandReviews(reviews);
     document.getElementById('handDesc').value = 'preflop 行动：Hero /[Xx Xx] \nOTF翻牌 牌面：    行动：\nOTT转牌 牌面：    行动：\nOTR河牌 牌面：    行动：';
@@ -1714,9 +1719,11 @@ export const Review = {
       const customParts = parts.filter(function (p) { return predefined.indexOf(p) === -1; });
       document.getElementById('handMistakeCustom').value = customParts.join(', ');
     }
-    document.getElementById('saveHandBtn').textContent = '💾 更新手局';
-    document.getElementById('saveHandBtn').style.background = '#0ea5e9';
-    window.scrollTo({ top: document.getElementById('saveHandBtn').offsetTop - 100, behavior: 'smooth' });
+    document.getElementById('saveHandBtn').textContent = '更新手牌';
+    document.getElementById('saveHandBtn').dataset.state = 'edit';
+    var handPane = document.getElementById('handDetailPane');
+    handPane.classList.add('is-editing');
+    handPane.focus({ preventScroll: true });
     // [V7.5.1] 位置对抗速查自动匹配
     _renderPosAdviceButtons();
     _applyPosAdvice(r.preflopScenario);
@@ -1771,9 +1778,9 @@ export const Review = {
       batchBar.style.display = 'flex';
     }
     if (btn) {
-      btn.textContent = (selCount === totalVisible && totalVisible > 0) ? 'Deselect All' : 'Select All';
+      btn.textContent = (selCount === totalVisible && totalVisible > 0) ? '取消全选' : '全选';
     }
-    if (countEl) countEl.textContent = selCount + ' selected';
+    if (countEl) countEl.textContent = '已选 ' + selCount + ' 手';
     allRows.forEach(function (row) {
       if (Review._selectedHandIds.has(row.dataset.handId)) {
         row.classList.add('is-selected');
@@ -1868,10 +1875,10 @@ export const Review = {
     var batchBar = document.getElementById('handBatchBar');
     var sessSel = document.getElementById('handBatchSessionSelect');
     if (sessSel) {
-      sessSel.innerHTML = '<option value="">-- Link to Session --</option>';
+      sessSel.innerHTML = '<option value="">-- 关联到 Session --</option>';
       sessions.forEach(function (s) { sessSel.innerHTML += '<option value="' + s.id + '">' + Utils.escapeHtml(s.date) + ' ' + Utils.escapeHtml(s.level) + '</option>'; });
     }
-    Review._selectedHandIds.clear(); batchBar.style.display = 'none'; document.getElementById('handBatchCount').textContent = '0 selected';
+    Review._selectedHandIds.clear(); batchBar.style.display = 'none'; document.getElementById('handBatchCount').textContent = '已选 0 手';
   },
   _renderHandPagination(total, pageNum, totalPages) {
     var self = this; var bar = document.getElementById('handPagination');
@@ -1930,7 +1937,7 @@ export const Review = {
     const autoSummary = this.generateWeeklySummary(sessions, tp, tt, topMistakes);
     const wBb100 = th ? Utils.safeFixed((tp / th) * 100, 1) : 'N/A';
     document.getElementById('weeklyAutoStats').innerHTML = '<div class="stats"><div class="stats__item"><div class="stats__label">本周场次</div><div class="stats__value">' + sessions.length + '</div></div><div class="stats__item ' + (tp >= 0 ? 'stats__item--win' : 'stats__item--lose') + '"><div class="stats__label">本周盈亏</div><div class="stats__value ' + (tp >= 0 ? 'text-win' : 'text-lose') + '">' + (tp >= 0 ? '+' + Utils.safeFixed(tp, 1) : Utils.safeFixed(tp, 1)) + ' BB</div></div><div class="stats__item"><div class="stats__label">总手数</div><div class="stats__value">' + th + '</div></div><div class="stats__item ' + (parseFloat(wBb100) >= 0 ? 'stats__item--win' : 'stats__item--lose') + '"><div class="stats__label">bb/100</div><div class="stats__value ' + (parseFloat(wBb100) >= 0 ? 'text-win' : 'text-lose') + '">' + wBb100 + '</div></div><div class="stats__item"><div class="stats__label">平均Tilt</div><div class="stats__value">' + (sessions.length ? Utils.safeFixed(tt / sessions.length, 1) : 'N/A') + '</div></div><div class="stats__item"><div class="stats__label">主要错误</div><div class="stats__value" style="font-size:0.8em">' + Utils.escapeHtml(topMistakes) + '</div></div></div>' + trendHtml;
-    document.getElementById('weeklySummary').innerHTML = autoSummary ? '<b>🧠 本周总结</b><br>' + autoSummary : '';
+    document.getElementById('weeklySummary').innerHTML = autoSummary ? '<b>本周总结</b><br>' + autoSummary : '';
     // [V6.18.5] 本周引擎统计
     var wEngineResult = analyze(hrs);
     var wes = document.getElementById('weeklyEngineStats');
@@ -1963,8 +1970,11 @@ export const Review = {
     else reviews.push({ week, weakness, plan });
     this.saveWeeklyReviews(reviews);
     document.getElementById('weeklyWeakness').value = ''; document.getElementById('weeklyPlan').value = '';
-    document.getElementById('saveWeeklyBtn').textContent = '💾 保存本周复盘';
-    document.getElementById('saveWeeklyBtn').style.background = '';
+    const saveBtn = document.getElementById('saveWeeklyBtn');
+    const editorPane = document.getElementById('weeklyEditorPane');
+    saveBtn.textContent = '保存本周复盘';
+    saveBtn.dataset.state = 'create';
+    if (editorPane) editorPane.classList.remove('is-editing');
     this.renderWeeklyReviews();
   },
   deleteWeeklyReview(week) { this._confirmDelete(() => this.getWeeklyReviews(), (d) => this.saveWeeklyReviews(d), () => this.renderWeeklyReviews(), 'week', week); },
@@ -1974,9 +1984,14 @@ export const Review = {
     if (!r) return;
     document.getElementById('weeklyWeakness').value = r.weakness || '';
     document.getElementById('weeklyPlan').value = r.plan || '';
-    document.getElementById('saveWeeklyBtn').textContent = '💾 更新本周复盘';
-    document.getElementById('saveWeeklyBtn').style.background = '#0ea5e9';
-    window.scrollTo({ top: document.getElementById('saveWeeklyBtn').offsetTop - 100, behavior: 'smooth' });
+    const saveBtn = document.getElementById('saveWeeklyBtn');
+    const editorPane = document.getElementById('weeklyEditorPane');
+    saveBtn.textContent = '更新本周复盘';
+    saveBtn.dataset.state = 'edit';
+    if (editorPane) {
+      editorPane.classList.add('is-editing');
+      editorPane.focus({ preventScroll: true });
+    }
   },
   renderWeeklyReviews() {
     const reviews = Utils.sortByDateKey(this.getWeeklyReviews(), 'week');
@@ -2016,36 +2031,36 @@ export const Review = {
       try { QuizTrainer.init(); _bindQuizUI(); self._quizReady = true; } catch (e) { console.warn('Quiz init failed:', e); }
     }
     if (!findings.length) {
-      container.innerHTML = '<div class="card"><div class="card__title">🔍 Discover</div><div class="text-muted" style="padding:40px 0">暂无值得关注的模式<br>导入 50+ 手牌后自动分析</div></div>';
+      container.innerHTML = '<div class="empty-state">暂无值得关注的模式<br>导入 50+ 手牌后自动分析</div>';
       return;
     }
     // [V7.4.8] 读取 Quiz 进度用于标记弱项/已掌握
     var quizStages = {};
     try { QuizTrainer.getStages().forEach(function (s) { quizStages[s.key] = s.accuracy; }); } catch(e) {}
-    var typeLabels = { profit_anomaly: '💰 盈亏异常', self_contradiction: '📊 自我矛盾', gto_deviation: '🎯 偏离 GTO' };
-    var typeColors = { profit_anomaly: '#c06060', self_contradiction: '#d4a853', gto_deviation: '#5a9e8f' };
-    container.innerHTML = '<div class="card"><div class="card__title">🔍 Discover</div>' +
-      '<div style="font-size:0.85em;color:#909090;margin-bottom:12px">基于 ' + Discover.getScanHandCount() + ' 手牌自动分析，发现 ' + findings.length + ' 条模式</div>' +
+    var typeLabels = { profit_anomaly: '盈亏异常', self_contradiction: '自我矛盾', gto_deviation: '偏离 GTO' };
+    var typeClasses = { profit_anomaly: 'finding-card--profit', self_contradiction: 'finding-card--contradiction', gto_deviation: 'finding-card--gto' };
+    container.innerHTML = '<section class="learning-findings"><div class="card__title">模式发现</div>' +
+      '<div class="learning-findings__summary">基于 ' + Discover.getScanHandCount() + ' 手牌自动分析，发现 ' + findings.length + ' 条模式</div><div class="finding-list">' +
       findings.map(function (f) {
-        var typeColor = typeColors[f.type] || '#909090';
-        var badges = f.improved ? ' <span style="color:#6baf7e">✅ 已改善</span>' : '';
+        var typeClass = typeClasses[f.type] || 'finding-card--gto';
+        var badges = f.improved ? ' <span class="status-inline status-inline--success">已改善</span>' : '';
         // [V7.4.8] Quiz 进度标记
         var quizAcc = quizStages[f.category];
-        if (quizAcc !== undefined && quizAcc < 50) badges += ' <span style="color:#c06060">🔴 弱项 ' + quizAcc + '%</span>';
-        else if (quizAcc !== undefined && quizAcc > 80) badges += ' <span style="color:#6baf7e">✅ 已掌握</span>';
+        if (quizAcc !== undefined && quizAcc < 50) badges += ' <span class="status-inline status-inline--danger">弱项 ' + quizAcc + '%</span>';
+        else if (quizAcc !== undefined && quizAcc > 80) badges += ' <span class="status-inline status-inline--success">已掌握</span>';
         // 针对训练按钮
-        var quizBtn = f.category ? ' <button class="btn--mini" data-discover-quiz="' + Utils.escapeHtml(f.id) + '" style="font-size:0.85em">🎯 Quiz</button>' : '';
-        return '<div class="card" style="padding:14px 16px;margin-bottom:8px">' +
-          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
-          '<span style="color:' + typeColor + ';font-weight:bold">' + (typeLabels[f.type] || f.type) + badges + '</span>' +
-          '<span style="font-size:0.85em;color:#909090">' + f.handCount + ' 手</span></div>' +
-          '<div style="font-size:0.95em;margin-bottom:6px">' + Utils.escapeHtml(f.title) + '</div>' +
-          (f.localFreq !== undefined ? '<div style="font-size:0.85em;color:#909090;margin-bottom:4px">CBet ' + f.localFreq + '% vs 场景平均 ' + f.globalFreq + '%' + (f.gtoRef !== '—' ? ' · ' + f.gtoRef : '') + '</div>' : '') +
-          (f.avgProfit !== undefined ? '<div style="font-size:0.85em;color:' + (parseFloat(f.avgProfit) < 0 ? '#c06060' : '#909090') + ';margin-bottom:4px">平均盈亏 ' + f.avgProfit + ' BB</div>' : '') +
-          '<div style="margin-top:6px"><button class="btn--mini" data-discover-hands="' + f.id + '" style="font-size:0.85em">👁️ 查看手牌</button>' + quizBtn + '</div>' +
-          '<div id="discoverDetail-' + f.id + '" style="display:none;margin-top:10px"></div>' +
-          '</div>';
-      }).join('') + '</div>';
+        var escapedId = Utils.escapeHtml(f.id);
+        var quizBtn = f.category ? ' <button class="btn--mini" data-discover-quiz="' + escapedId + '">开始 Quiz</button>' : '';
+        return '<article class="finding-card ' + typeClass + '">' +
+          '<div class="finding-card__header"><span><strong>' + Utils.escapeHtml(typeLabels[f.type] || f.type) + '</strong>' + badges + '</span>' +
+          '<span class="finding-card__count">' + f.handCount + ' 手</span></div>' +
+          '<div class="finding-card__title">' + Utils.escapeHtml(f.title) + '</div>' +
+          (f.localFreq !== undefined ? '<div class="finding-card__meta">CBet ' + Utils.escapeHtml(String(f.localFreq)) + '% vs 场景平均 ' + Utils.escapeHtml(String(f.globalFreq)) + '%' + (f.gtoRef !== '—' ? ' · ' + Utils.escapeHtml(String(f.gtoRef)) : '') + '</div>' : '') +
+          (f.avgProfit !== undefined ? '<div class="finding-card__meta">平均盈亏 ' + Utils.escapeHtml(String(f.avgProfit)) + ' BB</div>' : '') +
+          '<div class="finding-card__actions"><button class="btn--mini" data-discover-hands="' + escapedId + '">查看手牌</button>' + quizBtn + '</div>' +
+          '<div class="finding-card__detail" id="discoverDetail-' + escapedId + '" style="display:none"></div>' +
+          '</article>';
+      }).join('') + '</div></section>';
     _bindDiscoverQuiz();
 
     // 点击查看手牌 → 展开列表（仅绑定一次）
@@ -2063,7 +2078,7 @@ export const Review = {
       var sessMap = {};
       SessionRepo.getAll().forEach(function (s) { sessMap[s.id] = s; });
       detail.style.display = 'block';
-      detail.innerHTML = '<table class="session-table" style="font-size:0.75em"><thead><tr><th>Time</th><th>Type</th><th>Session</th><th>Hand</th><th>Profit</th></tr></thead><tbody>' +
+      detail.innerHTML = '<table class="session-table finding-hands-table"><thead><tr><th>时间</th><th>类型</th><th>Session</th><th>手牌</th><th>盈亏</th></tr></thead><tbody>' +
         hands.map(function (h) {
           var profitStr = h.pBB != null ? (h.pBB >= 0 ? '+' : '') + Utils.safeFixed(h.pBB, 1) + ' BB' : '--';
           var sess = h.sessionId ? sessMap[h.sessionId] : null;
@@ -2296,7 +2311,7 @@ function _bindQuizUI() {
   scenarioSel.addEventListener('change', function () { QuizTrainer.setScenario(this.value); _renderStages(); _nextQuestion(); });
   function _renderStages() {
     var stages = QuizTrainer.getStages();
-    stageSel.innerHTML = '<option value="">🎲 随机出题</option>' + stages.map(function (s) { return '<option value="' + s.key + '">' + s.name + ' (' + s.accuracy + '%)</option>'; }).join('');
+    stageSel.innerHTML = '<option value="">随机出题</option>' + stages.map(function (s) { return '<option value="' + s.key + '">' + s.name + ' (' + s.accuracy + '%)</option>'; }).join('');
   }
   stageSel.addEventListener('change', function () { _nextQuestion(); });
   function _nextQuestion() {
@@ -2357,7 +2372,7 @@ function _renderErrorList() {
     var stats = QuizTrainer.getStats();
     var stages = QuizTrainer.getStages();
     var weakStages = stages.filter(function (s) { return s.total > 0 && s.accuracy < 50; });
-    var html = '<div style="padding:12px 0;color:#8b949e;font-size:0.85em">';
+    var html = '<div class="empty-state empty-state--compact">';
     if (stats.total > 0) {
       html += '暂无错题，继续保持！<br>当前总准确率：' + stats.accuracy + '%（' + stats.ok + '/' + stats.total + '）';
       if (weakStages.length) {
