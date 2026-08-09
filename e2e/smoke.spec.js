@@ -31,6 +31,8 @@ test('页面加载无 Console 报错', async ({ page }) => {
   for (const sub of ['hand', 'session', 'weekly', 'opponent']) {
     await page.click(`[data-sub="${sub}"]`);
     await page.waitForTimeout(200);
+    const panelName = sub.charAt(0).toUpperCase() + sub.slice(1);
+    await expect(page.locator(`#sub${panelName}`)).toHaveClass(/is-visible/);
   }
 
   if (errors.length) {

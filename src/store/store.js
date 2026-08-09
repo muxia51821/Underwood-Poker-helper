@@ -1,7 +1,18 @@
 import { CONSTANTS } from '../constants.js';
 import { Utils } from '../utils.js';
 import { DB } from './db.js';  // [V6.17.0] DB 独立模块
+import { LocalStorageAdapter, IndexedDBAdapter, PersistenceCoordinator } from './storage.js';
 import { clearStatsCache } from '../modules/statsEngine.js';  // [V7.0.0] 数据变更时清统计缓存
+
+const localStorageAdapter = new LocalStorageAdapter();
+const persistence = new PersistenceCoordinator({
+  local: localStorageAdapter,
+  indexedDB: new IndexedDBAdapter(DB),
+  onIssue: function (message) {
+    _healthMode = 'degraded';
+    _addHealthIssue(message);
+  },
+});
 
 // #region Store
 /* ==================== 分层存储 ==================== */
@@ -9,12 +20,7 @@ export const Store = {
   _prefix: CONSTANTS.STORAGE_PREFIX,
   /** @param {string} key - localStorage 键名（不含 pa_ 前缀） @returns {*|null} */
   _getRaw(key) {
-    try {
-      const raw = localStorage.getItem(this._prefix + key);
-      return raw ? JSON.parse(raw) : null;
-    } catch (e) {
-      return null;
-    }
+    return localStorageAdapter.get(key);
   },
   /** @param {string} key - localStorage 键名（不含 pa_ 前缀） @param {*} value - 要存储的值 */
   _setRaw(key, value) {
@@ -25,9 +31,7 @@ export const Store = {
       );
       console.assert(value !== undefined, 'Store._setRaw: value must not be undefined');
     }
-    try {
-      localStorage.setItem(this._prefix + key, JSON.stringify(value));
-    } catch (e) { console.warn('Store._setRaw failed:', e); }
+    if (!localStorageAdapter.set(key, value)) console.warn('Store._setRaw failed:', key);
   },
   settings: {
     get() {
@@ -178,15 +182,10 @@ export const Store = {
   },
   _collectLogs() {
     const logs = {};
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.startsWith(this._prefix + 'log_')) {
-        const ds = key.replace(this._prefix + 'log_', '');
-        try {
-          logs[ds] = JSON.parse(localStorage.getItem(key));
-        } catch (e) { console.warn('Store._collectLogs parse failed:', e); }
-      }
-    }
+    const collected = localStorageAdapter.collect('log_');
+    Object.keys(collected).forEach(function (key) {
+      logs[key.slice(4)] = collected[key];
+    });
     return logs;
   },
 };
@@ -195,11 +194,12 @@ export const Store = {
 // [V6.6.2] 仓储基类 — 抽象 localStorage 数组实体的增删改查
 // [V6.7] 升级：内存缓存 + IndexedDB 双后端，对外 API 签名不变
 export class BaseRepo {
-  constructor(key, idField) {
+  constructor(key, idField, storage) {
     this._key = key;
     this._idField = idField || 'id';
+    this._storage = storage || persistence;
     this._cache = [];
-    this._dbReady = false;
+    this._backend = 'localstorage';
     this._writeTimer = null;
   }
   /** @returns {Array} */
@@ -210,38 +210,33 @@ export class BaseRepo {
   saveAll(items) {
     this._cache = items;
     // [V7.0.0] 手牌数据变更时清除统计缓存（context + analyze 两层）
-    if (this._key === 'pa_handReviews') clearStatsCache();
-    if (this._dbReady) {
+    if (this._key === 'handReviews') clearStatsCache();
+    if (this._backend === 'indexeddb') {
       this._scheduleDBWrite();
     } else {
-      Store._setRaw(this._key, items);
+      this._storage.writeLocal(this._key, items);
     }
   }
   async _init() {
-    if (DB._db) {
-      try {
-        this._cache = await DB.getAll(this._key);
-        this._dbReady = true;
-        return;
-      } catch (e) {
-        console.warn(
-          'IndexedDB load failed for ' + this._key + ', fallback to localStorage',
-          e
-        );
-      }
-    }
-    this._cache = Store._getRaw(this._key) || [];
+    const loaded = await this._storage.loadCollection(this._key);
+    this._cache = loaded.items;
+    this._backend = loaded.backend;
   }
   _scheduleDBWrite() {
     var self = this;
     if (this._writeTimer) clearTimeout(this._writeTimer);
     this._writeTimer = setTimeout(function () {
-      DB.putAll(self._key, self._cache).catch(function (e) {
-        Store._setRaw(self._key, self._cache);
-        self._dbReady = false;
+      self._storage.persistCollection(self._key, self._cache).then(function (result) {
+        self._backend = result.backend;
+        if (result.backend !== 'indexeddb') {
+          _healthMode = 'degraded';
+          console.warn('IndexedDB write failed for ' + self._key, result.error || 'fallback');
+        }
+      }).catch(function (e) {
+        self._backend = 'localstorage';
         _healthMode = 'degraded';
-        _addHealthIssue(self._key + ' IndexedDB 写入失败，已降级到 localStorage');
-        console.warn('IndexedDB write failed for ' + self._key, e);
+        _addHealthIssue(self._key + ' 持久化失败');
+        console.warn('Persistence failed for ' + self._key, e);
       });
     }, 300);
   }
@@ -250,9 +245,22 @@ export class BaseRepo {
       clearTimeout(this._writeTimer);
       this._writeTimer = null;
     }
-    if (this._dbReady) {
-      Store._setRaw(this._key, this._cache);
-    }
+    if (this._backend === 'indexeddb') this._storage.writeLocal(this._key, this._cache);
+  }
+  isIndexedDBReady() {
+    return this._backend === 'indexeddb';
+  }
+  markIndexedDBReady() {
+    this._backend = 'indexeddb';
+  }
+  replaceCache(items) {
+    this._cache = Array.isArray(items) ? items : [];
+  }
+  getStorageKey() {
+    return this._key;
+  }
+  getIdField() {
+    return this._idField;
   }
   getPage(pageSize, pageNum) {
     var start = (pageNum - 1) * pageSize;
@@ -317,8 +325,7 @@ async function migrateToIndexedDB() {
     if (!oldData.length) continue;
 
     try {
-      await DB.putAll(table, oldData);
-      var count = await DB.count(table);
+      var count = await persistence.writeIndexedDB(table, oldData);
       if (count !== oldData.length) {
         console.error(
           'Migration count mismatch: ' + table + ' expected ' + oldData.length + ' got ' + count
@@ -332,15 +339,15 @@ async function migrateToIndexedDB() {
   }
 
   if (allOk) {
-    localStorage.removeItem('pa_sessions');
-    localStorage.removeItem('pa_handReviews');
-    localStorage.removeItem('pa_weeklyReviews');
-    localStorage.removeItem('pa_tiltLogs');
+    persistence.removeLocal('sessions');
+    persistence.removeLocal('handReviews');
+    persistence.removeLocal('weeklyReviews');
+    persistence.removeLocal('tiltLogs');
     // [V7.0.3] 先 ready 再标记，避免中间崩溃造成标记为真但 repo 未 ready
-    SessionRepo._dbReady = true;
-    HandRepo._dbReady = true;
-    WeeklyRepo._dbReady = true;
-    TiltLogRepo._dbReady = true;
+    SessionRepo.markIndexedDBReady();
+    HandRepo.markIndexedDBReady();
+    WeeklyRepo.markIndexedDBReady();
+    TiltLogRepo.markIndexedDBReady();
     localStorage.setItem('pa_migrated_v1', 'true');
   } else {
     console.warn('Migration incomplete, localStorage data preserved for next retry');
@@ -375,7 +382,8 @@ async function _migrateBoardFields() {
   }
   var changed = false;
   hands.forEach(function (r) {
-    var boardSource = r.boardCards || _extractFlopBoardFromDesc(r.desc) || r.boardCode || '';
+    // 优先使用描述中的翻牌面；boardCards 可能是包含 turn/river 的完整 runout。
+    var boardSource = _extractFlopBoardFromDesc(r.desc) || r.boardCards || r.boardCode || '';
     if (boardSource) {
       var code = r.boardCode || _simpleNormalize(boardSource);
       if (!r.boardCode && code) {
@@ -396,12 +404,11 @@ async function _migrateBoardFields() {
     }
   });
   if (changed) {
-    if (DB._db && HandRepo._dbReady) {
+    if (persistence.isIndexedDBReady() && HandRepo.isIndexedDBReady()) {
       // 先保留本地备份，IndexedDB 写入失败时下次启动仍可重试。
-      Store._setRaw('handReviews', hands);
+      persistence.writeLocal('handReviews', hands);
       try {
-        await DB.putAll('handReviews', hands);
-        var actual = await DB.count('handReviews');
+        var actual = await persistence.writeIndexedDB('handReviews', hands);
         if (actual !== hands.length) {
           throw new Error('handReviews migration count mismatch');
         }
@@ -430,7 +437,12 @@ function _extractFlopBoardFromDesc(desc) {
 function _simpleNormalize(boardCards) {
   if (!boardCards) return '';
   var rankOrder = 'AKQJT98765432';
-  var cards = boardCards.split(' ');
+  var cards = String(boardCards).trim().split(/\s+/);
+  if (cards.length === 1 && cards[0].length >= 6) {
+    var compact = cards[0];
+    cards = [];
+    for (var i = 0; i + 1 < compact.length; i += 2) cards.push(compact.slice(i, i + 2));
+  }
   try {
     cards.sort(function (a, b) { return rankOrder.indexOf(a.charAt(0)) - rankOrder.indexOf(b.charAt(0)); });
     return cards.map(function (c) { return c.charAt(0) + c.charAt(c.length - 1).toLowerCase(); }).join('');
@@ -514,7 +526,7 @@ export async function initStorage(opts) {
     }
   }
 
-  var useIndexedDB = !safeMode && DB._db && localStorage.getItem('pa_migrated_v1');
+  var useIndexedDB = !safeMode && persistence.isIndexedDBReady() && localStorage.getItem('pa_migrated_v1');
 
   if (useIndexedDB) {
     _healthMode = 'indexeddb';
@@ -533,16 +545,16 @@ export async function initStorage(opts) {
     recoveryRepos.forEach(function (r) {
       var fallback = Store._getRaw(r.key);
       if (fallback && fallback.length > r.repo.getAll().length) {
-        var cacheIds = new Set();
-        r.repo.getAll().forEach(function (item) {
-          cacheIds.add(item[r.repo._idField]);
-        });
-        var missing = fallback.filter(function (item) {
-          return !cacheIds.has(item[r.repo._idField]);
-        });
-        if (missing.length) {
-          r.repo._cache = r.repo.getAll().concat(missing);
-          r.repo.saveAll(r.repo._cache);
+          var cacheIds = new Set();
+          r.repo.getAll().forEach(function (item) {
+          cacheIds.add(item[r.repo.getIdField()]);
+          });
+          var missing = fallback.filter(function (item) {
+          return !cacheIds.has(item[r.repo.getIdField()]);
+          });
+          if (missing.length) {
+          r.repo.replaceCache(r.repo.getAll().concat(missing));
+          r.repo.saveAll(r.repo.getAll());
           console.warn(
             r.key + ': recovered ' + missing.length + ' records from localStorage backup'
           );
@@ -551,12 +563,12 @@ export async function initStorage(opts) {
       }
     });
   } else {
-    SessionRepo._cache = Store._getRaw('sessions') || [];
-    HandRepo._cache = Store._getRaw('handReviews') || [];
-    WeeklyRepo._cache = Store._getRaw('weeklyReviews') || [];
-    TiltLogRepo._cache = Store._getRaw('tiltLogs') || [];
+    SessionRepo.replaceCache(Store._getRaw('sessions') || []);
+    HandRepo.replaceCache(Store._getRaw('handReviews') || []);
+    WeeklyRepo.replaceCache(Store._getRaw('weeklyReviews') || []);
+    TiltLogRepo.replaceCache(Store._getRaw('tiltLogs') || []);
 
-    if (DB._db) {
+    if (persistence.isIndexedDBReady()) {
       await migrateToIndexedDB();
       // [V6.12.4] 迁移完成后更新健康状态（全新安装首次加载时 pa_migrated_v1 刚被写入）
       if (localStorage.getItem('pa_migrated_v1')) {
@@ -587,14 +599,14 @@ export async function initStorage(opts) {
     );
     repos.forEach(function (r) {
       if (!Array.isArray(r.repo.getAll())) {
-        var fallback = Store._getRaw(r.repo._key);
+        var fallback = Store._getRaw(r.repo.getStorageKey());
         if (Array.isArray(fallback)) {
-          r.repo._cache = fallback;
+          r.repo.replaceCache(fallback);
           r.repo.saveAll(fallback);
           console.warn(r.name + ' recovered from localStorage backup');
           _addHealthIssue(r.name + ' 数据已损坏，已从本地备份恢复');
         } else {
-          r.repo._cache = [];
+          r.repo.replaceCache([]);
           console.warn(r.name + ' reset to empty (data lost)');
           _addHealthIssue(r.name + ' 数据无法恢复，已重置为空（数据丢失）');
         }

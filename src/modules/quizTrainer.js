@@ -74,6 +74,10 @@ export var QuizTrainer = {
     _saveState(this._state);
   },
 
+  getScenario: function () {
+    return this._scenario;
+  },
+
   getScenarios: function () {
     return Object.keys(SCENARIOS).map(function (k) {
       return { key: k, label: SCENARIOS[k].description };

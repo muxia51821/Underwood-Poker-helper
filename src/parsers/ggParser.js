@@ -201,17 +201,25 @@ export const GGParser = {
    * @returns {Array<{handId: string, date: string, heroPosition: string, heroCards: string, profit: number, profitBB: number, potType: string, boardCards: string, board: string, desc: string, opponentId?: string, opponentCards?: string, rake: number, jackpot: number}>}
    */
   parse: function (text) {
+    return this.parseDetailed(text).hands;
+  },
+  // [V7.7.2 修改] 保留解析失败原因，供导入预览展示；parse() 继续返回数组以兼容旧调用方。
+  parseDetailed: function (text) {
     var split = this._splitBlocks(text);
     var blocks = split.blocks;
     var bbValue = split.bbValue;
     var results = [];
+    var failures = [];
     var self = this;
     function toBB(dollar) {
       return parseFloat((parseFloat(dollar) / bbValue).toFixed(1));
     }
     for (var i = 0; i < blocks.length; i++) {
       var block = blocks[i];
-      if (!/Seat \d+: Hero/i.test(block)) continue;
+      if (!/Seat \d+: Hero/i.test(block)) {
+        failures.push({ handId: '', reason: '未找到 Hero 座位信息' });
+        continue;
+      }
       try {
         var hand = {};
         var idM = block.match(/Poker Hand #([\w\d]+)/);
@@ -578,9 +586,17 @@ export const GGParser = {
         results.push(hand);
       } catch (e) {
         console.warn('GG parse error for hand', (hand && hand.handId) || '?', e);
+        failures.push({
+          handId: (hand && hand.handId) || '',
+          reason: '手牌内容不完整或格式不受支持',
+        });
       }
     }
-    return results;
+    return {
+      hands: results,
+      failures: failures,
+      total: (String(text || '').match(/Poker Hand #/g) || []).length,
+    };
   },
 };
 // #endregion

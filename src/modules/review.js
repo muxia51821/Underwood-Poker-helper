@@ -5,8 +5,10 @@ import { Store, SessionRepo, HandRepo, WeeklyRepo, TiltLogRepo } from '../store/
 import { analyze, getStatColor, STAT_TOOLTIPS, STAT_DEFINITIONS } from './statsEngine.js';  // [V6.18.4]
 import { Discover } from './discover.js';  // [V7.4.6]
 import { QuizTrainer } from './quizTrainer.js';  // [V7.4.7]
+import { getLearningTarget } from './analysisReadModel.js';
 import { openGGImportForSession } from './ggImport.js';  // [V6.14.0]
 import { HandPicker } from './handPicker.js';  // [V6.15.0]
+import { Navigation } from './navigation.js';  // [V7.7.2]
 
 // [V7.5.1] 位置对抗速查 — 10 种 6-max 对抗策略要点
 var POSITION_ADVICE = {
@@ -397,9 +399,7 @@ export const Review = {
       // [V6.18.6] Session 展开区手牌编辑 → 跳转 Hand 面板
       const sessHandEditBtn = e.target.closest('[data-hand-edit]');
       if (sessHandEditBtn) {
-        var handTab = document.querySelector('[data-sub="hand"]');
-        if (handTab) handTab.click();
-        setTimeout(function () { Review.editHandReview(sessHandEditBtn.dataset.handEdit); }, 100);
+        Navigation.goToHand(sessHandEditBtn.dataset.handEdit);
       }
       // [V6.15.0] Session 展开区域内的标记按钮
       const markBtn = e.target.closest('[data-hand-mark]');
@@ -488,7 +488,7 @@ export const Review = {
     // [V6.10.0] 玩家数据分析 → 对手画像跳转按钮
     var gotoBtn = document.getElementById('gotoOpponentBtn');
     if (gotoBtn) gotoBtn.addEventListener('click', function () {
-      document.querySelector('[data-sub="opponent"]').click();
+      Navigation.goToReviewSubtab('opponent');
     });
     // [V6.18.4] tooltip 关闭
     var tooltipModal = document.getElementById('statTooltip');
@@ -796,8 +796,7 @@ export const Review = {
     var tlsEl = document.getElementById('totalLiveStats'); if (tlsEl) tlsEl.innerHTML = target.level.toLowerCase() === 'live' ? 'Live 场次' : '';
     var self = this;
     document.getElementById('resetStatsFilterBtn').addEventListener('click', function () {
-      var totalTab = document.querySelector('[data-sub="total"]');
-      if (totalTab) totalTab.click();
+      Navigation.goToReviewSubtab('total');
     });
     _initStatTooltip('statsArea');
     self._renderSessionHandChart(sessionId);
@@ -1549,8 +1548,7 @@ export const Review = {
       var handEditBtn = e.target.closest('[data-hand-edit]');
       if (handEditBtn) {
         e.stopPropagation();
-        self.editHandReview(handEditBtn.dataset.handEdit);
-        document.querySelector('[data-sub="hand"]').click();
+        Navigation.goToHand(handEditBtn.dataset.handEdit);
         return;
       }
       // 3. 手牌行展开
@@ -1630,6 +1628,38 @@ export const Review = {
   },
   getHandReviews() { return HandRepo.getAll(); },
   saveHandReviews(r) { HandRepo.saveAll(r); },
+  focusHand(handId) {
+    var allReviews = Utils.sortByDateKey(this.getHandReviews());
+    var idx = allReviews.findIndex(function (review) { return review.id === handId; });
+    if (idx < 0) {
+      Utils.showToast('找不到目标手牌，可能已被删除。');
+      return false;
+    }
+    var details = document.getElementById('handHistoryDetails');
+    if (details) details.open = true;
+    this.handCurrentPage = Math.floor(idx / this.handPageSize) + 1;
+    this.renderHandReviews();
+    var expandBtn = document.querySelector('[data-hand-expand="' + handId + '"]');
+    if (expandBtn) this.toggleHandExpand(handId, expandBtn);
+    var row = document.querySelector('[data-hand-id="' + handId + '"]');
+    if (row && row.scrollIntoView) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    this.editHandReview(handId);
+    return true;
+  },
+  focusSession(sessionId) {
+    var session = this.getSessions().find(function (item) { return item.id === sessionId; });
+    if (!session) {
+      Utils.showToast('找不到目标 Session，可能已被删除。');
+      return false;
+    }
+    var expandBtn = document.querySelector('[data-expand-id="' + sessionId + '"]');
+    var expanded = document.getElementById('expand-row-' + sessionId);
+    if (expandBtn && !expanded) this.toggleSessionExpand(sessionId, expandBtn);
+    var row = document.querySelector('[data-expand-id="' + sessionId + '"]');
+    if (row && row.scrollIntoView) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    this.updateStatsForSession(sessionId);
+    return true;
+  },
   populateHandSessionSelect() {
     const sessions = Utils.sortByDateKey(this.getSessions()), sel = document.getElementById('handSessionSelect');
     sel.innerHTML = '<option value="">-- 不关联 --</option>';
@@ -1976,7 +2006,7 @@ export const Review = {
     reader.readAsText(file);
   },
   // [V7.4.6] Discover — 自动模式发现渲染
-  renderDiscover() {
+  renderDiscover(options) {
     var findings = Discover.scan();
     var container = document.getElementById('discoverFindings');
     if (!container) return;
@@ -1995,7 +2025,7 @@ export const Review = {
     var typeLabels = { profit_anomaly: '💰 盈亏异常', self_contradiction: '📊 自我矛盾', gto_deviation: '🎯 偏离 GTO' };
     var typeColors = { profit_anomaly: '#c06060', self_contradiction: '#d4a853', gto_deviation: '#5a9e8f' };
     container.innerHTML = '<div class="card"><div class="card__title">🔍 Discover</div>' +
-      '<div style="font-size:0.85em;color:#909090;margin-bottom:12px">基于 ' + Discover._state.scanHandCount + ' 手牌自动分析，发现 ' + findings.length + ' 条模式</div>' +
+      '<div style="font-size:0.85em;color:#909090;margin-bottom:12px">基于 ' + Discover.getScanHandCount() + ' 手牌自动分析，发现 ' + findings.length + ' 条模式</div>' +
       findings.map(function (f) {
         var typeColor = typeColors[f.type] || '#909090';
         var badges = f.improved ? ' <span style="color:#6baf7e">✅ 已改善</span>' : '';
@@ -2004,7 +2034,7 @@ export const Review = {
         if (quizAcc !== undefined && quizAcc < 50) badges += ' <span style="color:#c06060">🔴 弱项 ' + quizAcc + '%</span>';
         else if (quizAcc !== undefined && quizAcc > 80) badges += ' <span style="color:#6baf7e">✅ 已掌握</span>';
         // 针对训练按钮
-        var quizBtn = f.category ? ' <button class="btn--mini" data-discover-quiz="' + (f.scenario || 'other') + '|' + f.category + '" style="font-size:0.85em">🎯 Quiz</button>' : '';
+        var quizBtn = f.category ? ' <button class="btn--mini" data-discover-quiz="' + Utils.escapeHtml(f.id) + '" style="font-size:0.85em">🎯 Quiz</button>' : '';
         return '<div class="card" style="padding:14px 16px;margin-bottom:8px">' +
           '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
           '<span style="color:' + typeColor + ';font-weight:bold">' + (typeLabels[f.type] || f.type) + badges + '</span>' +
@@ -2046,24 +2076,39 @@ export const Review = {
       detail.querySelectorAll('[data-discover-hand]').forEach(function (row) {
         row.addEventListener('click', function () {
           var handId = this.dataset.discoverHand;
-          var handTab = document.querySelector('[data-sub="hand"]');
-          if (handTab) handTab.click();
-          setTimeout(function () {
-            var allReviews = Utils.sortByDateKey(self.getHandReviews());
-            for (var i = 0; i < allReviews.length; i++) {
-              if (allReviews[i].id === handId) {
-                self.handCurrentPage = Math.floor(i / self.handPageSize) + 1;
-                self.renderHandReviews();
-                break;
-              }
-            }
-            setTimeout(function () { self.editHandReview(handId); }, 150);
-          }, 150);
+          Navigation.goToHand(handId);
         });
       });
     });
     }  // end if (!container.dataset.discoverBound)
     _renderDiscoverHeatmap();  // [V7.6.1]
+  },
+
+  startLearningTarget: function (target) {
+    if (!target) return false;
+    var quizDetails = document.getElementById('discoverQuizDetails');
+    if (quizDetails) quizDetails.open = true;
+    var scenarioSel = document.getElementById('quizScenario');
+    if (scenarioSel && target.scenario) {
+      var scenarioExists = Array.prototype.some.call(scenarioSel.options, function (option) {
+        return option.value === target.scenario;
+      });
+      if (scenarioExists && scenarioSel.value !== target.scenario) {
+        scenarioSel.value = target.scenario;
+        scenarioSel.dispatchEvent(new Event('change'));
+      }
+    }
+    var stageSel = document.getElementById('quizStage');
+    if (stageSel && target.boardCategory) {
+      var stageExists = Array.prototype.some.call(stageSel.options, function (option) {
+        return option.value === target.boardCategory;
+      });
+      if (stageExists) {
+        stageSel.value = target.boardCategory;
+        stageSel.dispatchEvent(new Event('change'));
+      }
+    }
+    return true;
   },
 };
 
@@ -2247,7 +2292,7 @@ function _bindQuizUI() {
   var chosenAction = null;
   var scenarios = QuizTrainer.getScenarios();
   scenarioSel.innerHTML = scenarios.map(function (s) { return '<option value="' + s.key + '">' + s.label.split(' —')[0] + '</option>'; }).join('');
-  scenarioSel.value = QuizTrainer._scenario;
+  scenarioSel.value = QuizTrainer.getScenario();
   scenarioSel.addEventListener('change', function () { QuizTrainer.setScenario(this.value); _renderStages(); _nextQuestion(); });
   function _renderStages() {
     var stages = QuizTrainer.getStages();
@@ -2292,21 +2337,9 @@ function _bindDiscoverQuiz() {
     if (btn.dataset.quizBound) return;
     btn.dataset.quizBound = '1';
     btn.addEventListener('click', function () {
-      var parts = (this.dataset.discoverQuiz || 'other|').split('|');
-      var sc = parts[0], cat = parts[1] || '';
-      var quizDetails = document.getElementById('discoverQuizDetails');
-      if (quizDetails) quizDetails.open = true;
-      // 设置场景
-      var scenarioSel = document.getElementById('quizScenario');
-      if (scenarioSel && sc) { scenarioSel.value = sc; scenarioSel.dispatchEvent(new Event('change')); }
-      // 设置牌面阶段
-      var stageSel = document.getElementById('quizStage');
-      if (stageSel) {
-        for (var i = 0; i < stageSel.options.length; i++) {
-          if (stageSel.options[i].value === cat) { stageSel.value = cat; break; }
-        }
-        stageSel.dispatchEvent(new Event('change'));
-      }
+      var findingId = this.dataset.discoverQuiz || '';
+      var finding = Discover.getFindings().find(function (item) { return item.id === findingId; });
+      Navigation.goToLearningTarget(finding ? getLearningTarget(finding) : null);
     });
   });
 }

@@ -9,6 +9,11 @@
 - 新增面向用户的 parser、存储、离线、HTTPS 和移动端验收标准。
 - 新增临时构建型 `npm run check` 流程，检查构建产物、数据契约和浏览器冒烟。
 - 更新 GitHub Pages workflow：发布前先安装依赖并从源码构建。
+- 完成存储 seam：IndexedDB、localStorage 降级、备份和迁移重试统一由持久化协调器管理。
+- 完成 GG 导入 seam：解析失败、重复、覆盖和 Session 分组在写入前统一生成导入计划。
+- 完成 Review 导航 seam：手牌、Session、Discover 和学习目标使用统一导航意图。
+- 完成学习分析读模型：Review、Discover、Quiz 使用只读规范化快照，Discover 可稳定跳转 Quiz。
+- 强化构建产物契约：检查单文件输出、CSP、无外部运行时资源、HTTPS Service Worker 和两套部署构建入口。
 
 本条目不代表已经发布到生产环境。
 

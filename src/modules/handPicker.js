@@ -2,7 +2,7 @@
 // [V6.16.0 修改] 移入 Hand 面板内，支持点击跳转手牌/Session
 import { HandRepo, SessionRepo } from '../store/store.js';
 import { Utils } from '../utils.js';
-import { Review } from './review.js';  // [V6.16.0] 用于跳转导航
+import { Navigation } from './navigation.js';  // [V7.7.2] 导航 intent
 
 export const HandPicker = {
   init: function () {
@@ -20,14 +20,14 @@ export const HandPicker = {
       var handNav = e.target.closest('[data-hand-nav]');
       if (handNav) {
         var handId = handNav.getAttribute('data-hand-nav');
-        _navigateToHand(handId);
+        Navigation.goToHand(handId);
         return;
       }
       // [V6.16.0] 点击 Session 列 → 跳转到 Session 并展开
       var sessNav = e.target.closest('[data-sess-nav]');
       if (sessNav) {
         var sessId = sessNav.getAttribute('data-sess-nav');
-        _navigateToSession(sessId);
+        Navigation.goToSession(sessId);
         return;
       }
     });
@@ -118,51 +118,10 @@ export const HandPicker = {
       HandRepo.saveAll(reviews);
       this.render();
       // [V6.16.0] 同步刷新 Hand History 中的标记按钮状态
-      Review.renderHandReviews();
+      Navigation.refreshReview('hand');
     }
   },
 };
-
-// [V6.16.5] 点击手牌 → 跳转到 Hand History 并展开 + 自动编辑
-function _navigateToHand(handId) {
-  var handTab = document.querySelector('[data-sub="hand"]');
-  if (handTab) handTab.click();
-  // 展开 Hand History
-  var details = document.getElementById('handHistoryDetails');
-  if (details) details.open = true;
-  var allReviews = Utils.sortByDateKey(Review.getHandReviews());
-  var idx = -1;
-  for (var i = 0; i < allReviews.length; i++) {
-    if (allReviews[i].id === handId) { idx = i; break; }
-  }
-  if (idx >= 0) {
-    var pageNum = Math.floor(idx / Review.handPageSize) + 1;
-    Review.handCurrentPage = pageNum;
-    Review.renderHandReviews();
-    setTimeout(function () {
-      var expandBtn = document.querySelector('[data-hand-expand="' + handId + '"]');
-      if (expandBtn) Review.toggleHandExpand(handId, expandBtn);
-      var row = document.querySelector('[data-hand-id="' + handId + '"]');
-      if (row) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      // [V6.16.5] 自动触发编辑，填充表单显示 hand notes
-      Review.editHandReview(handId);
-    }, 150);
-  }
-}
-
-// [V6.16.5] 点击 Session → 跳转到 Session 子 Tab 并展开 + 统计面板过滤到该 Session
-function _navigateToSession(sessId) {
-  var sessTab = document.querySelector('[data-sub="session"]');
-  if (sessTab) sessTab.click();
-  setTimeout(function () {
-    var expandBtn = document.querySelector('[data-expand-id="' + sessId + '"]');
-    if (expandBtn) Review.toggleSessionExpand(sessId, expandBtn);
-    var row = document.querySelector('[data-expand-id="' + sessId + '"]');
-    if (row) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    // [V6.16.5] 过滤统计面板只显示该 Session 数据
-    Review.updateStatsForSession(sessId);
-  }, 150);
-}
 
 // 从 desc 解析 Hero 底牌并渲染花色徽章
 function _renderCardsHtml(r) {

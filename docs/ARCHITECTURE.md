@@ -5,7 +5,7 @@
 - **Dev**: Vite 7 dev server (`npm run dev` → `http://localhost:5173`)
 - **Build**: Vite + `vite-plugin-singlefile` → single `dist/index.html`
 - **Runtime**: ES 模块（dev 时 Vite 处理 import；build 时全内联）
-- **Storage**: IndexedDB (`pa_store`) 为主，localStorage 降级。`pa_migrated_v1` 标记迁移状态
+- **Storage**: `src/store/storage.js` 统一协调 IndexedDB 主存储、localStorage 降级、备份和迁移重试。保留所有 `pa_` 键名和历史迁移标记
 - **Hosting**: Netlify (`https://mxpoker.netlify.app/`) + GitHub Pages (`https://muxia51821.github.io/Underwood-Poker-helper/`)
 - **PWA**: `public/sw.js` (独立文件)，Blob URL 降级。仅 HTTPS 生效
 
@@ -19,7 +19,7 @@
 | Notifications | Disabled | Enabled |
 | Storage | IndexedDB + localStorage | 同左 |
 
-## Module Map (26 ES modules, ~9000 lines)
+## Module Map (28 ES modules, ~9000 lines)
 
 ```
 src/
@@ -34,6 +34,7 @@ src/
 
   store/
     db.js            # IndexedDB 封装（DB 对象，零依赖）
+    storage.js       # localStorage / IndexedDB adapter + PersistenceCoordinator
     store.js          # Store + BaseRepo + repos + initStorage + 迁移 + 健康状态
 
   modules/
@@ -43,8 +44,11 @@ src/
     tournament.js    # 占位桩
     tiltRescue.js    # 情绪急救（PubSub → Review）
     dataSync.js      # 剪切板导入导出 + CSV
-    review.js        # 复盘系统（~2500行：Session/Hand/Discover/Weekly/Overall/Villain + 分页 + 统计 + 图表 + 对手合并 + 热力图 + Monte Carlo）
-    ggImport.js      # GG 导入（解析/去重/覆盖/文件拖拽/Session 自动分组）
+    review.js        # 复盘系统（Session/Hand/Discover/Weekly/Overall/Villain + 分页 + 统计 + 图表）
+    navigation.js    # 统一导航意图：Tab / Review 子 Tab / Hand / Session / 学习目标
+    analysisReadModel.js # Review / Discover / Quiz 共用的只读规范化学习快照
+    ggImport.js      # GG 导入 UI（预览/反馈/文件拖拽）
+    ggImportCoordinator.js # GG 解析结果 → 去重/覆盖/Session/持久化计划
     statsEngine.js   # 声明式统计引擎（~900行：36 指标 + 范围阈值 + 优化建议 + context 缓存）
     handPicker.js    # 手牌精选（☆ 标记 + Picks 卡片 + Hand/Session 跳转）
     discover.js      # 自动模式发现（盈亏异常/自我矛盾/偏离GTO + 热力图数据）
@@ -75,11 +79,13 @@ main.js
   ├── modules/app.js         → constants, utils, store, srpData, actionLines, 全部子模块
   ├── modules/timer.js       → constants, utils, store, [beep/vibrate/notify from app]
   ├── modules/odds.js        → constants, utils
-  ├── modules/review.js      → constants, utils, store, statsEngine, ggImport, handPicker, discover, quizTrainer
+  ├── modules/review.js      → constants, utils, store, statsEngine, ggImport, handPicker, discover, quizTrainer, navigation, analysisReadModel
   ├── modules/statsEngine.js → constants
-  ├── modules/handPicker.js  → constants, utils, store, review
-  ├── modules/ggImport.js    → constants, utils, store, review
-  ├── modules/discover.js    → constants, utils, store, gtoBaseline
+  ├── modules/handPicker.js  → constants, utils, store, navigation
+  ├── modules/ggImport.js    → constants, utils, store, ggParser, ggImportCoordinator, navigation
+  ├── modules/discover.js    → constants, utils, store, gtoBaseline, analysisReadModel
+  ├── modules/navigation.js  → DOM adapter + App-configured callbacks
+  ├── modules/analysisReadModel.js → utils
   ├── modules/quizTrainer.js → constants, utils, gtoRaw (BTNvsBB + SBvsBB)
   ├── modules/tiltRescue.js  → constants, utils, store, PubSub
   ├── modules/dataSync.js    → utils, store
@@ -120,36 +126,33 @@ main.js
 
 ```
 User action → Repo.add/update/delete/saveAll()
-  → this._cache (sync, in-memory)
-  → _scheduleDBWrite() (300ms debounce)
-      → if _dbReady: IndexedDB put/clear+putAll
-      → else: localStorage.setItem() (fallback)
+  → BaseRepo in-memory cache (业务模块不直接读取其内部状态)
+  → PersistenceCoordinator.persistCollection() (300ms debounce)
+      → IndexedDBAdapter.writeAll()（主路径）
+      → 失败后 localStorage adapter 写入备份并标记降级
 
 beforeunload:
-  → Repo._flush() → localStorage.setItem() (sync safety net)
+  → Repo._flush() → coordinator 写入 localStorage (sync safety net)
 ```
 
 ### GG Hand History Import
 
 ```
 User pastes GG text in overlay
-  → Utils.parseGGHandHistory(raw) — bridge to GGParser
-      → Split by "Poker Hand #" delimiter
-      → Parse each block: positions, cards, street actions, profit
-      → Return [{ handId, heroCards, profitBB, opponentId, opponentCards, ... }]
-  → HandRepo.getAll() → deduplicate by ggId
-  → User selects/deselects hands → import selected
-      → HandRepo.saveAll([...existing, ...new])
-  → Review.handCurrentPage = 1
-  → Review.renderHandReviews()
+  → GGParser.parseDetailed(raw)
+      → Return { hands, failures, total }
+  → ggImportCoordinator.buildImportPlan()
+      → duplicate / overwrite / Session 分组 / record mapping
+  → User selects/deselects hands → HandRepo.saveAll(plan.records)
+  → Navigation.refreshReview() + Navigation.goToReviewSubtab('hand')
 ```
 
 ### BaseRepo Cache Layer
 
 ```
 BaseRepo
-  _cache: []          ← in-memory (sync reads)
-  _dbReady: false     ← true after first IndexedDB load
+  _cache: []          ← in-memory sync reads（仅 store seam 内部）
+  _backend: 'localstorage' | 'indexeddb'
   _dirty: false       ← pending IndexedDB write
   _key: 'pa_xxx'      ← localStorage key (fallback)
 
@@ -162,6 +165,8 @@ Methods:
   add(item)           → cache.push; _scheduleDBWrite()
   update(id, patch)   → Object.assign; _scheduleDBWrite()
   delete(id)          → cache.filter; _scheduleDBWrite()
+
+业务模块只通过 Repo 的公开读写方法访问数据，不依赖 `_cache`、`_dbReady`、`_flush` 等内部状态。
 ```
 
 ## Store Schema
@@ -258,7 +263,8 @@ QuizTrainer.answer(actionKey)
 ### Discover Auto-Analysis
 
 ```
-Discover.scan()
+HandRepo.getAll()
+  → analysisReadModel.createLearningSnapshot()
   → filter hands (boardCategory + actionLineOTF + Hero preflop fold)
   → group by category × scenario
   → detect: profit_anomaly (< -0.5BB) / self_contradiction (CBet deviation >10pp) / gto_deviation
@@ -268,6 +274,9 @@ Discover.scan()
 Discover.getHeatmapData()
   → return full category×scenario grid (not just anomalies)
   → each cell: handCount, avgProfit, cbetFreq, gtoAvgCbet
+
+Review / Discover / Quiz 共用 `analysisReadModel` 的规范化字段，不回写手牌数据。
+Discover 的 Quiz 按钮通过 `Navigation.goToLearningTarget()` 传递 `{ scenario, boardCategory, handIds }`。
 ```
 
 ## Constraints (Hard Rules)

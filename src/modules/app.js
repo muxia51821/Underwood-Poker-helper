@@ -12,6 +12,7 @@ import { Review } from './review.js';
 import { initGGImport } from './ggImport.js';
 import { HandPicker } from './handPicker.js';  // [V6.15.0]
 import { Discover } from './discover.js';      // [V7.4.6]
+import { Navigation } from './navigation.js';  // [V7.7.2]
 
 export const App = {
           sound: true,
@@ -55,6 +56,39 @@ export const App = {
             // [V6.9.0] 渲染存储健康指示器
             this.renderHealthIndicator();
 
+            Navigation.configure({
+              onTab: function (tab) {
+                if (tab === 'odds') Odds.calc();
+                if (tab === 'review' && !App.reviewRendered) {
+                  Review.renderAll();
+                  App.reviewRendered = true;
+                }
+              },
+              onSubtab: function (name, options) {
+                if (name === 'total') Review.updateTotalStats();
+                if (name === 'session') Review.renderSessions();
+                if (name === 'hand') {
+                  if (options.resetPage) Review.handCurrentPage = 1;
+                  Review.populateHandSessionSelect();
+                  Review.renderHandReviews();
+                  HandPicker.render();
+                }
+                if (name === 'discover') Review.renderDiscover(options);
+                if (name === 'weekly') {
+                  Review.generateWeeklyStats();
+                  Review.renderWeeklyReviews();
+                }
+                if (name === 'opponent') Review.renderOpponentProfiles();
+              },
+              onTargetHand: function (handId) { Review.focusHand(handId); },
+              onTargetSession: function (sessionId) { Review.focusSession(sessionId); },
+              onLearningTarget: function (target) { Review.startLearningTarget(target); },
+              onRefresh: function (scope) {
+                if (scope === 'hand') Review.renderHandReviews();
+                else if (scope === 'session') Review.renderSessions();
+                else Review.renderAll();
+              },
+            });
             this.bindSettings();
             this.bindNav();
             this.bindSubNav();
@@ -395,64 +429,10 @@ export const App = {
             });
           },
           bindNav() {
-            document.querySelector('.nav').addEventListener('click', (e) => {
-              const b = e.target.closest('.nav__btn');
-              if (!b) return;
-              document
-                .querySelectorAll('.nav__btn')
-                .forEach((x) => x.classList.remove('nav__btn--active'));
-              b.classList.add('nav__btn--active');
-              var tab = b.dataset.tab;
-              var main = document.querySelector('.main');
-              main.setAttribute('data-active-tab', tab);
-              document.querySelectorAll('.panel').forEach((p) => p.classList.remove('is-visible'));
-              // [V7.3.3] 一个 Tab 一个面板
-              document.getElementById(tab + 'Panel').classList.add('is-visible');
-              if (tab === 'odds') Odds.calc();
-              if (tab === 'review' && !this.reviewRendered) {
-                Review.renderAll();
-                this.reviewRendered = true;
-              }
-            });
+            Navigation.bindNav();
           },
           bindSubNav() {
-            document.getElementById('reviewSubNav').addEventListener('click', (e) => {
-              const b = e.target.closest('.subnav__btn');
-              if (!b) return;
-              document
-                .querySelectorAll('#reviewSubNav .subnav__btn')
-                .forEach((x) => x.classList.remove('subnav__btn--active'));
-              b.classList.add('subnav__btn--active');
-              document
-                .querySelectorAll('#reviewPanel .sub-panel')
-                .forEach((p) => p.classList.remove('is-visible'));
-              document
-                .getElementById(
-                  'sub' + b.dataset.sub.charAt(0).toUpperCase() + b.dataset.sub.slice(1)
-                )
-                .classList.add('is-visible');
-              if (b.dataset.sub === 'total') {
-                Review.updateTotalStats();
-              }
-              if (b.dataset.sub === 'session') {
-                Review.renderSessions();
-              }
-              if (b.dataset.sub === 'hand') {
-                Review.populateHandSessionSelect();
-                Review.renderHandReviews();
-                HandPicker.render();  // [V6.16.0]
-              }
-              if (b.dataset.sub === 'discover') {
-                Review.renderDiscover();
-              }
-              if (b.dataset.sub === 'weekly') {
-                Review.generateWeeklyStats();
-                Review.renderWeeklyReviews();
-              }
-              if (b.dataset.sub === 'opponent') {
-                Review.renderOpponentProfiles();
-              }
-            });
+            Navigation.bindSubNav();
           },
 
 };

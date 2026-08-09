@@ -6,6 +6,10 @@ const DB = {
   _name: 'pa_store',
   _version: 1,
 
+  isReady: function () {
+    return Boolean(this._db);
+  },
+
   open: function () {
     var self = this;
     return new Promise(function (resolve, reject) {

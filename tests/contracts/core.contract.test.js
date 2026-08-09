@@ -19,8 +19,10 @@ const localStorage = createLocalStorage();
 globalThis.localStorage = localStorage;
 globalThis.window = { addEventListener() {} };
 
-const { Store, SessionRepo, HandRepo, initStorage } = await import('../../src/store/store.js');
-const { DB } = await import('../../src/store/db.js');
+const { Store, SessionRepo, HandRepo, BaseRepo, initStorage } = await import('../../src/store/store.js');
+const { LocalStorageAdapter, PersistenceCoordinator } = await import('../../src/store/storage.js');
+const { buildImportPlan, createOverwritePatch } = await import('../../src/modules/ggImportCoordinator.js');
+const { normalizeLearningHand, createLearningSnapshot, getLearningTarget } = await import('../../src/modules/analysisReadModel.js');
 
 const uncalledHand = [
   'Poker Hand #RC100001',
@@ -134,12 +136,90 @@ test('GG parser keeps GTO boardCode at the flop street', () => {
   assert.equal(hand.boardCategory, 'monotone');
 });
 
-test('storage import merges records without overwriting local records', () => {
+test('GG parser detailed result reports unsupported blocks', () => {
+  const result = GGParser.parseDetailed('Poker Hand #BAD001\nnot a complete hand');
+  assert.equal(result.hands.length, 0);
+  assert.equal(result.total, 1);
+  assert.ok(result.failures.some((failure) => failure.reason.includes('Hero')));
+});
+
+test('GG import plan separates duplicates, session assignment, and record mapping', () => {
+  let nextId = 0;
+  const generateId = () => 'generated-' + (++nextId);
+  const parsedHands = [
+    { handId: 'new-1', date: '2026-05-01 10:00', profitBB: 2, boardCode: 'AhJh2h', boardCategory: 'monotone' },
+    { handId: 'existing-1', date: '2026-05-01 10:10', profitBB: -1 },
+  ];
+  const existingReviews = [
+    { id: 'review-1', ggId: 'existing-1', sessionId: 'session-1', decision: 'call', mistake: 'overcall', reflection: 'keep this reflection' },
+  ];
+  const existingSessions = [{ id: 'session-1', date: '2026-05-01', level: 'NL5' }];
+  const plan = buildImportPlan(parsedHands, existingReviews, existingSessions, {
+    targetSessionId: 'session-1',
+    generateId,
+  });
+
+  assert.equal(plan.valid, true);
+  assert.equal(plan.summary.duplicates, 1);
+  assert.equal(plan.summary.imported, 1);
+  assert.equal(plan.records[0].sessionId, 'session-1');
+  assert.equal(plan.records[0].boardCode, 'AhJh2h');
+
+  const patch = createOverwritePatch({
+    handId: 'existing-1', date: '2026-05-02', profitBB: 4, board: 'A-high',
+    boardCode: 'AsKd2c', boardCategory: 'dryAHigh', opponentId: 'Villain',
+  });
+  assert.equal(patch.date, '2026-05-02');
+  assert.equal('decision' in patch, false);
+  assert.equal('mistake' in patch, false);
+  assert.equal('reflection' in patch, false);
+  assert.equal('sessionId' in patch, false);
+});
+
+test('learning read model derives analysis fields without mutating stored hands', () => {
+  const sourceHand = {
+    id: 'learning-1',
+    boardCode: 'AhJh2h',
+    desc: 'preflop 行动：Hero BTN/[As Kd] raises to 3.0bb\nOTF翻牌 Ah Jh 2h    行动：B59 (3.2bb) F',
+  };
+  const foldHand = {
+    id: 'learning-2',
+    boardCode: 'AsKd2c',
+    desc: 'preflop 行动：Hero BTN/[Qs Jd] folds',
+  };
+  const normalized = normalizeLearningHand(sourceHand);
+  const snapshot = createLearningSnapshot([sourceHand, foldHand]);
+
+  assert.equal(sourceHand.boardCategory, undefined);
+  assert.equal(sourceHand.actionLineOTF, undefined);
+  assert.equal(normalized.boardCategory, 'monotone');
+  assert.equal(normalized.actionLineOTF, 'B59-(3.2bb)-F');
+  assert.equal(normalized.preflopScenario, 'other');
+  assert.equal(snapshot.totalHands, 2);
+  assert.deepEqual(snapshot.eligibleHands.map((hand) => hand.id), ['learning-1']);
+});
+
+test('learning finding converts to a stable Discover to Quiz target', () => {
+  const target = getLearningTarget({
+    id: 'self_monotone|BTNvsBB',
+    type: 'self_contradiction',
+    category: 'monotone',
+    scenario: 'BTNvsBB',
+    handIds: ['hand-1', 'hand-2'],
+  });
+
+  assert.deepEqual(target, {
+    findingId: 'self_monotone|BTNvsBB',
+    type: 'self_contradiction',
+    scenario: 'BTNvsBB',
+    boardCategory: 'monotone',
+    handIds: ['hand-1', 'hand-2'],
+  });
+});
+
+test('storage import merges records without overwriting local records', async () => {
   localStorage.clear();
-  SessionRepo._cache = [];
-  HandRepo._cache = [];
-  SessionRepo._dbReady = false;
-  HandRepo._dbReady = false;
+  await initStorage({ safeMode: true });
 
   Store.importAll({
     sessions: [{ id: 'session-1', profit: 10 }],
@@ -175,8 +255,6 @@ test('storage migration derives board fields from legacy hand descriptions', asy
     },
   ]));
   localStorage.removeItem('pa_migrated_board_v2');
-  HandRepo._cache = [];
-  HandRepo._dbReady = false;
 
   await initStorage({ safeMode: true });
 
@@ -189,18 +267,65 @@ test('storage migration derives board fields from legacy hand descriptions', asy
 
 test('storage falls back to localStorage when IndexedDB write fails', async () => {
   localStorage.clear();
-  const originalPutAll = DB.putAll;
-  DB.putAll = function () { return Promise.reject(new Error('simulated IndexedDB failure')); };
-  HandRepo._dbReady = true;
+  const failingIndexedDB = {
+    isReady() { return true; },
+    readAll() { return Promise.resolve([]); },
+    writeAll() { return Promise.reject(new Error('simulated IndexedDB failure')); },
+    count() { return Promise.resolve(0); },
+  };
+  const testPersistence = new PersistenceCoordinator({
+    local: new LocalStorageAdapter(localStorage),
+    indexedDB: failingIndexedDB,
+  });
+  const repo = new BaseRepo('handReviews', 'id', testPersistence);
+  repo.markIndexedDBReady();
 
-  HandRepo.saveAll([{ id: 'fallback-hand-1', decision: 'check' }]);
+  repo.saveAll([{ id: 'fallback-hand-1', decision: 'check' }]);
   await new Promise(function (resolve) { setTimeout(resolve, 350); });
 
   assert.deepEqual(JSON.parse(localStorage.getItem('pa_handReviews')), [
     { id: 'fallback-hand-1', decision: 'check' },
   ]);
-  assert.equal(HandRepo._dbReady, false);
+  assert.equal(repo.isIndexedDBReady(), false);
+});
 
-  DB.putAll = originalPutAll;
-  HandRepo._dbReady = false;
+test('storage coordinator prefers IndexedDB and falls back on read failure', async () => {
+  localStorage.clear();
+  localStorage.setItem('pa_sessions', JSON.stringify([{ id: 'local-1' }]));
+  const indexedDB = {
+    isReady() { return true; },
+    readAll() { return Promise.resolve([{ id: 'indexed-1' }]); },
+    writeAll() { return Promise.resolve(); },
+    count() { return Promise.resolve(1); },
+  };
+  const primary = new PersistenceCoordinator({
+    local: new LocalStorageAdapter(localStorage),
+    indexedDB,
+  });
+  assert.deepEqual(await primary.loadCollection('sessions'), {
+    items: [{ id: 'indexed-1' }],
+    backend: 'indexeddb',
+  });
+
+  const failing = new PersistenceCoordinator({
+    local: new LocalStorageAdapter(localStorage),
+    indexedDB: {
+      isReady() { return true; },
+      readAll() { return Promise.reject(new Error('simulated IndexedDB read failure')); },
+      writeAll() { return Promise.resolve(); },
+      count() { return Promise.resolve(0); },
+    },
+  });
+  assert.deepEqual(await failing.loadCollection('sessions'), {
+    items: [{ id: 'local-1' }],
+    backend: 'localstorage',
+  });
+});
+
+test('safe-mode startup is idempotent and preserves imported data', async () => {
+  localStorage.clear();
+  localStorage.setItem('pa_sessions', JSON.stringify([{ id: 'stable-session', profit: 3 }]));
+  await initStorage({ safeMode: true });
+  await initStorage({ safeMode: true });
+  assert.deepEqual(SessionRepo.getAll(), [{ id: 'stable-session', profit: 3 }]);
 });

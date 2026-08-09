@@ -3,6 +3,7 @@
 import { Utils } from '../utils.js';
 import { HandRepo } from '../store/store.js';
 import { detectExtremes, getGTOReference } from '../data/strategy/gtoBaseline.js';  // [V7.4.8]
+import { createLearningSnapshot, getLearningTarget } from './analysisReadModel.js';
 
 // 分类标签
 var CAT_LABELS = {
@@ -40,30 +41,19 @@ export var Discover = {
     if (this._scanning) return this._findings;  // [V7.4.7] 防重入
     this._scanning = true;
     try {
-    var hands = HandRepo.getAll();
+    var snapshot = createLearningSnapshot(HandRepo.getAll());
+    var hands = snapshot.hands;
     if (!hands || hands.length < 50) { return []; }
     var totalHands = hands.length;
     // 如果手牌总数未变且已有结果，直接返回缓存
     if (this._state.scanHandCount && totalHands === this._state.scanHandCount && this._findings.length) { return this._findings; }
-    // [V7.4.6] 自动补 actionLineOTF
-    hands.forEach(function (h) {
-      if (h.desc && !h.actionLineOTF) {
-        h.actionLineOTF = Utils.extractActionLine(h.desc, 'OTF') || '未知';
-        h.actionLineOTT = Utils.extractActionLine(h.desc, 'OTT') || '';
-        h.actionLineOTR = Utils.extractActionLine(h.desc, 'OTR') || '';
-      }
-    });
     this._state.scanHandCount = totalHands;
     this._findings = [];
     var findings = [];
 
     // 构建分组：category × scenario（boardCategory 为空的手牌跳过）
     var groups = {};
-    hands.forEach(function (h) {
-      // 翻前弃牌的手牌不参与翻后频率分析（desc 中 Hero 翻前 fold 了）
-      if (!h.boardCategory) return;
-      if (h.actionLineOTF === '未知' || !h.actionLineOTF) return;
-      if (/\bHero\b[^\n]*\bfolds\b/i.test(h.desc || '')) return;
+    snapshot.eligibleHands.forEach(function (h) {
       var cat = h.boardCategory;
       var sc = h.preflopScenario || 'other';
       var key = cat + '|' + sc;
@@ -166,6 +156,14 @@ export var Discover = {
     return HandRepo.getAll().filter(function (h) { return ids.indexOf(h.id) !== -1; });
   },
 
+  getScanHandCount: function () {
+    return this._state.scanHandCount || 0;
+  },
+
+  getLearningTarget: function (finding) {
+    return getLearningTarget(finding);
+  },
+
   markImproved: function (findingId) {
     var f = this._findings.find(function (x) { return x.id === findingId; });
     if (f) f.improved = true;
@@ -181,13 +179,11 @@ export var Discover = {
 
   // [V7.6.1] 返回完整 category×scenario 网格数据，供热力图使用
   getHeatmapData: function () {
-    var hands = HandRepo.getAll();
+    var snapshot = createLearningSnapshot(HandRepo.getAll());
+    var hands = snapshot.eligibleHands;
     if (!hands || !hands.length) return null;
     var groups = {};
     hands.forEach(function (h) {
-      if (!h.boardCategory) return;
-      if (h.actionLineOTF === '未知' || !h.actionLineOTF) return;
-      if (/\bHero\b[^\n]*\bfolds\b/i.test(h.desc || '')) return;
       var cat = h.boardCategory;
       var sc = h.preflopScenario || 'other';
       var key = cat + '|' + sc;
@@ -244,4 +240,3 @@ function _calcCBetFreq(hands) {
   });
   return Math.round(cbetCount / hands.length * 100);
 }
-
