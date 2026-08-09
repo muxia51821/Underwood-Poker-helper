@@ -38,7 +38,15 @@
         <nav class="nav">
           <button class="nav__btn nav__btn--active" data-tab="timer">Timer</button
           ><button class="nav__btn" data-tab="odds">Odds</button
-          ><button class="nav__btn" data-tab="review">Review</button>
+          ><button class="nav__btn" data-tab="review">Review</button
+          ><button
+            id="quickCaptureBtn"
+            class="quick-capture-trigger"
+            type="button"
+            aria-haspopup="dialog"
+            aria-controls="handDetailPane"
+            aria-expanded="false"
+          >快速记录</button>
         </nav>
       </aside>
       <main class="main" data-active-tab="timer">
@@ -46,7 +54,6 @@
           <!-- [V7.7.2 修改] PC-first Timer workspace -->
           <header class="timer-workspace__header">
             <div>
-              <div class="timer-workspace__eyebrow">Focus Timer</div>
               <h2 class="timer-workspace__title">专注与站立循环</h2>
               <p class="timer-workspace__description">用清晰的工作与休息节奏保持注意力，也让身体定时离开座位。</p>
             </div>
@@ -436,7 +443,6 @@
         <section id="reviewPanel" class="panel">
           <!-- [V7.7.2 修改] Review desktop analysis workspace -->
           <header class="review-workspace__header">
-            <div class="review-workspace__eyebrow">Analysis workspace</div>
             <h2>Review 工作台</h2>
             <p>在同一工作区整理手牌、关联 Session、发现模式并进入针对性训练。</p>
           </header>
@@ -485,8 +491,14 @@
           </div>
           <div id="subHand" class="sub-panel is-visible">
             <div class="card hand-detail-pane" id="handDetailPane" tabindex="-1">
-              <div class="card__title">手牌详情与反思</div>
-              <div class="row" style="margin-bottom: 8px">
+              <!-- [V7.7.2 新增] Mobile quick capture header; desktop hidden. -->
+              <header class="quick-capture__header">
+                <button id="quickCaptureCloseBtn" class="quick-capture__header-btn" type="button">关闭</button>
+                <h2 id="quickCaptureTitle">快速记录手牌</h2>
+                <button id="quickCaptureFullBtn" class="quick-capture__header-btn" type="button">完整编辑</button>
+              </header>
+              <div class="card__title hand-detail-title">手牌详情与反思</div>
+              <div class="row hand-core-fields" style="margin-bottom: 8px">
                 <label class="field"
                   >Pot Type<select id="handPotType" class="select">
                     <option value="">--</option>
@@ -531,12 +543,12 @@
                   </select></label
                 >
               </div>
-              <label class="field"
+              <label class="field hand-session-field"
                 >关联Session (可选)<select id="handSessionSelect" class="select">
                   <option value="">-- 不关联 --</option>
                 </select></label
               >
-              <label class="field"
+              <label class="field hand-notes-field"
                 >Hand Notes：
                 <div id="playerCardsVisual" class="player-cards" style="display: none"></div>
                 <div id="handCardVisual" class="card-visual" style="display: none"></div>
@@ -547,11 +559,11 @@ OTT转牌 牌面：    行动：
 OTR河牌 牌面：    行动：</textarea
                 >
               </label>
-              <div class="text-muted" style="margin-top: 2px">
+              <div class="text-muted hand-notes-help" style="margin-top: 2px">
                 <b>S</b>pade <b>H</b>eart <b>C</b>lub <b>D</b>iamond | <b>X</b>check <b>F</b>old
                 <b>C</b>all <b>R</b>aise <b>B</b>et
               </div>
-              <label class="field"
+              <label class="field hand-reflection-field"
                 >结果与反思：<textarea
                   id="handReflection"
                   class="textarea"
@@ -559,7 +571,7 @@ OTR河牌 牌面：    行动：</textarea
                   placeholder="手牌结果和决策复盘"
                 ></textarea>
               </label>
-              <details>
+              <details class="hand-extended-field">
                 <summary style="font-size: 0.85em; color: #94a3b8; cursor: pointer">
                   思考模板
                 </summary>
@@ -571,7 +583,7 @@ OTR河牌 牌面：    行动：</textarea
                   面对下注时：我能赢价值还是只能抓诈唬？他有能力诈唬吗？我给了他操作空间吗？这个下注尺寸代表什么？他有多少缺乏SDV的牌？
                 </div>
               </details>
-              <details id="actionLineDetails" style="font-size: 0.75em; margin-top: 8px">
+              <details class="hand-extended-field" id="actionLineDetails" style="font-size: 0.75em; margin-top: 8px">
                 <summary style="color: #94a3b8; cursor: pointer">行动线速查</summary>
                 <table
                   class="srp-table"
@@ -589,12 +601,12 @@ OTR河牌 牌面：    行动：</textarea
                   <tbody id="actionLineBody"></tbody>
                 </table>
               </details>
-              <details id="posAdviceDetails" style="font-size:0.75em;margin-top:8px">
+              <details class="hand-extended-field" id="posAdviceDetails" style="font-size:0.75em;margin-top:8px">
                 <summary style="color:#94a3b8;cursor:pointer">位置对抗速查</summary>
                 <div class="pos-advice-group" id="posAdviceGroup" style="margin:8px 0;display:flex;flex-wrap:wrap;gap:4px"></div>
                 <div id="posAdviceText" style="color:#cbd5e1;line-height:1.5;font-size:0.95em">请选择对抗类型查看策略要点。</div>
               </details>
-              <label class="field">错误类型 </label>
+              <label class="field hand-mistake-label">错误类型 </label>
               <div class="toggle-group" id="handMistakeGroup">
                 <button class="toggle-btn" data-mistake="open过宽">open过宽</button>
                 <button class="toggle-btn" data-mistake="OOP defend过宽">OOP defend过宽</button>
@@ -619,10 +631,12 @@ OTR河牌 牌面：    行动：</textarea
                 <button class="toggle-btn" data-mistake="想证明自己">想证明自己</button>
                 <button class="toggle-btn" data-mistake="追回损失">追回损失</button>
               </div>
-              <label class="field"
-                ><input type="text" id="handMistakeCustom" class="input" placeholder="其他错误类型"
+              <label class="field hand-mistake-custom-field"
+                >错误速记（可选）<input type="text" id="handMistakeCustom" class="input" placeholder="例如：过度跟注"
               /></label>
-              <button id="saveHandBtn" class="btn" data-state="create">保存手牌</button>
+              <div class="quick-capture__save-bar">
+                <button id="saveHandBtn" class="btn" data-state="create">保存手牌</button>
+              </div>
             </div>
             <!-- [V6.16.0] Picks 手牌精选，位于 Hand History 上方 -->
             <div class="card hand-picks-pane" id="picksCard" style="display: none">

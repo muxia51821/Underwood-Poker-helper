@@ -348,6 +348,10 @@ function _aggregatePositionProfit() {
 }
 
 export const Review = {
+  handEditingId: null,
+  _quickCaptureActive: false,
+  _quickCaptureOrigin: null,
+  _quickCaptureSnapshot: null,
   init() {
     document.getElementById('addSessionBtn').addEventListener('click', () => this.addSession());
     document.getElementById('clearSessionBtn').addEventListener('click', () => this.clearSessionForm());
@@ -356,7 +360,15 @@ export const Review = {
     document.getElementById('exportBtn').addEventListener('click', () => this.exportData());
     document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFileInput').click());
     document.getElementById('importFileInput').addEventListener('change', (e) => this.importData(e));
-    document.getElementById('saveHandBtn').addEventListener('click', () => this.saveHandReview());
+    document.getElementById('saveHandBtn').addEventListener('click', () => {
+      const saved = this.saveHandReview();
+      if (saved && this._quickCaptureActive) this.closeQuickCapture('saved');
+    });
+    // [V7.7.2 新增] Mobile quick capture reuses the existing Hand form and save path.
+    document.getElementById('quickCaptureBtn').addEventListener('click', () => this.openQuickCapture());
+    document.getElementById('quickCaptureCloseBtn').addEventListener('click', () => this.closeQuickCapture('cancel'));
+    document.getElementById('quickCaptureFullBtn').addEventListener('click', () => this.closeQuickCapture('full'));
+    document.addEventListener('keydown', (event) => this.handleQuickCaptureKeydown(event));
     // [V6.15.1] 手牌筛选器
     var handPotFilter = document.getElementById('handPotSizeFilter');
     var handSessFilter = document.getElementById('handSessFilter');
@@ -1669,6 +1681,141 @@ export const Review = {
     sel.innerHTML = '<option value="">-- 不关联 --</option>';
     sessions.forEach((s) => { sel.innerHTML += '<option value="' + s.id + '">' + Utils.escapeHtml(s.date) + ' ' + Utils.escapeHtml(s.level) + ' (' + (s.profit >= 0 ? '+' + Utils.safeFixed(s.profit, 1) : Utils.safeFixed(s.profit, 1)) + 'BB)</option>'; });
   },
+  captureHandDraft() {
+    const pane = document.getElementById('handDetailPane');
+    const fields = {};
+    pane.querySelectorAll('input[id], select[id], textarea[id]').forEach(function (field) {
+      fields[field.id] = { value: field.value, checked: field.checked };
+    });
+    return {
+      fields,
+      activeMistakes: Array.from(document.querySelectorAll('#handMistakeGroup .toggle-btn.is-active')).map(function (button) { return button.dataset.mistake; }),
+      handEditingId: this.handEditingId || null,
+      saveText: document.getElementById('saveHandBtn').textContent,
+      saveState: document.getElementById('saveHandBtn').dataset.state || 'create',
+      isEditing: pane.classList.contains('is-editing'),
+    };
+  },
+  restoreHandDraft(snapshot) {
+    if (!snapshot) return;
+    Object.keys(snapshot.fields).forEach(function (id) {
+      const field = document.getElementById(id);
+      if (!field) return;
+      field.value = snapshot.fields[id].value;
+      if (field.type === 'checkbox' || field.type === 'radio') field.checked = snapshot.fields[id].checked;
+    });
+    document.querySelectorAll('#handMistakeGroup .toggle-btn').forEach(function (button) {
+      button.classList.toggle('is-active', snapshot.activeMistakes.indexOf(button.dataset.mistake) !== -1);
+    });
+    this.handEditingId = snapshot.handEditingId;
+    const saveBtn = document.getElementById('saveHandBtn');
+    saveBtn.textContent = snapshot.saveText;
+    saveBtn.dataset.state = snapshot.saveState;
+    document.getElementById('handDetailPane').classList.toggle('is-editing', snapshot.isEditing);
+    document.getElementById('handDesc').dispatchEvent(new Event('input'));
+    _renderPosAdviceButtons();
+    _applyPosAdvice(document.getElementById('handPreflopScenario').value || null);
+  },
+  resetHandFormForQuickCapture(preferredSessionId) {
+    ['handPotType', 'handBoard', 'handPreflopScenario', 'handDesc', 'handReflection', 'handMistakeCustom'].forEach(function (id) {
+      document.getElementById(id).value = '';
+    });
+    document.querySelectorAll('#handMistakeGroup .toggle-btn').forEach(function (button) { button.classList.remove('is-active'); });
+    this.handEditingId = null;
+    const pane = document.getElementById('handDetailPane');
+    pane.classList.remove('is-editing');
+    const saveBtn = document.getElementById('saveHandBtn');
+    saveBtn.textContent = '保存快速记录';
+    saveBtn.dataset.state = 'quick';
+    const sessionSelect = document.getElementById('handSessionSelect');
+    if (preferredSessionId && sessionSelect.querySelector('option[value="' + preferredSessionId + '"]')) {
+      sessionSelect.value = preferredSessionId;
+    } else {
+      const latestSession = this.getSessions().slice().sort(function (a, b) {
+        return String(b.date || '').localeCompare(String(a.date || ''));
+      })[0];
+      sessionSelect.value = latestSession ? latestSession.id : '';
+    }
+    document.getElementById('handDesc').dispatchEvent(new Event('input'));
+  },
+  openQuickCapture() {
+    if (this._quickCaptureActive || !window.matchMedia('(max-width: 767px)').matches) return false;
+    const main = document.querySelector('.main');
+    const activeSub = document.querySelector('#reviewSubNav .subnav__btn--active');
+    this._quickCaptureOrigin = {
+      tab: main.getAttribute('data-active-tab') || 'timer',
+      sub: activeSub ? activeSub.dataset.sub : 'hand',
+    };
+    this._quickCaptureSnapshot = this.captureHandDraft();
+    const preferredSessionId = this._quickCaptureSnapshot.fields.handSessionSelect.value;
+    if (!Navigation.goToReviewSubtab('hand')) return false;
+    this.resetHandFormForQuickCapture(preferredSessionId);
+    this._quickCaptureActive = true;
+    const pane = document.getElementById('handDetailPane');
+    const trigger = document.getElementById('quickCaptureBtn');
+    document.body.classList.add('quick-capture-open');
+    pane.classList.add('is-quick-capture');
+    pane.setAttribute('role', 'dialog');
+    pane.setAttribute('aria-modal', 'true');
+    pane.setAttribute('aria-labelledby', 'quickCaptureTitle');
+    trigger.setAttribute('aria-expanded', 'true');
+    document.getElementById('quickCaptureCloseBtn').focus({ preventScroll: true });
+    return true;
+  },
+  closeQuickCapture(mode) {
+    if (!this._quickCaptureActive) return;
+    const pane = document.getElementById('handDetailPane');
+    const trigger = document.getElementById('quickCaptureBtn');
+    const origin = this._quickCaptureOrigin;
+    const snapshot = this._quickCaptureSnapshot;
+    this._quickCaptureActive = false;
+    document.body.classList.remove('quick-capture-open');
+    pane.classList.remove('is-quick-capture');
+    pane.removeAttribute('role');
+    pane.removeAttribute('aria-modal');
+    pane.removeAttribute('aria-labelledby');
+    trigger.setAttribute('aria-expanded', 'false');
+
+    if (mode === 'full') {
+      document.getElementById('saveHandBtn').textContent = '保存手牌';
+      document.getElementById('saveHandBtn').dataset.state = 'create';
+      this._quickCaptureOrigin = null;
+      this._quickCaptureSnapshot = null;
+      document.getElementById('handDesc').focus({ preventScroll: true });
+      return;
+    }
+
+    if (origin && origin.tab === 'review') Navigation.goToReviewSubtab(origin.sub || 'hand');
+    else Navigation.goToTab(origin ? origin.tab : 'timer');
+    if (mode === 'cancel' || mode === 'saved') this.restoreHandDraft(snapshot);
+    this._quickCaptureOrigin = null;
+    this._quickCaptureSnapshot = null;
+    trigger.focus({ preventScroll: true });
+    if (mode === 'saved') Utils.showToast('已快速记录，可稍后补全反思');
+  },
+  handleQuickCaptureKeydown(event) {
+    if (!this._quickCaptureActive) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      this.closeQuickCapture('cancel');
+      return;
+    }
+    if (event.key !== 'Tab') return;
+    const pane = document.getElementById('handDetailPane');
+    const focusable = Array.from(pane.querySelectorAll('button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')).filter(function (element) {
+      return element.offsetParent !== null;
+    });
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  },
   saveHandReview() {
     const sid = document.getElementById('handSessionSelect').value || null,
       desc = document.getElementById('handDesc').value.trim(),
@@ -1679,7 +1826,7 @@ export const Review = {
     const custom = document.getElementById('handMistakeCustom').value.trim();
     if (custom) mistakes.push(custom);
     const mistakeStr = mistakes.join(', ') || '';
-    if (!desc && !reflection) { Utils.showToast('请至少填写一项内容'); return; }
+    if (!desc && !reflection) { Utils.showToast('请至少填写一项内容'); return false; }
     const r = { sessionId: sid || null, date: Utils.getLocalDatetime(), potType, board, desc, mistake: mistakeStr, reflection, pBB: null, preflopScenario: document.getElementById('handPreflopScenario').value || null };
     const reviews = this.getHandReviews();
     if (this.handEditingId) {
@@ -1697,6 +1844,7 @@ export const Review = {
     document.querySelectorAll('#handMistakeGroup .toggle-btn').forEach((b) => b.classList.remove('is-active'));
     document.getElementById('handMistakeCustom').value = '';
     this.renderHandReviews();
+    return true;
   },
   deleteHandReview(id) { this._confirmDelete(() => this.getHandReviews(), (d) => this.saveHandReviews(d), () => this.renderHandReviews(), 'id', id); },
   editHandReview(id) {
