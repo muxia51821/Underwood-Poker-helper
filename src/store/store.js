@@ -237,6 +237,10 @@ export class BaseRepo {
     if (this._writeTimer) clearTimeout(this._writeTimer);
     this._writeTimer = setTimeout(function () {
       DB.putAll(self._key, self._cache).catch(function (e) {
+        Store._setRaw(self._key, self._cache);
+        self._dbReady = false;
+        _healthMode = 'degraded';
+        _addHealthIssue(self._key + ' IndexedDB 写入失败，已降级到 localStorage');
         console.warn('IndexedDB write failed for ' + self._key, e);
       });
     }, 300);
@@ -361,6 +365,78 @@ function _migrateOpponentHash() {
   }
   localStorage.setItem('pa_migrated_ohash_v1', 'true');
 }
+
+// [V7.7.2 修改] 旧手牌补牌面字段和行动线，完成持久化后再标记迁移
+async function _migrateBoardFields() {
+  var hands = HandRepo.getAll();
+  if (!hands || !hands.length) {
+    localStorage.setItem('pa_migrated_board_v2', 'true');
+    return true;
+  }
+  var changed = false;
+  hands.forEach(function (r) {
+    var boardSource = r.boardCards || _extractFlopBoardFromDesc(r.desc) || r.boardCode || '';
+    if (boardSource) {
+      var code = r.boardCode || _simpleNormalize(boardSource);
+      if (!r.boardCode && code) {
+        r.boardCode = code;
+        changed = true;
+      }
+      if (!r.boardCategory) {
+        r.boardCategory = Utils.classifyBoard(boardSource);
+        changed = true;
+      }
+    }
+    // [V7.7.2 修改] 旧手牌从 desc 提取行动线
+    if (r.desc && !r.actionLineOTF) {
+      r.actionLineOTF = Utils.extractActionLine(r.desc, 'OTF');
+      r.actionLineOTT = Utils.extractActionLine(r.desc, 'OTT');
+      r.actionLineOTR = Utils.extractActionLine(r.desc, 'OTR');
+      changed = true;
+    }
+  });
+  if (changed) {
+    if (DB._db && HandRepo._dbReady) {
+      // 先保留本地备份，IndexedDB 写入失败时下次启动仍可重试。
+      Store._setRaw('handReviews', hands);
+      try {
+        await DB.putAll('handReviews', hands);
+        var actual = await DB.count('handReviews');
+        if (actual !== hands.length) {
+          throw new Error('handReviews migration count mismatch');
+        }
+      } catch (e) {
+        console.warn('Hand review field migration failed; will retry', e);
+        _addHealthIssue('手牌字段迁移未完成，将在下次启动重试');
+        return false;
+      }
+    } else {
+      HandRepo.saveAll(hands);
+    }
+  }
+  localStorage.setItem('pa_migrated_board_v2', 'true');
+  return true;
+}
+
+function _extractFlopBoardFromDesc(desc) {
+  if (!desc) return '';
+  var match = String(desc).match(
+    /(?:^|\n)OTF翻牌\s+((?:[2-9TJQKA][shdc]\s+){2}[2-9TJQKA][shdc])(?:\s|$)/i
+  );
+  return match ? match[1] : '';
+}
+
+// 简化版规范化（与 ggParser._normalizeBoardCode 逻辑一致）
+function _simpleNormalize(boardCards) {
+  if (!boardCards) return '';
+  var rankOrder = 'AKQJT98765432';
+  var cards = boardCards.split(' ');
+  try {
+    cards.sort(function (a, b) { return rankOrder.indexOf(a.charAt(0)) - rankOrder.indexOf(b.charAt(0)); });
+    return cards.map(function (c) { return c.charAt(0) + c.charAt(c.length - 1).toLowerCase(); }).join('');
+  } catch (e) { return ''; }
+}
+
 
 function migrateOldData() {
   var oldKey = 'pokerAssistantData';
@@ -526,6 +602,8 @@ export async function initStorage(opts) {
     });
   }
 
+  // [V7.7.2 修改] 旧手牌补 boardCode/boardCategory
+  if (!localStorage.getItem('pa_migrated_board_v2')) await _migrateBoardFields();
   // [V7.0.2] 旧手牌补 oHash（基于 oId 规范化）
   _migrateOpponentHash();
   migrateHandReviews();

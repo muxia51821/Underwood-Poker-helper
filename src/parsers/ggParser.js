@@ -38,7 +38,20 @@ export const GGParser = {
     });
     return uniq.length === 1 ? 'M' : uniq.length === 2 ? 'TT' : 'R';
   },
-  // 动态位置映射（含HU）
+  // [V7.7.2 修改] 牌面规范化编码（匹配 gtoRaw boardCode）
+  _normalizeBoardCode: function (boardCards) {
+    if (!boardCards) return '';
+    var rankOrder = 'AKQJT98765432';
+    var cards = boardCards.split(' ');
+    cards.sort(function (a, b) { return rankOrder.indexOf(a.charAt(0)) - rankOrder.indexOf(b.charAt(0)); });
+    return cards.map(function (c) {
+      return c.charAt(0) + c.charAt(c.length - 1).toLowerCase();
+    }).join('');
+  },
+  // [V7.7.2 修改] 牌面详细分类 → 7 个学习阶段标签
+  _classifyBoardCategory: function (boardCards) { return Utils.classifyBoard(boardCards); },
+  // [V7.7.2 修改] 委托 Utils.extractActionLine（统一入口）
+  _extractActionLine: function (desc, prefix) { return Utils.extractActionLine(desc, prefix); },
   _posMap: function (block) {
     var sumIdx = block.indexOf('*** SUMMARY ***');
     var scanBlock = sumIdx > 0 ? block.substring(0, sumIdx) : block;
@@ -46,20 +59,14 @@ export const GGParser = {
     var m;
     var re = /Seat (\d+):/g;
     while ((m = re.exec(scanBlock)) !== null) seats.push(parseInt(m[1]));
-    seats.sort(function (a, b) {
-      return a - b;
-    });
+    seats.sort(function (a, b) { return a - b; });
     var n = seats.length;
     var btnM = block.match(/Seat #(\d+) is the button/);
     var btn = btnM ? parseInt(btnM[1]) : seats[n - 1];
     var bi = seats.indexOf(btn);
     if (bi < 0) bi = n - 1;
     var map = {};
-    if (n === 2) {
-      map[seats[bi]] = 'BTN';
-      map[seats[(bi + 1) % 2]] = 'BB';
-      return map;
-    }
+    if (n === 2) { map[seats[bi]] = 'BTN'; map[seats[(bi + 1) % 2]] = 'BB'; return map; }
     var ec = n - 3;
     var early = [];
     if (ec === 1) early = ['UTG'];
@@ -69,10 +76,42 @@ export const GGParser = {
     else if (ec === 5) early = ['UTG', 'UTG+1', 'MP', 'HJ', 'CO'];
     else if (ec >= 6) early = ['UTG', 'UTG+1', 'MP', 'MP+1', 'HJ', 'CO'];
     var all = ['BTN', 'SB', 'BB'].concat(early);
-    for (var j = 0; j < n && j < all.length; j++) {
-      map[seats[(bi + j) % n]] = all[j];
-    }
+    for (var j = 0; j < n && j < all.length; j++) { map[seats[(bi + j) % n]] = all[j]; }
     return map;
+  },
+  // [V7.7.2 修改] 翻前场景检测：从玩家名映射到座位位置，支持 HU
+  _detectScenario: function (heroPos, posMap, seatsWithNames, pfBlock) {
+    if (!heroPos || !posMap || Object.keys(posMap).length < 2) return 'other';
+    var raiseCount = (pfBlock.match(/raises/gi) || []).length;
+    if (raiseCount !== 1) return 'other';
+
+    function positionForLine(line) {
+      if (/^Hero:?\s/i.test(line)) return heroPos;
+      var nameM = line.match(/^([^:]+?)(?::)?\s+(?:raises|calls)\b/i);
+      if (!nameM) return '';
+      for (var si = 0; si < seatsWithNames.length; si++) {
+        if (seatsWithNames[si].name === nameM[1].trim()) {
+          return posMap[seatsWithNames[si].seat] || '';
+        }
+      }
+      return '';
+    }
+
+    var raiserPos = '';
+    var callerPos = '';
+    var pfLines = pfBlock.split('\n');
+    for (var i = 0; i < pfLines.length; i++) {
+      var line = pfLines[i].trim();
+      if (!raiserPos && /raises\b/i.test(line)) raiserPos = positionForLine(line);
+      if (!callerPos && /calls\b/i.test(line)) callerPos = positionForLine(line);
+      if (raiserPos && callerPos) break;
+    }
+    if (!raiserPos || !callerPos) return 'other';
+
+    var scenario = raiserPos + 'vs' + callerPos;
+    return scenario === 'BTNvsBB' || scenario === 'SBvsBB' || scenario === 'COvsBTN'
+      ? scenario
+      : 'other';
   },
   // 行动格式化（底池百分比优先）
   _formatAction: function (act, currentPotBB, bbValue) {
@@ -254,6 +293,8 @@ export const GGParser = {
               : raiseCount === 1
                 ? 'SIA'
                 : 'limp';
+        // [V7.7.2 修改] 翻前场景检测
+        hand.preflopScenario = self._detectScenario(heroPos, pm, seatsWithNames, pfBlock);
         // --- 翻前解析 ---
         var pfLines = pfBlock.split('\n');
         var pfPotDollar = 0;
@@ -388,6 +429,7 @@ export const GGParser = {
           },
         ];
         var prevBoard = '';
+        var flopBoard = '';
         for (var si = 0; si < streets.length; si++) {
           var st = streets[si];
           if (st.start <= 0) continue;
@@ -404,7 +446,8 @@ export const GGParser = {
                   return m.slice(1, -1);
                 })
                 .join(' ')
-            : '';
+                : '';
+          if (st.label === 'OTF翻牌' && !flopBoard) flopBoard = fullBoard;
           var newBoard = self._sortCardsDesc(self._getNewCards(fullBoard, prevBoard));
           prevBoard = fullBoard;
           var stLines = stBlock.split('\n');
@@ -519,7 +562,14 @@ export const GGParser = {
         allBd = self._sortCardsDesc(allBd);
         hand.boardCards = allBd;
         hand.board = self._classifyBoard(allBd);
+        var gtoBoard = self._sortCardsDesc(flopBoard || allBd);
+        hand.boardCode = self._normalizeBoardCode(gtoBoard);        // [V7.7.2 修改]
+        hand.boardCategory = self._classifyBoardCategory(gtoBoard); // [V7.7.2 修改]
         hand.desc = descParts.join('\n');
+        // [V7.7.2 修改] 提取行动线短码：B60-C / X-B50-F 等
+        hand.actionLineOTF = self._extractActionLine(hand.desc, 'OTF');
+        hand.actionLineOTT = self._extractActionLine(hand.desc, 'OTT');
+        hand.actionLineOTR = self._extractActionLine(hand.desc, 'OTR');
         // [V6.13.0 新增] 提取水钱和Jackpot
         var potLineM = block.match(/^Total pot \$([\d.]+) \| Rake \$([\d.]+) \| Jackpot \$([\d.]+)/m);
         hand.rake = potLineM ? parseFloat(potLineM[2]) : 0;

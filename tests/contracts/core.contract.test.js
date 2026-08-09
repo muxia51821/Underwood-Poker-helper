@@ -19,7 +19,8 @@ const localStorage = createLocalStorage();
 globalThis.localStorage = localStorage;
 globalThis.window = { addEventListener() {} };
 
-const { Store, SessionRepo, HandRepo } = await import('../../src/store/store.js');
+const { Store, SessionRepo, HandRepo, initStorage } = await import('../../src/store/store.js');
+const { DB } = await import('../../src/store/db.js');
 
 const uncalledHand = [
   'Poker Hand #RC100001',
@@ -66,6 +67,35 @@ const anteAndBoardHand = [
   'Board [Ah 2h Jh]',
 ].join('\n');
 
+const btnVsBbHand = [
+  'Poker Hand #SC100001: Hold\'em No Limit ($0.02/$0.05) - 2026/04/11 12:00:00',
+  'Table \'NLH\' 2-max Seat #1 is the button',
+  'Seat 1: Hero ($5.00 in chips)',
+  'Seat 2: Villain ($5.00 in chips)',
+  'Hero: posts small blind $0.02',
+  'Villain: posts big blind $0.05',
+  '*** HOLE CARDS ***',
+  'Dealt to Hero [As Kd]',
+  'Hero: raises $0.10 to $0.15',
+  'Villain: calls $0.10',
+  '*** FLOP *** [Ah 7c 2d]',
+  'Villain: checks',
+  'Hero: bets $0.10',
+  'Villain: folds',
+  'Uncalled bet ($0.10) returned to Hero',
+  'Hero collected $0.25 from pot',
+  '*** SUMMARY ***',
+  'Total pot $0.25 | Rake $0 | Jackpot $0 | Bingo $0 | Fortune $0 | Tax $0',
+  'Board [Ah 7c 2d]',
+].join('\n');
+
+const runoutHand = anteAndBoardHand
+  .replace(
+    '*** SHOWDOWN ***',
+    '*** TURN *** [7c]\nHero: checks\nVillain: checks\n*** RIVER *** [3s]\nHero: checks\nVillain: checks\n*** SHOWDOWN ***'
+  )
+  .replace('Board [Ah 2h Jh]', 'Board [Ah 2h Jh 7c 3s]');
+
 test('GG parser preserves uncalled-bet profit semantics', () => {
   const [hand] = GGParser.parse(uncalledHand);
   assert.ok(hand);
@@ -87,6 +117,21 @@ test('GG parser preserves ante, board, rake, and board metadata', () => {
   assert.ok(Math.abs(hand.profitBB - 6.2) < 0.5);
   assert.ok(hand.boardCode);
   assert.ok(hand.boardCategory);
+});
+
+test('GG parser identifies BTN vs BB from a heads-up hand', () => {
+  const [hand] = GGParser.parse(btnVsBbHand);
+  assert.ok(hand);
+  assert.equal(hand.heroPosition, 'BTN');
+  assert.equal(hand.preflopScenario, 'BTNvsBB');
+});
+
+test('GG parser keeps GTO boardCode at the flop street', () => {
+  const [hand] = GGParser.parse(runoutHand);
+  assert.ok(hand);
+  assert.equal(hand.boardCards.split(' ').length, 5);
+  assert.equal(hand.boardCode, 'AhJh2h');
+  assert.equal(hand.boardCategory, 'monotone');
 });
 
 test('storage import merges records without overwriting local records', () => {
@@ -119,4 +164,43 @@ test('storage import merges records without overwriting local records', () => {
 test('storage import rejects malformed collection shapes', () => {
   assert.throws(() => Store.importAll({ sessions: {} }), /sessions 应为数组/);
   assert.throws(() => Store.importAll({ handReviews: {} }), /handReviews 应为数组/);
+});
+
+test('storage migration derives board fields from legacy hand descriptions', async () => {
+  localStorage.clear();
+  localStorage.setItem('pa_handReviews', JSON.stringify([
+    {
+      id: 'legacy-hand-1',
+      desc: 'preflop 行动：Hero BTN/[As Kd] raises to 3.0bb\nOTF翻牌 Ah Jh 2h    行动：B59 (3.2bb) F',
+    },
+  ]));
+  localStorage.removeItem('pa_migrated_board_v2');
+  HandRepo._cache = [];
+  HandRepo._dbReady = false;
+
+  await initStorage({ safeMode: true });
+
+  const [hand] = HandRepo.getAll();
+  assert.equal(hand.boardCode, 'AhJh2h');
+  assert.equal(hand.boardCategory, 'monotone');
+  assert.equal(hand.actionLineOTF, 'B59-(3.2bb)-F');
+  assert.equal(localStorage.getItem('pa_migrated_board_v2'), 'true');
+});
+
+test('storage falls back to localStorage when IndexedDB write fails', async () => {
+  localStorage.clear();
+  const originalPutAll = DB.putAll;
+  DB.putAll = function () { return Promise.reject(new Error('simulated IndexedDB failure')); };
+  HandRepo._dbReady = true;
+
+  HandRepo.saveAll([{ id: 'fallback-hand-1', decision: 'check' }]);
+  await new Promise(function (resolve) { setTimeout(resolve, 350); });
+
+  assert.deepEqual(JSON.parse(localStorage.getItem('pa_handReviews')), [
+    { id: 'fallback-hand-1', decision: 'check' },
+  ]);
+  assert.equal(HandRepo._dbReady, false);
+
+  DB.putAll = originalPutAll;
+  HandRepo._dbReady = false;
 });

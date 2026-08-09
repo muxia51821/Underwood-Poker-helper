@@ -63,22 +63,32 @@ const DB = {
         var tx = self._db.transaction(storeName, 'readwrite');
         var store = tx.objectStore(storeName);
         var clearReq = store.clear();
+        var failures = [];
         clearReq.onsuccess = function () {
           for (var i = 0; i < items.length; i++) {
-            store.put(items[i]);
+            var putReq = store.put(items[i]);
+            // [V7.4.7] 收集单条写入失败
+            putReq.onerror = (function (item, idx) {
+              return function (e) {
+                failures.push({ index: idx, id: item.id, error: e.target.error });
+              };
+            })(items[i], i);
           }
         };
         tx.oncomplete = function () {
-          if (CONSTANTS.DEV) {
-            self.count(storeName).then(function (actual) {
-              if (actual !== items.length) {
-                console.warn('DB.putAll count mismatch: expected ' + items.length + ' got ' + actual + ' for ' + storeName);
-              }
-              resolve();
-            }).catch(function () { resolve(); });
-          } else {
-            resolve();
+          if (failures.length) {
+            console.warn('DB.putAll: ' + failures.length + ' records failed for ' + storeName, failures.slice(0, 5));
           }
+          // [V7.4.7] 始终校验写入数量
+          self.count(storeName).then(function (actual) {
+            if (actual !== items.length) {
+              var mismatch = new Error('DB.putAll count mismatch: expected ' + items.length + ' got ' + actual + ' for ' + storeName);
+              console.warn(mismatch.message);
+              reject(mismatch);
+              return;
+            }
+            resolve();
+          }).catch(reject);
         };
         tx.onerror = function () {
           reject(tx.error);

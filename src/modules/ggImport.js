@@ -322,7 +322,7 @@ export function initGGImport() {
         var existingId = h.duplicateOf.id;
         if (!confirm('覆盖手牌 ' + h.handId + ' 的牌面/盈亏/对手信息？\n（决策、错误类型、Session关联不受影响）')) return;
         HandRepo.update(existingId, {
-          date: h.date, potType: h.potType, board: h.board, desc: h.desc,
+          date: h.date, potType: h.potType, board: h.board, boardCode: h.boardCode || "", boardCategory: h.boardCategory || "", desc: h.desc,
           pBB: h.profitBB != null ? h.profitBB : null,
           reflection: h.profitBB != null && h.profitBB !== 0
             ? (h.profitBB > 0 ? '盈利：+' + h.profitBB + ' BB' : '亏损：' + h.profitBB + ' BB') : '',
@@ -345,26 +345,27 @@ export function initGGImport() {
     if (!checks.length) { Utils.showToast('请至少勾选一手牌'); return; }
     var toImport = [];
     checks.forEach(function (cb) { toImport.push(ggParsedHands[parseInt(cb.dataset.idx)]); });
-    var estSize = JSON.stringify(toImport).length;
-    if (!Utils.checkStorageQuota(estSize)) {
-      Utils.showToast('存储空间不足（接近 ' + CONSTANTS.MAX_STORAGE_MB + 'MB 上限）。请先导出备份或清理旧数据后再导入。');
-      return;
-    }
+    // [V7.7.2 修改] 异步检测 IndexedDB 配额
+    Utils.checkStorageQuota(JSON.stringify(toImport).length).then(function (ok) {
+      if (!ok) { Utils.showToast('存储空间不足。请先导出备份或清理旧数据后再导入。'); return; }
+      _doImportSelected();
+    });
+  });
+  function _doImportSelected() {
+    var checks = document.querySelectorAll('.gg-import-check:checked');
+    var toImport = [];
+    checks.forEach(function (cb) { toImport.push(ggParsedHands[parseInt(cb.dataset.idx)]); });
     var existingReviews = HandRepo.getAll();
     var existingSessions = SessionRepo.getAll();
     var importCount = 0;
-    var targetSid = _targetSessionId;  // [V6.14.0]
+    var targetSid = _targetSessionId;
 
     if (targetSid) {
-      // 导入到指定 Session
       toImport.forEach(function (h) {
         var r = {
           id: Utils.generateUUID(), sessionId: targetSid, date: h.date, potType: h.potType,
-          board: h.board, desc: h.desc, decision: '', mistake: '',
-          reflection:
-            h.profitBB != null && h.profitBB !== 0
-              ? (h.profitBB > 0 ? '盈利：+' + h.profitBB + ' BB' : '亏损：' + h.profitBB + ' BB')
-              : '',
+          board: h.board, boardCode: h.boardCode || "", boardCategory: h.boardCategory || "", desc: h.desc, decision: '', mistake: '',
+          reflection: h.profitBB != null && h.profitBB !== 0 ? (h.profitBB > 0 ? '盈利：+' + h.profitBB + ' BB' : '亏损：' + h.profitBB + ' BB') : '',
           pBB: h.profitBB != null ? h.profitBB : null,
           gg: true, ggId: h.handId, oId: h.opponentId, oCards: h.opponentCards, oHash: h.oHash || Utils.normalizeOpponentName(h.opponentId),
           rake: h.rake || 0, jackpot: h.jackpot || 0,
@@ -376,18 +377,14 @@ export function initGGImport() {
       document.getElementById('ggImportOverlay').classList.remove('is-active');
       Utils.showToast('成功导入 ' + importCount + ' 手牌到 Session！');
     } else {
-      // [V6.14.0] 自动分 Session
       var groups = _autoGroupToSessions(toImport);
       var sessionMappings = _createSessionsFromGroups(groups, existingSessions);
       sessionMappings.forEach(function (mapping) {
         mapping.hands.forEach(function (h) {
           var r = {
             id: Utils.generateUUID(), sessionId: mapping.session.id, date: h.date, potType: h.potType,
-            board: h.board, desc: h.desc, decision: '', mistake: '',
-            reflection:
-              h.profitBB != null && h.profitBB !== 0
-                ? (h.profitBB > 0 ? '盈利：+' + h.profitBB + ' BB' : '亏损：' + h.profitBB + ' BB')
-                : '',
+            board: h.board, boardCode: h.boardCode || "", boardCategory: h.boardCategory || "", desc: h.desc, decision: '', mistake: '',
+            reflection: h.profitBB != null && h.profitBB !== 0 ? (h.profitBB > 0 ? '盈利：+' + h.profitBB + ' BB' : '亏损：' + h.profitBB + ' BB') : '',
             pBB: h.profitBB != null ? h.profitBB : null,
             gg: true, ggId: h.handId, oId: h.opponentId, oCards: h.opponentCards, oHash: h.oHash || Utils.normalizeOpponentName(h.opponentId),
             rake: h.rake || 0, jackpot: h.jackpot || 0,
@@ -395,7 +392,6 @@ export function initGGImport() {
           existingReviews.push(r);
           importCount++;
         });
-        // 新建的 Session 写入 SessionRepo
         if (!existingSessions.some(function (s) { return s.id === mapping.session.id; })) {
           SessionRepo.saveAll(existingSessions);
         }
@@ -412,7 +408,7 @@ export function initGGImport() {
     Review.renderHandReviews();
     Review.renderSessions();
     Review.updateTotalStats();
-  });
+  }
   // [V6.14.0] 设置文件拖拽
   _setupFileDrop();
 }
