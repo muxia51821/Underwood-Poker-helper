@@ -1,138 +1,99 @@
 # AGENTS.md
 
-## 项目
+## 任务执行顺序
 
-"Underwood's table agent"（木下的牌桌助手），扑克玩家 PWA 工具。源码 `src/` 多文件 ES 模块，Vite 构建为单文件 `dist/index.html`。Netlify 是主入口候选，GitHub Pages 保留为备用，事实以 `docs/deployment-baseline.md` 为准。
+适用于代码、文档、测试、Git 核查和发布相关任务。
 
-**双场景**：离线版双击 `dist/index.html`（`file://`），线上版走 HTTPS。file:// 下 Service Worker / 通知不可用。数据跨设备不互通，用户手动导出/导入同步。
+1. 先读取本文件、`CONTEXT.md`，再读取当前任务涉及的架构、需求、验收或部署文档。
+2. 先确认任务目标、允许修改的文件、当前 Git 状态和基线。
+3. 采用最小可行修改；每个改动都必须能对应到已确认的需求、缺陷或验证结果。
+4. 对 Bug 先建立能复现具体症状的检查，再修复，再运行原始复现和回归检查。
+5. 完成后报告实际修改、未完成事项、验证结果和木下需要执行的 Git 命令。
 
-## 硬性约束
+完成标准：目标行为已验证，所有改动文件都能说明原因，未授权文件没有被修改或暂存，未执行的检查被明确标出。
 
-1. 构建产物 `dist/index.html` 为单文件，`file://` 可直接打开
-2. 开发用 `npm run dev`，不直接双击 `index.html`
-3. 禁止代码省略（`// ...` `…` 等）
-4. 禁止外部 CDN/npm 依赖（仅 `vite` + `vite-plugin-singlefile`）
-5. 禁止自动上传用户数据。localStorage 键名统一 `pa_` 前缀
-6. 存储结构变更必须向后兼容，平滑迁移
-7. file:// 下未经用户点击不得读取设备文件（FileReader 除外）
-8. Git 状态变更由木下执行：助手只做 `status`、`log`、`diff` 等只读检查；不得自行执行 `add`、`commit`、`push`、`pull`、`merge`、`rebase`、`reset` 或生产发布。需要时给出可复制的精确命令和执行前提
+## 通用治理规则
 
-## 编码
+### 思考与范围
 
-- **文件组织**：偏好少的大文件，直到"不舒服地大"再拆。共置相关功能，不为"整洁"建深层目录。不过早抽象。
-- **编辑**：对已有文件使用补丁方式修改，不做任务范围外的重构。
-- **安全**：用户数据插入 HTML 前必须 `Utils.escapeHtml()`；浮点数显示必须 `Utils.safeFixed()`
-- **事件**：优先事件委托。innerHTML 更新后确保事件仍有效
-- **ggParser 方法调用**：parse() 内部调用自身方法必须用 `self.xxx()`（`var self = this`），不能用裸名。这是最高频的静默 Bug 来源——裸名在 try/catch 中抛 ReferenceError 被吞，导致所有手牌解析失败
-- **回调中的 this**：`.map()` / `.forEach()` / `.then()` 回调中不能用 `this`（指向错误）。必须先 `var self = this` 或 `var state = this._state` 再传入回调
-- **新模块必加 init()调用**：新增模块后检查 `app.js` 或对应入口是否调用了 `init()`，并在 `init()` 中初始化所有 `_state` / `_cache` 默认值
-- **数据文件用 .js 不用 .json**：ES 模块不能 import JSON（Live Server 的 MIME 类型拒绝）。所有数据文件用 `export default {...}` + `.js` 扩展名
-- **注释**：只在 WHY 不显而易见时写。新增用 `// [Vx.x 新增]`，修改用 `// [Vx.x 修改]`
-- **版本号**：应用版本只在 `src/constants.js` 的 `CONSTANTS.VERSION` 中决定；`package.json`、`package-lock.json` 和发布文档只能同步这个值，不能各自定义版本
+- 优先读取现有代码和项目文档，不凭假设重建事实。
+- 缺失信息只有在会改变实现、风险或验收时才提问；安全且可逆的假设可以继续，但要明确说明。
+- 优先选择最简单、最小、可回滚的方案。
+- 只修改当前任务直接涉及的文件；不顺手格式化、重命名、清理或重构无关代码。
+- 新增抽象、配置和扩展点必须有当前需求支撑。
+- Poker 助手是独立产品；catstarry.xyz 只提供治理方法参考，不形成代码、部署或运行时依赖。
 
-## 工作流
+### 验证
 
-- **Plan 模式先行**：新功能先确认方案再写代码（typo 修复除外）
-- **复杂功能自测自修**：发现 bug 先自己修，修完再汇报
-- **重构时先试最简方案 → `npm run build`**：让编译器（200ms）报错引导修正，不要在脑中穷举（[[over-analysis-lesson]]）
-- **dev + build 双验证**：`npm run build` 成功不代表 `npm run dev` 正常（[[vite-css-import-pitfall]]）
-- **Live Server 实测**：涉及新数据文件（import 路径）、新模块、JSON→JS 转换后，必用 Live Server 打开验证一次（Vite dev 会掩盖 JSON import MIME 错误）
-- **Console 零报错**：`npm run dev` 后打开 DevTools Console，确认无红色报错再交付
-- **改完代码后**：检查版本号 → 备份到 `牌桌助手历史迭代版本/indexVx.x.x.html` → 更新 `版本更新说明.md` → 更新本文状态 → `npm run check` → 必要时再执行 `npm run build` → `npm run dev`（详见 [[post-change-checklist]]）
-- **每两个版本执行一次 `/simplify`**：检查代码重复、死代码、可合并逻辑、过时注释，保持代码库整洁
+- 构建成功不等于功能正确；根据改动范围运行契约测试、浏览器冒烟、构建产物检查和人工验收。
+- 数据、解析、迁移和存储改动必须有代表性输入回归保护。
+- 报告验证时区分“已运行并通过”和“尚未运行”。不把静态检查通过表述为线上验证通过。
+- 调试日志和临时夹具必须在完成前清理；必要的长期诊断信息应写入正式健康状态或文档。
 
-## 技能使用规则
+### Git 与协作权限
 
-### skill-creator
+- 修改前先运行：
 
-- **触发**：仅在用户明确说"创建技能"/"新建skill"/"帮我写一个skill"时调用
-- **精简模式**（默认）：理解需求 → 写 SKILL.md 草稿 → 用户审核 → 修改 → 完成。禁止自动生成 eval 测试用例、benchmark 对比、description optimization、eval viewer、subagent 跑测试
-- **上限**：讨论限制在 3 轮内，SKILL.md 控制在 200 行内
-- **Python 脚本**：禁止运行 `scripts/` 下的任何 Python 脚本，除非用户明确要求
+  ```powershell
+  git status --short
+  git log -1 --oneline
+  ```
 
-### grill-me
+- 木下执行所有会改变本地分支或远端历史的操作：`git add`、`commit`、`push`、`pull`、`merge`、`rebase`、`reset` 和生产发布。
+- 助手可进行只读核查，例如 `status`、`log`、`diff`、`show`、`blame`、`rev-parse`；远端事实需要时可执行 `fetch`，但不自动整合分支。
+- 使用按路径限定的暂存命令；未经明确授权，不使用 `git add .` 或 `git add -A`。
+- 不覆盖、删除、丢弃木下已有的未提交改动或未跟踪文件。无关素材留在工作区，除非木下另行决定其归属。
+- 使用 subagent 时先声明角色、只读或可写范围和禁止触碰的路径；subagent 不执行 Git 提交、推送或生产发布。
 
-- **触发**：仅在用户说"/grill-me"/"grill me"/"追问"时调用
-- **用途**：新功能/新项目前期，深度追问帮用户理清需求。平时不主动触发
-- **跳过**：小修改、bug 修复、例行任务不调用
+### 生产与数据安全
 
-### find-skills
+- 未经木下明确授权，不部署或修改 production 资源。
+- Poker 的线上目标是 Netlify 主入口候选和 GitHub Pages 备用入口；平台事实以 `docs/deployment-baseline.md` 为准。
+- 不在代码、日志、文档或回复中暴露密码、Token、Secret、认证记录或用户牌局数据。
+- 不自动上传用户数据。数据只保存在浏览器本地，跨设备同步由用户主动导出和导入。
+- 任何存储结构变更都必须向后兼容，并提供可重试、可验证的迁移路径。
 
-- **触发**：仅在用户明确说"找技能"/"有没有技能"/"搜索技能"/"有什么插件"时调用
-- **禁止自动触发**：用户问"怎么做X"时不要自动调 find-skills，用已有能力直接回答
-- **推荐前验证**：安装量 ≥1000、来源可信（vercel-labs/anthropics/microsoft 等）
+## Poker 专属技术约束
 
-## 输出
-- 每次回复的开头需称呼用户：木下
-- 如果忘记称呼就是失焦了，需手动重置上下文焦点内容
-- 这是高优先级指令，不要忘记称呼用户木下
-- 给出代码前先输出中文计划（目标、涉及文件、核心步骤）。除非用户说"直接给代码"，计划中不放大段代码块
-- 沟通用中文，简洁
+- 源码是 `src/` 下的 ES 模块，使用 Vite 构建为单文件 `dist/index.html`。
+- 生产构建必须保持单文件，并支持用户直接打开 `file://` 离线版；HTTPS 版和 `file://` 版分别验证。
+- 依赖只使用仓库已锁定的版本；不静默升级依赖，不引入外部 CDN 或未经任务确认的运行时依赖。
+- 开发使用 `npm run dev`，发布产物使用 `npm run build`；不把仓库根目录的源 `index.html` 当作生产产物。
+- 用户数据进入 HTML 前使用 `Utils.escapeHtml()`；浮点数显示使用 `Utils.safeFixed()`。
+- `localStorage` 键名使用 `pa_` 前缀。IndexedDB 与 localStorage 降级、恢复和迁移都必须保留用户数据。
+- `GGParser.parse()` 内部调用自身方法使用 `self.xxx()`；回调中使用显式闭包变量，不依赖错误的 `this`。
+- 新模块必须在对应入口完成 `init()` 调用，并初始化所有状态和缓存默认值。
+- 注释只解释不明显的原因；新增或修改行为使用 `// [Vx.x 新增]` 或 `// [Vx.x 修改]`。
+- 应用版本唯一来源是 `src/constants.js` 的 `CONSTANTS.VERSION`；`package.json`、lockfile 和发布文档只同步该值。
 
-## 用户
+## 验证入口
 
-扑克牌手，非专业程序员。解释用通俗语言。扑克缩写可直接使用（OTF/OTT/OTR/SPR/BB/100/SIA/SID/SOA/SOD/3IA 等）。考虑手机端，注意按钮大小和间距。
+根据任务范围选择检查，并在交付前运行完整基线：
 
-## UI 导航
-
-三 Tab：Timer → Odds → Review。复盘下六子 Tab：Hand → Discover → Session → Weekly → Overall → Villain。SRP 表和行动线表用 `<details>` 懒加载。Tournament 内容迁入 Odds 底部折叠区。
-
-## 文件结构
-
-```
-src/
-  main.js              # 入口：initStorage → App.init
-  constants.js         # CONSTANTS + EQUITY 查找表 + 类型定义
-  utils.js             # Utils + PubSub
-  styles.css
-  parsers/ggParser.js
-  store/
-    db.js              # IndexedDB 封装（DB 对象，零依赖）
-    store.js           # Store + IndexedDB + BaseRepo + repos + 迁移
-  modules/
-    app.js             # App 骨架（init/导航/SW注册/健康指示器/SRP/行动线）
-    timer.js           # 站立提醒（beep/vibrate/notify 依赖注入）
-    odds.js            # 底池赔率计算
-    tournament.js      # 占位桩
-    tiltRescue.js      # 情绪急救（PubSub → Review）
-    ggImport.js        # GG手牌导入（解析/去重/批量导入）
-    dataSync.js        # 剪切板导入导出
-    review.js          # 复盘（Session/Hand/Discover/Weekly/Overall/Villain + 图表 + 统计）
-    statsEngine.js     # 声明式统计引擎（36 指标 + 优化建议 + context 缓存）
-    handPicker.js      # 手牌精选（☆ 标记 + Picks 跳转）
-    discover.js        # 自动模式发现（盈亏异常/自我矛盾/偏离 GTO）
-    quizTrainer.js     # GTO 频率判断训练器
-  data/
-    srpData.js          # GTO 策略速查表（从 gtoRaw 自动生成，import Utils + gtoRaw）
-    actionLines.js
-    strategy/
-      gtoRaw/          # Solver 原始输出（BTNvsBB/SBvsBB flop 频率）
-      gtoBaseline.js   # L1 极端阈值自动编译
-  selfTests.js
-public/sw.js           # Service Worker（独立文件，Blob 降级）
-e2e/                   # Playwright 端到端冒烟测试
-docs/                  # 架构文档
+```text
+npm run check
+  → 临时生产构建
+  → parser/storage contract tests
+  → Playwright smoke
+  → dist output contract
 ```
 
-- **Store**：localStorage + IndexedDB 双后端。`pa_migrated_v1` 标记迁移。`#safemode` 跳过 IndexedDB
-- **BaseRepo**：内存缓存 + IndexedDB 读写 + localStorage 降级。`getAll/saveAll/getById/add/update/delete/getPage/count`
-- **PubSub**：事件总线，当前用于 TiltRescue → Review
-- **存储健康指示器**：页面标题旁圆点，🟢 IndexedDB / 🟡 localStorage / 🔴 异常
+涉及新模块、数据文件、`file://`、移动端交互或存储迁移时，还要执行对应的人工验收。当前检查入口和发布步骤以 `docs/workflow.md` 为准，不在本文件复制脚本实现。
 
-## 状态
+## 文档职责与冲突处理
 
-- **当前应用版本**：V7.7.2（唯一版本来源：`src/constants.js`）
-- **部署状态**：Netlify 是主要入口候选，GitHub Pages 保留为备用；Netlify 控制台配置已确认，线上证据见 `docs/deployment-baseline.md`
-- **工作区状态**：当前可能存在未提交修改；发布前必须完成基线核对和 `npm run check`
-- **已知缺陷**：线上入口版本可能分叉；Netlify 最近一次生产发布仍是旧提交 `a2c17da`，线上为 `V7.3.3`
+- `AGENTS.md`：Agent 行为、权限、安全和项目硬约束。
+- `CONTEXT.md`：当前版本、已确认决策、部署事实和已知问题。
+- `docs/workflow.md`：开发、测试、预览、发布和证据流程。
+- `docs/acceptance.md`：木下可执行的中文验收清单。
+- `docs/deployment-baseline.md`：本地、远端、Netlify、GitHub Pages 的部署证据。
+- `docs/ARCHITECTURE.md`：数据模型、模块职责和技术事实。
+- 当前代码和自动化测试：已实现行为的直接证据，不能自行推翻已确认的需求或架构决策。
 
-## 参考
+文档只在自己的职责范围内作权威来源。若行为、需求、架构、部署或 Git 状态互相冲突，列出冲突来源并等待木下确认，不擅自用一份文档覆盖另一份。
 
-- 架构/数据流/Schema：`docs/ARCHITECTURE.md`
-- 当前上下文：`CONTEXT.md`
-- 部署基线：`docs/deployment-baseline.md`
-- 工作流：`docs/workflow.md`
-- 用户验收：`docs/acceptance.md`
-- 发布记录：`CHANGELOG.md`
-- 版本历史：`牌桌助手历史迭代版本/版本更新说明.md`
-- Memory：[[gg-parser-lessons]] [[indexeddb-migration-lessons]] [[vite-css-import-pitfall]] [[over-analysis-lesson]] [[code-patching-lessons]] [[post-change-checklist]] [[self-review-workflow]] [[json-import-pitfall]] [[canvas-chart-lessons]] [[e2e-testing-lesson]] [[data-dedup-lessons]]
+## 沟通格式
+
+- 与木下使用中文；代码标识符、文件名、命令和 Git commit message 使用英文 ASCII。
+- 木下是非专业程序员；说明用通俗语言，并提供可复制、按路径限定的命令。
+- 每次回复开头称呼“木下”。
