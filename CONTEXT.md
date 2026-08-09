@@ -6,13 +6,13 @@ Underwood's Table Agent 是独立的扑克学习与复盘 PWA。
 
 - 离线优先：`dist/index.html` 必须能够通过 `file://` 使用。
 - 用户数据默认只保存在本地，不自动上传。
-- 技术栈保持 Vite + Vanilla ES modules，生产环境输出单文件。
+- 技术栈保持 Vite + Vanilla ES modules；生产环境以单文件 `dist/index.html` 为核心，仅额外输出已验证的 PWA manifest、Service Worker 和图标资源。
 - Catstarry.xyz 只作为治理方法参考，其框架和后端不属于本项目。
 
 ## 当前工程状态
 
 - 应用版本唯一来源：`src/constants.js`。
-- 当前源码版本：`7.7.2`。
+- 当前源码版本：`7.8.0`。
 - 工作区可能存在木下尚未提交的修改；完成核对前不能当作发布基线。
 - 只有通过 `npm run check` 后，才把修改视为技术上通过。
 

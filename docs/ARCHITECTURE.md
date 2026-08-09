@@ -3,11 +3,11 @@
 ## Tech Stack
 
 - **Dev**: Vite 7 dev server (`npm run dev` → `http://localhost:5173`)
-- **Build**: Vite + `vite-plugin-singlefile` → single `dist/index.html`
+- **Build**: Vite + `vite-plugin-singlefile` → 单文件核心 `dist/index.html`，外加严格白名单内的 PWA manifest、Service Worker 和图标
 - **Runtime**: ES 模块（dev 时 Vite 处理 import；build 时全内联）
 - **Storage**: `src/store/storage.js` 统一协调 IndexedDB 主存储、localStorage 降级、备份和迁移重试。保留所有 `pa_` 键名和历史迁移标记
 - **Hosting**: Netlify (`https://mxpoker.netlify.app/`) + GitHub Pages (`https://muxia51821.github.io/Underwood-Poker-helper/`)
-- **PWA**: `public/sw.js` (独立文件)，Blob URL 降级。仅 HTTPS 生效
+- **PWA**: `public/manifest.webmanifest` + `public/sw.js` + 本地图标；Service Worker 与 Blob URL 降级仅 HTTPS 生效
 
 ## Dual-Scenario Runtime
 
@@ -64,8 +64,14 @@ src/
         SBvsBB_SRP_flop.js   # SBvsBB 翻牌频率（183 boards）
 
 public/
-  sw.js              # Service Worker（cache-first + notificationclick）
+  manifest.webmanifest        # 相对 scope/start_url 的安装描述
+  favicon.ico                 # 用户 ICO 字节级副本
+  apple-touch-icon.png        # 180x180 Apple 图标
+  icons/                      # 192/512 any 与 512 maskable PNG
+  sw.js                       # 同源 GET：导航网络优先回退，静态资源 cache-first
 ```
+
+PWA 图标源自 `public/favicon.ico`。普通图标保持原构图；maskable 图标使用不透明全幅背景，主体位于系统裁切安全区内。
 
 ### Dependency DAG
 
@@ -281,7 +287,7 @@ Discover 的 Quiz 按钮通过 `Navigation.goToLearningTarget()` 传递 `{ scena
 
 ## Constraints (Hard Rules)
 
-1. **构建产物为单文件**：`dist/index.html`，`file://` 可直接打开
+1. **构建产物以单文件为核心**：`dist/index.html` 可通过 `file://` 直接打开；只允许额外输出 manifest、Service Worker、favicon、Apple touch icon 和三张声明过的 PWA PNG
 2. **开发用 Vite dev server**：`npm run dev`，不直接双击 `index.html`
 3. **禁止代码省略**：不可用 `// ...`、`…` 替代真实代码
 4. **禁止外部依赖**：仅 `vite` + `vite-plugin-singlefile` 两个 devDependencies

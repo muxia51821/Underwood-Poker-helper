@@ -4,6 +4,7 @@
 
 ## 未发布
 
+- V7.8.0 新增可安装 PWA 基础：相对路径 manifest、Apple/PWA 图标、maskable 图标、HTTPS 离线 shell 与严格构建产物白名单；继续保留 `file://` 单文件核心能力。
 - 新增部署基线，区分本地 Git 状态、公开远端状态、Netlify 和 GitHub Pages。
 - 新增轻量开发、检查和发布流程。
 - 新增面向用户的 parser、存储、离线、HTTPS 和移动端验收标准。

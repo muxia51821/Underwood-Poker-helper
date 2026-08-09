@@ -219,3 +219,42 @@ test('移动端快速记录复用 Hand 表单并恢复来源上下文', async ({
   await expect(page.locator('#quickCaptureBtn')).toBeHidden();
   expect(getRealErrors(errors)).toEqual([]);
 });
+
+test('PWA manifest 与图标资源可读取且 Chromium 可解析', async ({ page }) => {
+  const errors = captureRuntimeErrors(page);
+  await page.goto('/');
+
+  const resourcePaths = [
+    './manifest.webmanifest',
+    './favicon.ico',
+    './apple-touch-icon.png',
+    './icons/icon-192.png',
+    './icons/icon-512.png',
+    './icons/icon-maskable-512.png',
+  ];
+  for (const relativePath of resourcePaths) {
+    const response = await page.request.get(new URL(relativePath, page.url()).href);
+    expect(response.ok(), relativePath + ' should be readable').toBe(true);
+    expect((await response.body()).length, relativePath + ' should not be empty').toBeGreaterThan(0);
+  }
+
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Page.enable');
+  const appManifest = await cdp.send('Page.getAppManifest');
+  expect(appManifest.url).toContain('/manifest.webmanifest');
+  expect(appManifest.errors).toEqual([]);
+  expect(appManifest.data).toBeTruthy();
+  const manifest = JSON.parse(appManifest.data);
+  expect(manifest.name).toBe("Underwood's Table Agent");
+  expect(manifest.short_name).toBe('木下牌桌助手');
+  expect(manifest.start_url).toBe('./');
+  expect(manifest.display).toBe('standalone');
+  expect(manifest.icons).toEqual([
+    { src: './icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+    { src: './icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+    { src: './icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+  ]);
+  await cdp.detach();
+
+  expect(getRealErrors(errors)).toEqual([]);
+});
