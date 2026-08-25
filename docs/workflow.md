@@ -31,7 +31,7 @@ npm run preview
 npm run test:e2e
 ```
 
-`npm run check` 会构建临时生产产物，检查单文件契约，运行数据契约测试和浏览器冒烟测试，不会覆盖受 Git 跟踪的 `dist` 目录。
+`npm run check` 会构建临时生产产物，检查单文件契约，运行数据契约测试，并把浏览器冒烟跑在**生产构建的预览服务器**上（`vite preview`，覆盖 CSP 与内联产物的真实行为），不会覆盖受 Git 跟踪的 `dist` 目录。单独运行 `npm run test:e2e` 时仍使用 dev server。
 
 ## 部署目标
 

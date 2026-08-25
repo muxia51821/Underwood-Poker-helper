@@ -18,7 +18,7 @@ Underwood's Table Agent 是独立的扑克学习与复盘 PWA。
 
 ## 部署状态
 
-Netlify 是主入口候选，GitHub Pages 继续作为备用入口。Netlify 控制台已确认 GitHub 仓库绑定、Git 持续部署、自动发布、`master` 生产分支、`npm run build`、`dist` 发布目录和 Node.js `22.x`。最近一次生产发布为旧提交 `a2c17da`，线上仍是 `V7.3.3`；当前证据统一记录在 `docs/deployment-baseline.md`。
+Netlify 是主入口候选，GitHub Pages 继续作为备用入口。2026-08-25 抽查：`poker.catstarry.xyz`（Netlify）与 `muxia51821.github.io/Underwood-Poker-helper/`（GitHub Pages）均返回 `V7.8.0` 且字节级一致；此前「Netlify 线上仍是 V7.3.3」的记录已过时。GitHub Pages 部署来源已切换为 GitHub Actions 工作流（`static.yml`，含 Playwright 浏览器安装与缓存）。当前证据统一记录在 `docs/deployment-baseline.md`。
 
 ## 文档索引
 
