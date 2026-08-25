@@ -1,6 +1,7 @@
 # 部署基线
 
 > 核查日期：2026-08-08。本文件记录已观察到的证据，不代表平台侧全部设置都已确认。
+> 2026-08-25 更新：GitHub Pages 部署来源切换为 GitHub Actions 工作流并修复 CI，见「GitHub Pages」小节与证据表新增行。
 
 ## 当前结论
 
@@ -18,6 +19,9 @@
 | Netlify Deploys 页面 | `Production: master@a2c17da`；Auto publishing is on | 页面显示 `May 19 at 8:35 PM`；发布说明为 `V7.3.0–V7.3.3 — 图表系统改版 + hover交互 + 单面板布局`；页面只显示短 SHA，本地当前仓库无法解析该对象 |
 | Netlify | HTTP 200，`V7.3.3`，256,955 bytes | SHA-256 `805c41b8e3499117e6d1ca24ebc193313acee66fc0604a0a8cf4eacb987645a7`；server 为 `Netlify`；连续 3 次 GET 结果一致 |
 | GitHub Pages | HTTP 200，`V7.7.2`，329,637 bytes | SHA-256 `493ef5c212dcc2a9be346e2c2463c286b55c6ca3130495217f61d2576eafde9d`；server 为 `GitHub.com`；Last-Modified 为 `Sat, 23 May 2026 19:43:56 GMT`；连续 3 次 GET 结果一致 |
+| GitHub Pages（2026-08-08 至 2026-08-25 期间） | HTTP 200 但返回的是源码根目录 `index.html`（55,048 bytes），UI 无法加载 | 原因：`static.yml` 因 CI 缺少 Playwright 浏览器在 `npm run check` 失败；同时 Pages 来源为 legacy "Deploy from a branch"，push 后把 `master` 根目录当站点发布 |
+| GitHub Pages（2026-08-25） | HTTP 200，`V7.8.0`，362,880 bytes，与 Netlify 入口字节级一致 | commit `7bb3cb9` 触发的 run `32829133610` 成功构建并部署 `dist`；真浏览器验证：标题 `V7.8.0`、导航可见、无 console 报错、SW 已接管、与 `poker.catstarry.xyz` 行为一致 |
+| Netlify 自定义域（2026-08-25 抽查） | HTTP 200，`V7.8.0`，362,880 bytes，server 为 `Netlify` | `https://poker.catstarry.xyz/` 实测；仅记录观察值，控制台配置未重新核查 |
 
 ## 仓库部署配置
 
@@ -35,7 +39,9 @@
 
 ### GitHub Pages
 
-`.github/workflows/static.yml` 由推送到 `master` 触发并部署 `dist`。当前 workflow 会先安装依赖、运行 `npm run check`，再构建 `dist` 后上传。GitHub Pages 在后续明确决定前继续作为备用入口。
+`.github/workflows/static.yml` 由推送到 `master` 触发并部署 `dist`。当前 workflow 会先安装依赖、安装 Playwright Chromium（commit `7bb3cb9` 新增，修复 CI 中 e2e 因浏览器缺失而失败）、运行 `npm run check`，再构建 `dist` 后上传。
+
+2026-08-25 起，仓库 Pages 设置的 Build type 已从 legacy "Deploy from a branch" 切换为 "GitHub Actions"（通过 Pages API `build_type=workflow` 修改）。切换原因：legacy 模式会把 `master` 根目录的源码 `index.html` 直接发布为站点，其 `/src/styles.css` 与 `/src/main.js` 引用在子路径下全部失效，导致 UI 无法加载。此后站点内容只来自工作流上传的 `dist` 产物；如需回滚该设置，在 GitHub 仓库 Settings → Pages → Build and deployment 中把 Source 改回 "Deploy from a branch"。GitHub Pages 在后续明确决定前继续作为备用入口。
 
 ## 仍需核对的线上证据
 
@@ -46,6 +52,8 @@ Netlify 的控制台配置和最近一次生产发布已经确认。若要建立
 - 最近一次成功的 `static.yml` run
 - workflow checkout 的 SHA
 - 上传产物的 SHA-256
+
+2026-08-25 已满足前两项（run `32829133610`，checkout `7bb3cb9`）；产物 SHA-256 尚未记录。
 
 ## 发布保护
 
