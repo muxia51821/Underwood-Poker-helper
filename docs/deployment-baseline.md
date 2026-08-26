@@ -11,6 +11,9 @@
 
 | 来源 | 观察到的状态 | 证据 |
 | --- | --- | --- |
+
+> 未标注日期的行均为 2026-08-08 核查证据；标注 2026-08-25 的行为本轮更新。
+
 | 本地 `HEAD` | `3c04f75770c0464fce85967cde240304abd557b2` | `V7.7.2 — Quiz独立可用 + 文档全面更新` |
 | 本地 `origin/master` | `3c04f75770c0464fce85967cde240304abd557b2` | 本地 tracking ref，不能证明当前 GitHub 状态 |
 | 公开 GitHub `master` | `e89e19077ad13895439099da25d839f6460d5d19` | 前一次远端核查中连续 3 次直接查询成功 |
@@ -20,7 +23,7 @@
 | Netlify | HTTP 200，`V7.3.3`，256,955 bytes | SHA-256 `805c41b8e3499117e6d1ca24ebc193313acee66fc0604a0a8cf4eacb987645a7`；server 为 `Netlify`；连续 3 次 GET 结果一致 |
 | GitHub Pages | HTTP 200，`V7.7.2`，329,637 bytes | SHA-256 `493ef5c212dcc2a9be346e2c2463c286b55c6ca3130495217f61d2576eafde9d`；server 为 `GitHub.com`；Last-Modified 为 `Sat, 23 May 2026 19:43:56 GMT`；连续 3 次 GET 结果一致 |
 | GitHub Pages（2026-08-08 至 2026-08-25 期间） | HTTP 200 但返回的是源码根目录 `index.html`（55,048 bytes），UI 无法加载 | 原因：`static.yml` 因 CI 缺少 Playwright 浏览器在 `npm run check` 失败；同时 Pages 来源为 legacy "Deploy from a branch"，push 后把 `master` 根目录当站点发布 |
-| GitHub Pages（2026-08-25） | HTTP 200，`V7.8.0`，362,880 bytes，与 Netlify 入口字节级一致 | commit `7bb3cb9` 触发的 run `32829133610` 成功构建并部署 `dist`；真浏览器验证：标题 `V7.8.0`、导航可见、无 console 报错、SW 已接管、与 `poker.catstarry.xyz` 行为一致 |
+| GitHub Pages（2026-08-25） | HTTP 200，`V7.8.0`，362,880 bytes，与 Netlify 入口字节级一致 | 最新部署：commit `c17214d` 触发的 run `32863472393`；上传产物 `index.html` SHA-256 `25E8A175E76B975E43B243DC5BCE3204CF25C99BC5B26EB5D6A4F101B5352AA2`，与线上返回内容哈希完全一致；真浏览器验证：标题 `V7.8.0`、导航可见、无 console 报错、SW 已接管、与 `poker.catstarry.xyz` 行为一致 |
 | Netlify 自定义域（2026-08-25 抽查） | HTTP 200，`V7.8.0`，362,880 bytes，server 为 `Netlify` | `https://poker.catstarry.xyz/` 实测；仅记录观察值，控制台配置未重新核查 |
 
 ## 仓库部署配置
@@ -53,8 +56,8 @@ Netlify 的控制台配置和最近一次生产发布已经确认。若要建立
 - workflow checkout 的 SHA
 - 上传产物的 SHA-256
 
-2026-08-25 已满足前两项（run `32829133610`，checkout `7bb3cb9`）；产物 SHA-256 尚未记录。
+2026-08-25 已全部满足：run `32863472393`，checkout `c17214d`，上传产物 `index.html` SHA-256 `25E8A175E76B975E43B243DC5BCE3204CF25C99BC5B26EB5D6A4F101B5352AA2`（与线上内容一致）。
 
 ## 发布保护
 
-本次核查不授权执行 `pull`、`reset`、`rebase`、merge、push 或生产部署。建立发布基线前，必须先复核当前未提交工作区和远端提交差异。
+（2026-08-08 核查时）本次核查不授权执行 `pull`、`reset`、`rebase`、merge、push 或生产部署。建立发布基线前，必须先复核当前未提交工作区和远端提交差异。2026-08-25 的 Pages 修复与部署由木下明确授权，不适用上述限制。
