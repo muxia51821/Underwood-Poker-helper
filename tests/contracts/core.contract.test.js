@@ -449,7 +449,7 @@ test('flop observations attribute hero actions by scenario flop order', async ()
   const { buildFlopObservations, OBSERVATION_VERSION } = await import('../../src/modules/analysisReadModel.js');
   const hands = [
     // BTNvsBB 加注者（后行动）：BB 过牌 → 第二 token 是 C-bet 决策
-    { id: 'o1', heroPosition: 'BTN', preflopScenario: 'BTNvsBB', boardCategory: 'monotone', actionLineOTF: 'X-B60-C', pBB: 5 },
+    { id: 'o1', heroPosition: 'BTN', preflopScenario: 'BTNvsBB', boardCategory: 'monotone', actionLineOTF: 'X-B60-C', pBB: 5, tableMax: 9 },
     // BTNvsBB 加注者：BB 先下注（donk）→ v1 排除
     { id: 'o2', heroPosition: 'BTN', preflopScenario: 'BTNvsBB', boardCategory: 'monotone', actionLineOTF: 'B40-C', pBB: -2 },
     // BTNvsBB 加注者：过牌到底
@@ -481,6 +481,7 @@ test('flop observations attribute hero actions by scenario flop order', async ()
   assert.equal(byId['o1'].sizingBucket, 'mid');
   assert.equal(byId['o1'].question, 'cbet');
   assert.equal(byId['o1'].role, 'aggressor');
+  assert.equal(byId['o1'].profileKey, '9max');
   assert.equal(byId['o3'].didBet, false);
   assert.equal(byId['o4'].question, 'facebet');
   assert.equal(byId['o4'].didFold, true);
@@ -496,15 +497,15 @@ test('radar signals use deterministic ids and deviation thresholds', async () =>
   const obs = [];
   // 8 手 BTNvsBB·monotone 全 C-bet
   for (let i = 0; i < 8; i++) {
-    obs.push({ handId: 'sig' + i, scenario: 'BTNvsBB', boardCategory: 'monotone', question: 'cbet', didBet: true, didFold: false, pBB: 4 });
+    obs.push({ handId: 'sig' + i, scenario: 'BTNvsBB', boardCategory: 'monotone', question: 'cbet', didBet: true, didFold: false, pBB: 4, profileKey: '9max' });
   }
   // 基线补充 12 手其他牌面（8 手 C-bet，使该 spot 自身偏差 <15pp）
   for (let i = 0; i < 12; i++) {
-    obs.push({ handId: 'base' + i, scenario: 'BTNvsBB', boardCategory: 'dryAHigh', question: 'cbet', didBet: i < 8, didFold: false, pBB: 1 });
+    obs.push({ handId: 'base' + i, scenario: 'BTNvsBB', boardCategory: 'dryAHigh', question: 'cbet', didBet: i < 8, didFold: false, pBB: 1, profileKey: '9max' });
   }
   const signals = DecisionRadar.buildSignals(obs);
   assert.equal(signals.length, 1);
-  assert.equal(signals[0].id, 'radar|BTNvsBB|flop|monotone|cbet');
+  assert.equal(signals[0].id, 'radar|BTNvsBB|flop|9max|monotone|cbet');
   assert.equal(signals[0].spotFreq, 100);
   assert.equal(signals[0].baselineFreq, 80);
   assert.equal(signals[0].deviationPP, 20);
@@ -514,6 +515,60 @@ test('radar signals use deterministic ids and deviation thresholds', async () =>
   // 偏差不足（基线同样全 C-bet）→ 无信号
   const flat = obs.map((o) => Object.assign({}, o, { didBet: true }));
   assert.equal(DecisionRadar.buildSignals(flat).length, 0);
+});
+
+test('radar never mixes table profiles into a spot baseline', async () => {
+  const { DecisionRadar } = await import('../../src/modules/decisionRadar.js');
+  const observations = [];
+  ['6max', '9max'].forEach(function (profileKey) {
+    for (let i = 0; i < 8; i++) {
+      observations.push({
+        handId: profileKey + '-mono-' + i,
+        scenario: 'BTNvsBB', boardCategory: 'monotone', question: 'cbet',
+        didBet: profileKey === '6max', didFold: false, pBB: 0, profileKey: profileKey,
+      });
+    }
+    for (let i = 0; i < 12; i++) {
+      observations.push({
+        handId: profileKey + '-dry-' + i,
+        scenario: 'BTNvsBB', boardCategory: 'dryAHigh', question: 'cbet',
+        didBet: profileKey !== '6max', didFold: false, pBB: 0, profileKey: profileKey,
+      });
+    }
+  });
+  const signals = DecisionRadar.buildSignals(observations).filter((signal) => signal.boardCategory === 'monotone');
+  assert.equal(signals.length, 2);
+  assert.deepEqual(signals.map((signal) => signal.profileKey).sort(), ['6max', '9max']);
+  signals.forEach(function (signal) {
+    assert.equal(signal.spotCount, 8);
+    assert.equal(signal.baselineCount, 20);
+    assert.equal(signal.legacySpotKey, 'BTNvsBB|flop|monotone|cbet');
+  });
+});
+
+test('legacy radar links migrate only when their stored hands identify one profile', async () => {
+  const { DecisionRadar } = await import('../../src/modules/decisionRadar.js');
+  const signal = {
+    id: 'radar|BTNvsBB|flop|9max|monotone|cbet',
+    spotKey: 'BTNvsBB|flop|9max|monotone|cbet',
+    legacySpotKey: 'BTNvsBB|flop|monotone|cbet',
+    legacySignalId: 'radar|BTNvsBB|flop|monotone|cbet',
+    profileKey: '9max',
+  };
+  const dossiers = [
+    { id: 'safe', signalId: signal.legacySignalId, sampleHandIds: ['h9a', 'h9b'] },
+    { id: 'mixed', signalId: signal.legacySignalId, sampleHandIds: ['h9a', 'h6a'] },
+  ];
+  const hands = [{ id: 'h9a', tableMax: 9 }, { id: 'h9b', tableMax: 9 }, { id: 'h6a', tableMax: 6 }];
+  assert.equal(DecisionRadar.findDossierForSignal(signal, dossiers, hands).id, 'safe');
+  assert.equal(DecisionRadar.findDossierForSignal(signal, [dossiers[1]], hands), null);
+
+  const ambiguous = DecisionRadar.findSignalForStoredSpotKey([
+    Object.assign({}, signal, { profileKey: '9max' }),
+    Object.assign({}, signal, { id: 'radar|BTNvsBB|flop|6max|monotone|cbet', spotKey: 'BTNvsBB|flop|6max|monotone|cbet', profileKey: '6max' }),
+  ], signal.legacySpotKey);
+  assert.equal(ambiguous.signal, null);
+  assert.equal(ambiguous.ambiguous, true);
 });
 
 test('dossier lifecycle persists through export/import merge', async () => {
@@ -1028,7 +1083,19 @@ test('gto baseline seeding is idempotent and wires evidence packs', async () => 
   const btn = GtoBaselineRepo.getAll().find((b) => b.id === 'gto-baseline-btnvsbb-cbet-40bb');
   assert.equal(btn.overall.betFreq, 75.2);
   assert.equal(btn.source.url, 'https://bbzpoker.com/when-they-c-bet-too-much/');
+  assert.equal(btn.referenceMode, 'structural');
+  assert.equal(btn.conditions.tableSize, '');
   assert.ok(btn.transferBoundary.includes('40bb'));
+  // 未编辑的 v1 固定种子在 v2 首次启动时应校正来源条件；用户编辑过的记录不会走此路径。
+  btn.seedRevision = 1;
+  delete btn.referenceMode;
+  btn.conditions = { stackBB: 40, game: '6max 现金', tableSize: '6max', solver: 'GTO Wizard aggregated reports' };
+  GtoBaselineRepo.saveAll(GtoBaselineRepo.getAll());
+  localStorage.removeItem('pa_gto_baseline_seed_v2');
+  await initStorage({ safeMode: true });
+  const migratedBtn = GtoBaselineRepo.getAll().find((b) => b.id === btn.id);
+  assert.equal(migratedBtn.referenceMode, 'structural');
+  assert.equal(migratedBtn.conditions.tableSize, '');
   await initStorage({ safeMode: true });
   assert.equal(GtoBaselineRepo.getAll().length, count1);  // 种子幂等
   await initStorage({ safeMode: true });
@@ -1047,6 +1114,22 @@ test('radar gto baseline matching filters by scenario and question', async () =>
   assert.deepEqual(matches.map((b) => b.id), ['b1']);
   assert.deepEqual(DecisionRadar.matchGtoBaselines(baselines, 'COvsBTN', 'cbet'), []);
   assert.deepEqual(DecisionRadar.matchGtoBaselines([], 'BTNvsBB', 'cbet'), []);
+});
+
+test('gto references remain structural and expose their source conditions', async () => {
+  const { DecisionRadar } = await import('../../src/modules/decisionRadar.js');
+  const reference = DecisionRadar.getGtoStructuralReference({
+    overall: { betFreq: 75.2, checkFreq: 24.8 },
+    conditions: { stackBB: 40, game: '来源文章未明示赛制/桌型', tableSize: '', solver: 'GTO Wizard aggregate report' },
+    source: { title: 'BBZ source' },
+    transferBoundary: '仅作结构性参考',
+  });
+  assert.equal(reference.mode, 'structural');
+  assert.equal(reference.valueText, '来源频率：C-bet 75.2% / check 24.8%');
+  assert.match(reference.conditionText, /40bb/);
+  assert.equal(reference.sourceText, 'BBZ source');
+  assert.equal(reference.boundaryText, '仅作结构性参考');
+  assert.ok(!reference.valueText.includes('差'));
 });
 
 test('gto baselines persist through export/import merge', async () => {

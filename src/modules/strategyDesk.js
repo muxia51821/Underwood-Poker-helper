@@ -9,6 +9,16 @@ import { DecisionRadar } from './decisionRadar.js';  // [V7.10.2 新增] 复测�
 var STATUS_LABELS = { research: '研究中', 'candidate-adjustment': '候选调整', maintain: '维持现状' };
 var SOURCE_TYPE_LABELS = { video: '视频', article: '文章', book: '书', course: '课程', solver: 'Solver', personal: '个人观察' };
 
+function _safeExternalUrl(value) {
+  if (!value) return '';
+  try {
+    var url = new URL(String(value));
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : '';
+  } catch (e) {
+    return '';
+  }
+}
+
 export var StrategyDesk = {
   STATUS_LABELS: STATUS_LABELS,
   SOURCE_TYPE_LABELS: SOURCE_TYPE_LABELS,
@@ -148,7 +158,7 @@ export var StrategyDesk = {
     this.renderGtoBaselines();  // [V7.10.4 新增]
   },
 
-  // [V7.10.4 新增] GTO 基线列表：种子 + 手工录入，全部带来源/条件/边界
+  // [V7.10.5 修改] GTO 基线列表：所有现有条目均为结构性参考，来源/条件/边界完整显示。
   renderGtoBaselines: function () {
     const listEl = document.getElementById('gtoBaselineList');
     const baselines = GtoBaselineRepo.getAll().slice().sort(function (a, b) {
@@ -159,16 +169,21 @@ export var StrategyDesk = {
       return;
     }
     listEl.innerHTML = '<div class="finding-list">' + baselines.map((b) => {
-      const num = b.overall ? 'C-bet ' + b.overall.betFreq + '% / check ' + b.overall.checkFreq + '%' : '仅定性方向';
-      const scenarioLabel = b.scenario + ' · ' + (b.question === 'cbet' ? 'C-bet' : b.question);
+      const reference = DecisionRadar.getGtoStructuralReference(b);
+      const scenarioLabel = (b.scenario || '--') + ' · ' + (b.question === 'cbet' ? 'C-bet' : b.question || '--');
+      const safeSourceUrl = _safeExternalUrl(b.source && b.source.url);
+      const sourceTitle = Utils.escapeHtml(reference.sourceText);
+      const sourceHtml = safeSourceUrl
+        ? '<a href="' + Utils.escapeHtml(safeSourceUrl) + '" target="_blank" rel="noopener noreferrer" style="color:#5a9e8f">' + sourceTitle + '</a>'
+        : sourceTitle;
       return '<article class="finding-card" data-gto-id="' + Utils.escapeHtml(b.id) + '" style="cursor:pointer' + (b.isActive ? '' : ';opacity:0.55') + '">' +
         '<div class="finding-card__header"><span><strong>' + Utils.escapeHtml(scenarioLabel) + '</strong></span>' +
         '<span class="status-inline status-inline--' + (b.isActive ? 'success' : '') + '">' + (b.isActive ? '生效中' : '已停用') + '</span></div>' +
-        '<div class="finding-card__title">' + Utils.escapeHtml(num) + '</div>' +
-        '<div class="finding-card__meta">' + b.conditions.stackBB + 'bb · ' + Utils.escapeHtml(b.conditions.game) + ' · ' + Utils.escapeHtml(b.conditions.solver || '') + '</div>' +
+        '<div class="finding-card__title">🌐 结构性参考 · ' + Utils.escapeHtml(reference.valueText) + '</div>' +
+        '<div class="finding-card__meta">条件：' + Utils.escapeHtml(reference.conditionText) + '</div>' +
         (b.textureNotes ? '<div class="finding-card__meta">texture：' + Utils.escapeHtml(b.textureNotes) + '</div>' : '') +
-        '<div class="finding-card__meta">来源：<a href="' + Utils.escapeHtml(b.source.url) + '" target="_blank" rel="noopener noreferrer" style="color:#5a9e8f">' + Utils.escapeHtml(b.source.title) + '</a>（' + Utils.escapeHtml(b.source.articleDate || '未标注') + '）</div>' +
-        '<div class="finding-card__meta">边界：' + Utils.escapeHtml(b.transferBoundary) + '</div>' +
+        '<div class="finding-card__meta">来源：' + sourceHtml + '（' + Utils.escapeHtml(b.source && b.source.articleDate || '未标注') + '）</div>' +
+        '<div class="finding-card__meta">边界：' + Utils.escapeHtml(reference.boundaryText) + '</div>' +
         '<div class="finding-card__actions">' +
         '<button class="btn--mini" data-gto-edit="' + Utils.escapeHtml(b.id) + '">编辑</button>' +
         '<button class="btn--mini" data-gto-toggle="' + Utils.escapeHtml(b.id) + '">' + (b.isActive ? '停用' : '启用') + '</button>' +
@@ -180,15 +195,17 @@ export var StrategyDesk = {
   openGtoBaselineEditor: function (id) {
     this.editingGtoBaselineId = id || null;
     const b = id ? GtoBaselineRepo.getAll().find((x) => x.id === id) : null;
+    const conditions = b && b.conditions ? b.conditions : {};
+    const source = b && b.source ? b.source : {};
     document.getElementById('gtoScenario').value = b ? b.scenario : 'BTNvsBB';
-    document.getElementById('gtoStackBB').value = b && b.conditions ? b.conditions.stackBB : '';
-    document.getElementById('gtoGame').value = b && b.conditions ? b.conditions.game : '';
+    document.getElementById('gtoStackBB').value = conditions.stackBB != null ? conditions.stackBB : '';
+    document.getElementById('gtoGame').value = conditions.game || '';
     document.getElementById('gtoBetFreq').value = b && b.overall ? b.overall.betFreq : '';
     document.getElementById('gtoCheckFreq').value = b && b.overall ? b.overall.checkFreq : '';
     document.getElementById('gtoTextureNotes').value = b ? b.textureNotes || '' : '';
-    document.getElementById('gtoSourceTitle').value = b ? b.source.title || '' : '';
-    document.getElementById('gtoSourceUrl').value = b ? b.source.url || '' : '';
-    document.getElementById('gtoSourceDate').value = b ? b.source.articleDate || '' : '';
+    document.getElementById('gtoSourceTitle').value = source.title || '';
+    document.getElementById('gtoSourceUrl').value = source.url || '';
+    document.getElementById('gtoSourceDate').value = source.articleDate || '';
     document.getElementById('gtoBoundary').value = b ? b.transferBoundary || '' : '';
     const btn = document.getElementById('saveGtoBaselineBtn');
     btn.textContent = b ? '更新 GTO 基线' : '保存 GTO 基线';
@@ -215,6 +232,7 @@ export var StrategyDesk = {
       scenario: scenario,
       street: 'flop',
       question: 'cbet',
+      referenceMode: 'structural',  // [V7.10.5 新增] 直接条件匹配尚未建立前，手工条目同样不作数值对照
       conditions: {
         stackBB: stackBB,
         game: document.getElementById('gtoGame').value.trim(),
@@ -273,11 +291,15 @@ export var StrategyDesk = {
       // [V7.10.2 新增] 复测状态：基线快照 vs 当前 Radar
       let retestHtml = '';
       if (s.baselineSnapshot) {
-        const spotSignal = scan.signals.find((x) => x.spotKey === (s.spotKeys || [])[0]);
-        const retest = DecisionRadar.evaluateRetest(s.baselineSnapshot, spotSignal);
-        retestHtml = retest.due
-          ? '<span class="status-inline status-inline--danger">🔁 复测条件达成（' + Utils.escapeHtml(retest.reasons.join('；')) + '）</span>'
-          : '<span class="status-inline">基线 ' + s.baselineSnapshot.freq + '% / ' + s.baselineSnapshot.sample + ' 手</span>';
+        const lookup = DecisionRadar.findSignalForStoredSpotKey(scan.signals, (s.spotKeys || [])[0]);
+        if (lookup.ambiguous) {
+          retestHtml = '<span class="status-inline status-inline--info">🔁 旧策略横跨多个观察档案，先选择档案再复测</span>';
+        } else {
+          const retest = DecisionRadar.evaluateRetest(s.baselineSnapshot, lookup.signal);
+          retestHtml = retest.due
+            ? '<span class="status-inline status-inline--danger">🔁 复测条件达成（' + Utils.escapeHtml(retest.reasons.join('；')) + '）</span>'
+            : '<span class="status-inline">基线 ' + s.baselineSnapshot.freq + '% / ' + s.baselineSnapshot.sample + ' 手</span>';
+        }
       }
       const units = unitsByStrategy[s.id] || [];
       const unitsHtml = units.filter((u) => u.status !== 'archived').map((u) => {
@@ -285,11 +307,15 @@ export var StrategyDesk = {
           ' <button class="btn--mini" data-unit-quiz="' + Utils.escapeHtml(u.id) + '">去 Quiz</button>' +
           ' <button class="btn--mini" data-unit-archive="' + Utils.escapeHtml(u.id) + '">归档</button></div>';
       }).join('');
-      // [V7.10.4 新增] GTO 参考块（来源/边界见策略子页 GTO 基线管理区）
+      // [V7.10.5 修改] 这里同样只展示来源频率，不与当前策略/Spot 做伪精确对照。
       const scenarioKey = (s.familyKey || '').split('|')[0];
       const gtoMatches = DecisionRadar.matchGtoBaselines(GtoBaselineRepo.getAll(), scenarioKey, 'cbet');
       const gtoHtml = gtoMatches.length
-        ? '<div class="finding-card__meta" style="color:#8b949e">🌐 GTO 参考：' + gtoMatches.map((b) => (b.overall ? 'C-bet ' + b.overall.betFreq + '%' : '仅定性方向') + ' · ' + b.conditions.stackBB + 'bb').join('；') + '</div>'
+        ? '<div class="finding-card__meta" style="color:#8b949e">🌐 GTO 结构性参考：' + gtoMatches.map((b) => {
+          const reference = DecisionRadar.getGtoStructuralReference(b);
+          return Utils.escapeHtml(reference.valueText) + ' · 来源：' + Utils.escapeHtml(reference.sourceText) +
+            ' · 条件：' + Utils.escapeHtml(reference.conditionText) + ' · 边界：' + Utils.escapeHtml(reference.boundaryText);
+        }).join('；') + '</div>'
         : '';
       return '<article class="finding-card" data-strategy-id="' + Utils.escapeHtml(s.id) + '" style="cursor:pointer">' +
         '<div class="finding-card__header"><span><strong>' + Utils.escapeHtml(s.title || '(未命名)') + '</strong></span>' +
@@ -396,8 +422,8 @@ export var StrategyDesk = {
     this._pendingDraftSpotKeys = null;
     // [V7.10.2 新增] 建档快照：该 spot 当前信号频率/样本作为复测基线
     if (!record.baselineSnapshot && (record.spotKeys || []).length) {
-      const spotSignal = DecisionRadar.scan().signals.find((sig) => sig.spotKey === record.spotKeys[0]);
-      if (spotSignal) record.baselineSnapshot = { freq: spotSignal.spotFreq, sample: spotSignal.spotCount, capturedAt: now };
+      const lookup = DecisionRadar.findSignalForStoredSpotKey(DecisionRadar.scan().signals, record.spotKeys[0]);
+      if (lookup.signal) record.baselineSnapshot = { freq: lookup.signal.spotFreq, sample: lookup.signal.spotCount, capturedAt: now };
     }
     StrategyRepo.saveAll(strategies);
     this.editingStrategyId = null;

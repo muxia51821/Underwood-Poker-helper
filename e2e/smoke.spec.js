@@ -121,6 +121,31 @@ test('四种主题继续使用既有持久化契约', async ({ page }) => {
   expect(getRealErrors(errors)).toEqual([]);
 });
 
+test('GTO 基线只显示结构性参考，并安全渲染手工来源', async ({ page }) => {
+  const errors = captureRuntimeErrors(page);
+  await page.goto('/');
+  await page.click('[data-tab="review"]');
+  await page.click('[data-sub="strategy"]');
+  await expect(page.locator('#gtoBaselineList')).toContainText('结构性参考');
+  await expect(page.locator('#gtoBaselineList')).not.toContainText('与 Spot 差');
+  await expect(page.locator('#gtoBaselineList')).toContainText('来源：');
+  await expect(page.locator('#gtoBaselineList')).toContainText('边界：');
+
+  await page.click('#addGtoBaselineBtn');
+  await page.fill('#gtoStackBB', '100');
+  await page.fill('#gtoGame', '<img src=x onerror=alert(1)>');
+  await page.fill('#gtoSourceTitle', 'manual <img src=x onerror=alert(1)>');
+  await page.fill('#gtoSourceUrl', 'javascript:alert(1)');
+  await page.fill('#gtoBoundary', '<b>boundary</b>');
+  await page.click('#saveGtoBaselineBtn');
+
+  const manualCard = page.locator('#gtoBaselineList [data-gto-id]').filter({ hasText: 'manual <img src=x onerror=alert(1)>' });
+  await expect(manualCard).toHaveCount(1);
+  await expect(manualCard.locator('img')).toHaveCount(0);
+  await expect(manualCard.locator('a')).toHaveCount(0);
+  expect(getRealErrors(errors)).toEqual([]);
+});
+
 test('移动端快速记录复用 Hand 表单并恢复来源上下文', async ({ page }) => {
   const errors = captureRuntimeErrors(page);
   const draftBeforeQuick = 'draft-before-quick-capture';

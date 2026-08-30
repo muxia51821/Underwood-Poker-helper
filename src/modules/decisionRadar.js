@@ -2,7 +2,7 @@
 // 只生成候选，不宣布结论；基线只用用户样本（旧 GTO 不参与，Phase 0 裁决）。
 // 信号不持久化（随 handDataChanged 重算）；Dossier 以确定性 signalId 锚定，重算不失效。
 import { Utils, PubSub } from '../utils.js';
-import { createLearningSnapshot, buildFlopObservations, OBSERVATION_VERSION } from './analysisReadModel.js';
+import { createLearningSnapshot, buildFlopObservations, getObservedProfile, OBSERVATION_VERSION } from './analysisReadModel.js';
 import { HandRepo, DossierRepo, GtoBaselineRepo } from '../store/store.js';
 import { Navigation } from './navigation.js';
 
@@ -22,6 +22,36 @@ function _avgPBB(obs) {
   return parseFloat((sum / withBB.length).toFixed(1));
 }
 
+function _profileKey(observation) {
+  return observation && observation.profileKey ? observation.profileKey : 'unknown-table';
+}
+
+function _legacySpotKey(observation) {
+  return observation.scenario + '|flop|' + observation.boardCategory + '|' + observation.question;
+}
+
+function _formatPercent(value) {
+  var number = Number(value);
+  if (!Number.isFinite(number) || number < 0 || number > 100) return null;
+  return number.toFixed(1).replace(/\.0$/, '');
+}
+
+function _isLegacyDossierProfileMatch(dossier, signal, hands) {
+  if (!dossier || dossier.signalId !== signal.legacySignalId) return false;
+  var ids = Array.isArray(dossier.sampleHandIds) ? dossier.sampleHandIds : [];
+  if (!ids.length) return false;
+  var handById = {};
+  (hands || []).forEach(function (hand) { handById[hand.id] = hand; });
+  var matchedProfiles = {};
+  for (var i = 0; i < ids.length; i++) {
+    var hand = handById[ids[i]];
+    if (!hand) return false;
+    matchedProfiles[getObservedProfile(hand).key] = true;
+  }
+  var profileKeys = Object.keys(matchedProfiles);
+  return profileKeys.length === 1 && profileKeys[0] === signal.profileKey;
+}
+
 export var DecisionRadar = {
   THRESHOLDS: THRESHOLDS,
   QUESTION_LABELS: QUESTION_LABELS,
@@ -31,16 +61,62 @@ export var DecisionRadar = {
     return (baselines || []).filter((b) => b.isActive && b.question === question && b.scenario === scenario);
   },
 
+  // [V7.10.5 新增] 当前基线域没有可验证的完整直接匹配条件；所有条目都只作结构性参考。
+  // 返回未转义的结构化文本，调用方在插入 HTML 前必须 escapeHtml。
+  getGtoStructuralReference: function (baseline) {
+    var b = baseline || {};
+    var conditions = b.conditions || {};
+    var source = b.source || {};
+    var conditionParts = [];
+    var stackBB = Number(conditions.stackBB);
+    if (Number.isFinite(stackBB) && stackBB > 0) conditionParts.push('有效筹码 ' + stackBB + 'bb');
+    if (conditions.game) conditionParts.push(String(conditions.game));
+    if (conditions.tableSize) conditionParts.push(String(conditions.tableSize));
+    if (conditions.solver) conditionParts.push(String(conditions.solver));
+    var betFreq = _formatPercent(b.overall && b.overall.betFreq);
+    var checkFreq = _formatPercent(b.overall && b.overall.checkFreq);
+    var valueText = '来源：仅定性方向';
+    if (betFreq != null) {
+      valueText = '来源频率：C-bet ' + betFreq + '%' + (checkFreq != null ? ' / check ' + checkFreq + '%' : '');
+    }
+    return {
+      mode: 'structural',
+      valueText: valueText,
+      sourceText: source.title ? String(source.title) : '未标注来源',
+      conditionText: conditionParts.length ? conditionParts.join(' · ') : '来源条件未标注',
+      boundaryText: b.transferBoundary ? String(b.transferBoundary) : '未填写转移边界',
+    };
+  },
+
+  // 新 profile-aware key 优先；旧 key 只有唯一对应一个当前档案时才可安全继续用于复测。
+  findSignalForStoredSpotKey: function (signals, storedSpotKey) {
+    var exact = (signals || []).filter(function (signal) { return signal.spotKey === storedSpotKey; });
+    if (exact.length) return { signal: exact[0], ambiguous: false, legacy: false };
+    var legacy = (signals || []).filter(function (signal) { return signal.legacySpotKey === storedSpotKey; });
+    if (legacy.length === 1) return { signal: legacy[0], ambiguous: false, legacy: true };
+    return { signal: null, ambiguous: legacy.length > 1, legacy: false };
+  },
+
+  // 旧 Dossier 的 signalId 不带观察档案。只在样本手牌全部可解析为同一档案时临时关联，保存时迁移。
+  findDossierForSignal: function (signal, dossiers, hands) {
+    var exact = (dossiers || []).filter(function (dossier) { return dossier.signalId === signal.id; });
+    if (exact.length) return exact[0];
+    return (dossiers || []).filter(function (dossier) {
+      return _isLegacyDossierProfileMatch(dossier, signal, hands);
+    })[0] || null;
+  },
+
   // 纯函数：观察 → Spot 级信号（确定性 signalId）
   buildSignals: function (observations) {
     var t = THRESHOLDS;
     var spots = {};
     var baselines = {};
     (observations || []).forEach(function (o) {
-      var spotKey = o.scenario + '|flop|' + o.boardCategory + '|' + o.question;
+      var profileKey = _profileKey(o);
+      var spotKey = o.scenario + '|flop|' + profileKey + '|' + o.boardCategory + '|' + o.question;
       if (!spots[spotKey]) spots[spotKey] = [];
       spots[spotKey].push(o);
-      var baseKey = o.scenario + '|' + o.question;
+      var baseKey = profileKey + '|' + o.scenario + '|' + o.question;
       if (!baselines[baseKey]) baselines[baseKey] = [];
       baselines[baseKey].push(o);
     });
@@ -49,7 +125,7 @@ export var DecisionRadar = {
       var spotObs = spots[spotKey];
       if (spotObs.length < t.minSpot) return;
       var probe = spotObs[0];
-      var baseKey = probe.scenario + '|' + probe.question;
+      var baseKey = _profileKey(probe) + '|' + probe.scenario + '|' + probe.question;
       var baseObs = baselines[baseKey] || [];
       if (baseObs.length < t.minBaseline) return;
       var metric = probe.question === 'cbet'
@@ -63,6 +139,10 @@ export var DecisionRadar = {
       signals.push({
         id: 'radar|' + spotKey,
         spotKey: spotKey,
+        legacySpotKey: _legacySpotKey(probe),
+        legacySignalId: 'radar|' + _legacySpotKey(probe),
+        profileKey: _profileKey(probe),
+        profileLabel: probe.profileLabel || _profileKey(probe),
         scenario: probe.scenario,
         question: probe.question,
         boardCategory: probe.boardCategory,
@@ -129,6 +209,8 @@ export var DecisionRadar = {
       return;
     }
     card.style.display = '';
+    var dossiers = DossierRepo.getAll();
+    var hands = HandRepo.getAll();
     var byFamily = {};
     signals.forEach(function (s) {
       if (!byFamily[s.scenario]) byFamily[s.scenario] = [];
@@ -143,21 +225,23 @@ export var DecisionRadar = {
     Object.keys(byFamily).forEach(function (family) {
       html += '<div style="color:#a8afba;font-size:0.75em;margin:8px 0 4px">' + Utils.escapeHtml(family) + '</div>';
       byFamily[family].forEach(function (s) {
-        var dossier = DossierRepo.getAll().filter(function (d) { return d.signalId === s.id; })[0];
+        var dossier = self.findDossierForSignal(s, dossiers, hands);
         var questionLabel = QUESTION_LABELS[s.question] || s.question;
         html += '<article class="finding-card finding-card--radar">';
         html += '<div class="finding-card__header"><span><strong>' + Utils.escapeHtml(questionLabel) + ' · ' + Utils.escapeHtml(s.boardCategory) + '</strong>' +
           (dossier ? ' <span class="status-inline status-inline--success">已建档</span>' : '') + '</span>' +
           '<span class="finding-card__count">' + s.spotCount + ' 手</span></div>';
+        html += '<div class="finding-card__meta">观察档案：' + Utils.escapeHtml(s.profileLabel || s.profileKey) + '</div>';
         html += '<div class="finding-card__title">你 ' + s.spotFreq + '% vs 基线 ' + s.baselineFreq + '%（偏离 ' + (s.deviationPP >= 0 ? '+' : '') + s.deviationPP + 'pp）</div>';
         html += '<div class="finding-card__meta">Spot 平均盈亏 ' + (s.avgSpotPBB == null ? '--' : (s.avgSpotPBB >= 0 ? '+' : '') + s.avgSpotPBB + ' BB') +
           ' · 基线 ' + (s.avgBaselinePBB == null ? '--' : (s.avgBaselinePBB >= 0 ? '+' : '') + s.avgBaselinePBB + ' BB') + '（盈亏只提供语境）</div>';
-        // [V7.10.4 新增] GTO 参考块：匹配活跃基线，来源/条件/边界如实标注（数值对照只在条件相符时构成直接比较）
+        // [V7.10.5 修改] GTO 只显示结构性参考，绝不把来源频率与当前 Spot 做伪精确差值比较。
         const gtoMatches = self.matchGtoBaselines(GtoBaselineRepo.getAll(), s.scenario, s.question);
         if (gtoMatches.length) {
-          html += '<div class="finding-card__meta" style="color:#8b949e">🌐 GTO 参考：' + gtoMatches.map((b) => {
-            const num = b.overall ? 'C-bet ' + b.overall.betFreq + '%（与 Spot 差 ' + (s.spotFreq - b.overall.betFreq >= 0 ? '+' : '') + Math.round(s.spotFreq - b.overall.betFreq) + 'pp）' : '仅定性方向';
-            return num + ' · ' + b.conditions.stackBB + 'bb ' + b.conditions.game + ' · ' + b.transferBoundary;
+          html += '<div class="finding-card__meta" style="color:#8b949e">🌐 GTO 结构性参考：' + gtoMatches.map((b) => {
+            const reference = self.getGtoStructuralReference(b);
+            return Utils.escapeHtml(reference.valueText) + ' · 来源：' + Utils.escapeHtml(reference.sourceText) +
+              ' · 条件：' + Utils.escapeHtml(reference.conditionText) + ' · 边界：' + Utils.escapeHtml(reference.boundaryText);
           }).join('；') + '</div>';
         }
         html += '<div class="finding-card__actions">' +
@@ -226,7 +310,7 @@ export var DecisionRadar = {
     if (detail.style.display === 'block') { detail.style.display = 'none'; return; }
     var signal = this._findSignal(signalId);
     if (!signal) return;
-    var dossier = DossierRepo.getAll().filter(function (d) { return d.signalId === signalId; })[0] || null;
+    var dossier = this.findDossierForSignal(signal, DossierRepo.getAll(), HandRepo.getAll());
     var status = dossier ? dossier.status : 'open';
     var questionLabel = QUESTION_LABELS[signal.question] || signal.question;
     var html = '';
@@ -259,9 +343,13 @@ export var DecisionRadar = {
       return el ? el.value : '';
     };
     var dossiers = DossierRepo.getAll();
-    var dossier = dossiers.filter(function (d) { return d.signalId === signalId; })[0] || null;
+    var dossier = this.findDossierForSignal(signal, dossiers, HandRepo.getAll());
     var now = Utils.getLocalDatetime();
     if (dossier) {
+      // [V7.10.5 修改] 兼容命中的旧档案在用户保存时升级到带 profile 的稳定锚点。
+      dossier.signalId = signal.id;
+      dossier.spotKey = signal.spotKey;
+      dossier.profileKey = signal.profileKey;
       dossier.status = field('status') || 'open';
       dossier.hypothesis = field('hypothesis');
       dossier.counterexamples = field('counterexamples');
@@ -272,6 +360,7 @@ export var DecisionRadar = {
         id: Utils.generateUUID(),
         signalId: signalId,
         spotKey: signal.spotKey,
+        profileKey: signal.profileKey,
         title: (QUESTION_LABELS[signal.question] || signal.question) + ' · ' + signal.boardCategory + ' · ' + signal.scenario,
         status: field('status') || 'open',
         hypothesis: field('hypothesis'),

@@ -66,7 +66,7 @@ src/
       gtoRaw/        # Solver 原始输出（旧遗留，scoped legacy reference）
         BTNvsBB_SRP_flop.js  # BTNvsBB 翻牌频率（183 boards）
         SBvsBB_SRP_flop.js   # SBvsBB 翻牌频率（183 boards）
-      gtoBaselineSeed.js # [V7.10.4 新增] GTO 基线种子（来源/条件/边界内联 + 证据包生成）
+      gtoBaselineSeed.js # [V7.10.5 修改] GTO 结构性参考种子（已核验来源条件 + 证据包生成）
 
 public/
   manifest.webmanifest        # 相对 scope/start_url 的安装描述
@@ -224,7 +224,7 @@ IndexedDB: `pa_store` v6, 12 ObjectStores (`handReviews`/`sessions`/`weeklyRevie
 `handReviews` has 3 indexes: `sessionId`, `ggId`, `date`.
 // [V7.9.1 新增] marks: [{ id, time 'YYYY-MM-DD HH:MM', note, mistake, sessionId|null, status 'open'|'matched'|'dismissed', matchedHandId, createdAt }]
 // [V7.9.1 新增] sessionClosures: [{ id, sessionId（唯一）, status 'draft'|'closed', closedAt, reviewedHandIds[], matchedMarkIds[], note }]
-// [V7.9.2 新增] dossiers: [{ id, signalId（确定性锚 radar|{spotKey}）, spotKey, title, status 'open'|'checking'|'resolved'|'maintain', hypothesis, counterexamples, nextSteps, sampleHandIds[], observationVersion, createdAt, updatedAt }]
+// [V7.9.2 新增] dossiers: [{ id, signalId（确定性锚 radar|{scenario}|flop|{profileKey}|...）, spotKey, profileKey, title, status 'open'|'checking'|'resolved'|'maintain', hypothesis, counterexamples, nextSteps, sampleHandIds[], observationVersion, createdAt, updatedAt }]
 
 ## UI Navigation
 

@@ -752,19 +752,34 @@ export async function initStorage(opts) {
   _migrateOpponentHash();
   migrateHandReviews();
   migrateOldData();
-  // [V7.10.4 新增] GTO 基线种子：一次性幂等播种（固定 id upsert + 关联证据包），用户后续编辑不被覆盖
+  // [V7.10.5 修改] GTO 基线种子：一次性幂等播种；v2 仅校正未编辑的 v1 来源条件。
   _seedGtoBaselines();
 }
 
-// [V7.10.4 新增] GTO 基线种子（来源/条件/边界内联；按 pa_gto_baseline_seed_v1 门控只跑一次）
+// [V7.10.5 修改] 固定 id 的种子可升级，但绝不覆盖用户在编辑器中改过的记录。
 function _seedGtoBaselines() {
   if (localStorage.getItem('pa_gto_baseline_seed_' + GTO_BASELINE_SEED_VERSION)) return;
   try {
     const baselines = GtoBaselineRepo.getAll();
     const packs = EvidencePackRepo.getAll();
     GTO_BASELINE_SEEDS.forEach(function (seed) {
-      if (!baselines.some((b) => b.id === seed.id)) baselines.push(JSON.parse(JSON.stringify(seed)));
-      if (!packs.some((p) => p.id === seed.evidenceId)) packs.push(gtoSeedToEvidencePack(seed));
+      const clone = JSON.parse(JSON.stringify(seed));
+      const existing = baselines.find((b) => b.id === seed.id);
+      if (!existing) {
+        baselines.push(clone);
+      } else if (!existing.updatedAt && Number(existing.seedRevision || 1) < Number(seed.seedRevision || 1)) {
+        // v1 种子没有 updatedAt；保留用户单独点过的启用状态，其余改为已核验来源条件。
+        const isActive = existing.isActive;
+        Object.keys(clone).forEach(function (key) { existing[key] = clone[key]; });
+        existing.isActive = isActive;
+      }
+      const existingPack = packs.find((p) => p.id === seed.evidenceId);
+      const replacementPack = gtoSeedToEvidencePack(seed);
+      if (!existingPack) {
+        packs.push(replacementPack);
+      } else if (existingPack.sourceRef === seed.source.url && existingPack.updatedAt === seed.capturedAt + ' 00:00') {
+        Object.keys(replacementPack).forEach(function (key) { existingPack[key] = replacementPack[key]; });
+      }
     });
     GtoBaselineRepo.saveAll(baselines);
     EvidencePackRepo.saveAll(packs);

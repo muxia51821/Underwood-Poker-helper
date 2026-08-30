@@ -19,6 +19,16 @@ export function normalizeLearningHand(hand) {
   return normalized;
 }
 
+// [V7.10.5 新增] Radar 的最低可靠观察档案是牌桌人数。
+// 当前历史手牌只稳定保存 tableMax；Hero 起止筹码不能代替 effective stack，不能据此伪造 100bb/200bb 档。
+export function getObservedProfile(hand) {
+  var tableMax = Number(hand && hand.tableMax);
+  if (Number.isInteger(tableMax) && tableMax >= 2 && tableMax <= 10) {
+    return { key: tableMax + 'max', label: tableMax + 'max' };
+  }
+  return { key: 'unknown-table', label: '桌型未知' };
+}
+
 function _isEligibleForPostflopAnalysis(hand) {
   if (!hand.boardCategory) return false;
   if (!hand.actionLineOTF || hand.actionLineOTF === '未知') return false;
@@ -104,6 +114,7 @@ export function buildFlopObservations(hands) {
   (hands || []).forEach(function (raw) {
     stats.total++;
     var h = normalizeLearningHand(raw);
+    var profile = getObservedProfile(h);
     var order = SCENARIO_FLOP_ORDER[h.preflopScenario];
     if (!order) return;
     stats.namedScenario++;
@@ -166,9 +177,10 @@ export function buildFlopObservations(hands) {
       didBet: action.actionClass === 'bet',
       didFold: action.actionClass === 'fold',
       pBB: h.pBB != null ? h.pBB : null,
+      profileKey: profile.key,
+      profileLabel: profile.label,
       observationVersion: OBSERVATION_VERSION,
     });
   });
   return { observations: observations, stats: stats };
 }
-
