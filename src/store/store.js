@@ -798,7 +798,8 @@ function _seedExternalEvidence() {
   try {
     const packs = EvidencePackRepo.getAll();
     EXTERNAL_EVIDENCE_SEEDS.forEach(function (seed) {
-      if (packs.some(function (pack) { return pack.id === seed.id; })) return;
+      // [V7.10.5 修复] GTO 基线也会生成 Evidence Pack；同一公开 URL 不重复占据策略页。
+      if (packs.some(function (pack) { return pack.id === seed.id || (seed.sourceRef && pack.sourceRef === seed.sourceRef); })) return;
       packs.push(JSON.parse(JSON.stringify(seed)));
     });
     EvidencePackRepo.saveAll(packs);

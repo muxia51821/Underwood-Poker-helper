@@ -483,6 +483,10 @@ body.quick-capture-open{overflow:hidden}
 .finding-card__header{justify-content:space-between}.finding-card__count{color:var(--color-text-subtle);font-size:var(--text-xs)}
 .finding-card__title{margin-top:var(--space-2);font-weight:700}.finding-card__meta{margin-top:var(--space-1);color:var(--color-text-muted);font-size:var(--text-xs)}
 .finding-card__actions{margin-top:var(--space-3)}.finding-card__detail{margin-top:var(--space-3);overflow:auto}
+/* [V7.10.5 修复] 外部来源标题/URL 很长时只在证据列表内折行，不把移动端页面撑出视口。 */
+#evidenceList .finding-card{min-width:0}
+#evidenceList .finding-card__header>*{min-width:0}
+#evidenceList .finding-card__header strong,#evidenceList .finding-card__meta{overflow-wrap:anywhere}
 .finding-hands-table{font-size:var(--text-xs)}
 .status-inline{font-size:var(--text-xs);font-weight:700}.status-inline--success{color:var(--color-success)}.status-inline--danger{color:var(--color-danger)}
 
