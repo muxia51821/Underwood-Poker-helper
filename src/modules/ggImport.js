@@ -10,6 +10,9 @@ import { buildImportPlan, createOverwritePatch } from './ggImportCoordinator.js'
 var ggParsedHands = [];
 var _lastImportSummary = null;
 var _targetSessionId = null;  // [V6.14.0] 目标 Session ID
+// [V7.10.5 新增] 大批量模式：新解析手牌达到阈值时省略逐手勾选 DOM，改用汇总 + 代表样本 + 导入全部
+var LARGE_BATCH_THRESHOLD = 500;
+var LARGE_BATCH_SAMPLE_COUNT = 100;
 
 function renderGGComparison(parsedHand) {
   var ex = parsedHand.duplicateOf;
@@ -197,6 +200,8 @@ export function initGGImport() {
     var newCount = previewPlan.summary.imported;
     var dupCount = previewPlan.summary.duplicates;
     var failedCount = parsedResult.failures.length;
+    // [V7.10.5 新增] 大批量判定（新解析手牌达到阈值）
+    var isLargeBatch = ggParsedHands.length >= LARGE_BATCH_THRESHOLD;
     var listHtml = '';
     listHtml +=
       '<div style="color:#a8afba;font-size:0.75em;padding:4px 0;margin-bottom:6px">' +
@@ -208,12 +213,21 @@ export function initGGImport() {
         Utils.escapeHtml(parsedResult.failures.slice(0, 3).map(function (failure) { return failure.reason; }).join('；')) +
         (failedCount > 3 ? '；其他失败记录未逐条展开' : '') + '</div>';
     }
-    if (newCount > 0)
+    if (newCount > 0 && !isLargeBatch)
       listHtml +=
         '<div style="display:flex;gap:8px;margin-bottom:8px"><button type="button" class="btn--mini gg-sel-all-btn">全选</button><button type="button" class="btn--mini gg-desel-all-btn">取消全选</button></div>';
-    ggParsedHands.forEach(function (h, idx) {
+    // [V7.10.5 新增] 大批量模式说明
+    if (isLargeBatch && newCount > 0) {
+      listHtml +=
+        '<div style="border:1px solid #1e3a5f;border-radius:8px;padding:8px;margin-bottom:8px;font-size:0.75em;color:#cbd5e1">' +
+        '⚡ 大批量模式：已省略逐手勾选与逐手覆盖/对比。重复 ' + dupCount + ' 手将自动跳过，点击下方按钮一次性导入全部 <strong>' + newCount + '</strong> 手新手牌。' +
+        '<span style="color:#a8afba">如需逐手覆盖/对比，请分小批导入。</span></div>';
+    }
+    var sampleHands = isLargeBatch ? ggParsedHands.slice(0, LARGE_BATCH_SAMPLE_COUNT) : ggParsedHands;
+    sampleHands.forEach(function (h, idx) {
       var profitColor = h.profitBB >= 0 ? '#6baf7e' : '#c06060';
       var profitStr = (h.profitBB >= 0 ? '+' : '') + h.profitBB + ' BB';
+      var readOnly = isLargeBatch;  // [V7.10.5 新增] 大批量样本行只读，无勾选/覆盖交互
       if (h.isDuplicate) {
         var bg = 'background:#141b24;border-left:3px solid #d4a853';
         listHtml +=
@@ -226,13 +240,28 @@ export function initGGImport() {
         listHtml += Utils.escapeHtml(h.handId) + ' | ' + Utils.escapeHtml(h.heroCards || '??') + ' vs ' + Utils.escapeHtml(Utils.getOpponentDisplayName(h.opponentId, Store.opponentAliases.get()));
         if (h.opponentCards) listHtml += ' (' + Utils.escapeHtml(h.opponentCards) + ')';
         listHtml += '<br>' + Utils.escapeHtml((h.desc || '').substring(0, 80)) + '&hellip;</div>';
-        if (h.duplicateOf) {
+        if (h.duplicateOf && !readOnly) {
           listHtml += '<button class="btn--mini gg-overwrite-btn" data-idx="' + idx + '" style="font-size:0.65em;background:#ea580c;white-space:nowrap">覆盖</button>';
           listHtml += '<button class="btn--mini gg-compare-btn" data-idx="' + idx + '" style="font-size:0.65em;white-space:nowrap">对比</button>';
+        } else if (h.duplicateOf) {
+          listHtml += '<span style="font-size:0.65em;color:#d4a853;white-space:nowrap">已存在（自动跳过）</span>';
         } else {
-          listHtml += '<span style="font-size:0.65em;color:#d4a853;white-space:nowrap">本次文本重复</span>';
+          listHtml += '<span style="font-size:0.65em;color:#d4a853;white-space:nowrap">本次文本重复（自动跳过）</span>';
         }
         listHtml += '</div>';
+      } else if (readOnly) {
+        // [V7.10.5 新增] 大批量代表样本：只读行，无勾选 DOM
+        var bgSample = h.isBigLoss
+          ? 'background:#2f0a0a;border-left:3px solid #c06060'
+          : 'background:#141b24;border-left:3px solid #2a2d35';
+        listHtml +=
+          '<div class="gg-sample-row" style="display:flex;align-items:center;gap:8px;padding:8px;margin-bottom:4px;border-radius:8px;' + bgSample + '">';
+        listHtml +=
+          '<div style="flex:1;min-width:0;font-size:0.7em;color:#cbd5e1;line-height:1.3">';
+        listHtml += '<span style="color:' + profitColor + ';font-weight:bold">' + Utils.escapeHtml(profitStr) + '</span> ';
+        listHtml += Utils.escapeHtml(h.handId) + ' | ' + Utils.escapeHtml(h.heroCards || '??') + ' vs ' + Utils.escapeHtml(Utils.getOpponentDisplayName(h.opponentId, Store.opponentAliases.get()));
+        if (h.opponentCards) listHtml += ' (' + Utils.escapeHtml(h.opponentCards) + ')';
+        listHtml += '<br>' + Utils.escapeHtml((h.desc || '').substring(0, 80)) + '&hellip;</div></div>';
       } else {
         var bg2 = h.isBigLoss
           ? 'background:#2f0a0a;border-left:3px solid #c06060'
@@ -249,6 +278,14 @@ export function initGGImport() {
         listHtml += '<br>' + Utils.escapeHtml((h.desc || '').substring(0, 80)) + '&hellip;</div></label>';
       }
     });
+    if (isLargeBatch && ggParsedHands.length > sampleHands.length) {
+      listHtml +=
+        '<div style="color:#a8afba;font-size:0.7em;padding:4px 0;text-align:center">…已省略其余 ' + (ggParsedHands.length - sampleHands.length) + ' 手的逐手列表（不影响导入）…</div>';
+      if (newCount > 0) {
+        listHtml +=
+          '<div style="text-align:center;margin:10px 0"><button id="ggImportAllBtn" class="btn btn--accent">📥 导入全部新手牌（' + newCount + ' 手，已排除重复）</button></div>';
+      }
+    }
     document.getElementById('ggImportList').replaceChildren(document.createRange().createContextualFragment(listHtml));
     var ggListEl = document.getElementById('ggImportList');
     var ggSelAll = ggListEl.querySelector('.gg-sel-all-btn');
@@ -276,7 +313,18 @@ export function initGGImport() {
         renderGGComparison(ggParsedHands[parseInt(btn.dataset.idx)]);
       });
     });
-    document.getElementById('ggImportSelectedBtn').style.display = newCount > 0 ? 'block' : 'none';
+    document.getElementById('ggImportSelectedBtn').style.display = (!isLargeBatch && newCount > 0) ? 'block' : 'none';  // [V7.10.5 修改] 大批量模式改用导入全部按钮
+    // [V7.10.5 新增] 大批量模式：导入全部新手牌（非重复，无需逐手勾选）
+    var ggAllBtn = ggListEl.querySelector('#ggImportAllBtn');
+    if (ggAllBtn)
+      ggAllBtn.addEventListener('click', function () {
+        var toImport = ggParsedHands.filter(function (h) { return !h.isDuplicate; });
+        if (!toImport.length) { Utils.showToast('没有可导入的新手牌'); return; }
+        Utils.checkStorageQuota(JSON.stringify(toImport).length).then(function (ok) {
+          if (!ok) { Utils.showToast('存储空间不足。请先导出备份或清理旧数据后再导入。'); return; }
+          _runImport(toImport, ggAllBtn);
+        });
+      });
   });
   document.getElementById('ggImportSelectedBtn').addEventListener('click', function () {
     var checks = document.querySelectorAll('.gg-import-check:checked');
@@ -286,13 +334,11 @@ export function initGGImport() {
     // [V7.7.2 修改] 异步检测 IndexedDB 配额
     Utils.checkStorageQuota(JSON.stringify(toImport).length).then(function (ok) {
       if (!ok) { Utils.showToast('存储空间不足。请先导出备份或清理旧数据后再导入。'); return; }
-      _doImportSelected();
+      _runImport(toImport, document.getElementById('ggImportSelectedBtn'));
     });
   });
-  function _doImportSelected() {
-    var checks = document.querySelectorAll('.gg-import-check:checked');
-    var toImport = [];
-    checks.forEach(function (cb) { toImport.push(ggParsedHands[parseInt(cb.dataset.idx)]); });
+  // [V7.10.5 重构] 导入执行统一入口：小批量（勾选）与大批量（导入全部）共用；sourceBtn 用于写入期间的按钮态
+  function _runImport(toImport, sourceBtn) {
     var existingReviews = HandRepo.getAll();
     var existingSessions = SessionRepo.getAll();
     var plan = buildImportPlan(toImport, existingReviews, existingSessions, {
@@ -310,13 +356,13 @@ export function initGGImport() {
     // [V7.7.2 修改] 统一由导入计划一次性生成并写入记录，避免两套字段映射漂移。
     HandRepo.saveAll(existingReviews.concat(plan.records));
     var persisted = [HandRepo.persistNow()];  // [V7.9.0 修改] 落库确认制
-    if (!_targetSessionId && plan.summary.newSessions > 0) {
-      SessionRepo.saveAll(plan.sessions);
-      persisted.push(SessionRepo.persistNow());
-    }
+    // [V7.10.5 修复] plan 聚合会更新匹配 Session（自动分组）与目标 Session 的 hands/profit：
+    // 此前仅 newSessions > 0 时保存，导入命中既有 Session 后手牌落库而 Session 汇总不持久化。只要导入了手牌就必须保存 Session 并等待落库。
+    SessionRepo.saveAll(plan.sessions);
+    persisted.push(SessionRepo.persistNow());
     // [V7.9.0 新增] 等待存储真正写入后再提示成功，消除"toast 已显示但数据未落盘"的丢失窗口
     // （真实语料压测：43,680 手的 IndexedDB 写事务约需 30 秒，窗口内关闭页面会静默丢失）
-    var importBtn = document.getElementById('ggImportSelectedBtn');
+    var importBtn = sourceBtn || document.getElementById('ggImportSelectedBtn');
     var importBtnLabel = importBtn.textContent;
     importBtn.disabled = true;
     importBtn.textContent = '写入存储中…';

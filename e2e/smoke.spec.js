@@ -660,3 +660,134 @@ test('对手观察笔记与 Live 开关持久化', async ({ page }) => {
   await expect(rowAfter).toContainText('LIVE');
   expect(getRealErrors(errors)).toEqual([]);
 });
+
+test('导入匹配既有 Session 后聚合持久化（自动与目标两条路径）', async ({ page }) => {
+  const errors = captureRuntimeErrors(page);
+  await page.goto('/');
+  const mk = (id, day, hh) => [
+    `Poker Hand #SP${id}: Hold'em No Limit ($0.05/$0.1) - 2026/06/${day} ${hh}:00:00`,
+    `Table 'SP${id}' 2-max Seat #1 is the button`,
+    'Seat 1: Hero ($10.00 in chips)',
+    'Seat 2: Villain ($10.00 in chips)',
+    'Villain: posts small blind $0.05',
+    'Hero: posts big blind $0.10',
+    '*** HOLE CARDS ***',
+    'Dealt to Hero [As Kd]',
+    'Villain: folds',
+    'Hero collected $0.15 from pot',
+    '*** SUMMARY ***',
+  ].join('\n');
+
+  // 两个手动 Session（各 hands=1, profit=0）
+  await page.click('[data-tab="review"]');
+  await page.click('[data-sub="session"]');
+  await page.fill('#sessDate', '2026-06-01');
+  await page.fill('#sessLevel', 'NL10');
+  await page.fill('#sessDur', '1');
+  await page.fill('#sessHands', '1');
+  await page.fill('#sessProfit', '0');
+  await page.click('#addSessionBtn');
+  await page.fill('#sessDate', '2026-06-02');
+  await page.fill('#sessLevel', 'NL10');
+  await page.fill('#sessDur', '1');
+  await page.fill('#sessHands', '1');
+  await page.fill('#sessProfit', '0');
+  await page.click('#addSessionBtn');
+
+  // 路径 A：自动匹配既有 Session（无目标导入 06-01 的 1 手）
+  await page.click('#importGGBtn');
+  await page.fill('#ggImportText', mk('A1', '01', '10'));
+  await page.click('#ggParseBtn');
+  await page.waitForFunction(() => document.querySelectorAll('.gg-import-check').length >= 1, undefined, { polling: 200 });
+  await page.click('.gg-sel-all-btn');
+  await page.click('#ggImportSelectedBtn');
+  await page.waitForSelector('#handBody tr[data-hand-id]', { timeout: 60000 });
+
+  await page.click('[data-sub="session"]');
+  const s1row = page.locator('#sessionBody tr').filter({ hasText: '2026-06-01' }).first();
+  await expect(s1row.locator('td').nth(3)).toHaveText('2');
+
+  // 路径 B：目标 Session 导入（s2 行 📥 → 06-02 的 1 手）
+  const s2row = page.locator('#sessionBody tr').filter({ hasText: '2026-06-02' }).first();
+  await s2row.locator('[data-import-sid]').click();
+  await page.fill('#ggImportText', mk('B1', '02', '10'));
+  await page.click('#ggParseBtn');
+  await page.waitForFunction(() => document.querySelectorAll('.gg-import-check').length >= 1, undefined, { polling: 200 });
+  await page.click('.gg-sel-all-btn');
+  await page.click('#ggImportSelectedBtn');
+  await page.waitForSelector('#handBody tr[data-hand-id]', { timeout: 60000 });
+
+  await page.click('[data-sub="session"]');
+  const s2rowAfter = page.locator('#sessionBody tr').filter({ hasText: '2026-06-02' }).first();
+  await expect(s2rowAfter.locator('td').nth(3)).toHaveText('2');
+
+  // 重载后两条路径的 Session 聚合均持久化
+  await page.reload();
+  await page.waitForSelector('.version-tag');
+  await page.waitForFunction(
+    () => ((document.getElementById('storageHealth') || { getAttribute: () => '' }).getAttribute('title') || '').indexOf('手牌') !== -1,
+    undefined,
+    { polling: 500 }
+  );
+  await page.click('[data-tab="review"]');
+  await page.click('[data-sub="session"]');
+  await expect(page.locator('#sessionBody tr').filter({ hasText: '2026-06-01' }).first().locator('td').nth(3)).toHaveText('2');
+  await expect(page.locator('#sessionBody tr').filter({ hasText: '2026-06-02' }).first().locator('td').nth(3)).toHaveText('2');
+  expect(getRealErrors(errors)).toEqual([]);
+});
+
+test('大批量导入模式：汇总预览、免勾选、导入全部新手牌', async ({ page }) => {
+  const errors = captureRuntimeErrors(page);
+  await page.goto('/');
+  const mk = (id) => [
+    `Poker Hand #${id}: Hold'em No Limit ($0.02/$0.05) - 2026/07/05 20:00:00`,
+    `Table 'LB' 2-max Seat #1 is the button`,
+    'Seat 1: Hero ($5.00 in chips)',
+    'Seat 2: Villain ($5.00 in chips)',
+    'Villain: posts small blind $0.02',
+    'Hero: posts big blind $0.05',
+    '*** HOLE CARDS ***',
+    'Dealt to Hero [As Kd]',
+    'Villain: folds',
+    'Hero collected $0.07 from pot',
+    '*** SUMMARY ***',
+  ].join('\n');
+  const hands = [];
+  for (let i = 0; i < 500; i++) hands.push(mk('LB' + String(i).padStart(3, '0')));
+  hands.push(mk('LB000'));  // 同批重复 ×2
+  hands.push(mk('LB001'));
+
+  await page.click('[data-tab="review"]');
+  await page.click('[data-sub="session"]');
+  await page.click('#importGGBtn');
+  // 500 手文本通过 DOM 赋值注入；逐字 fill 会让测试工具本身耗尽 30 秒，而非覆盖导入逻辑。
+  await page.locator('#ggImportText').evaluate((el, value) => { el.value = value; }, hands.join('\n\n'));
+  await page.click('#ggParseBtn');
+  await page.waitForFunction(
+    () => document.getElementById('ggImportList').textContent.includes('成功解析 502 手'),
+    undefined,
+    { polling: 200 }
+  );
+
+  // 大批量模式：无逐手勾选 DOM，代表样本 ≤ 100
+  const checkCount = await page.evaluate(() => document.querySelectorAll('.gg-import-check').length);
+  expect(checkCount).toBe(0);
+  const sampleCount = await page.evaluate(() => document.querySelectorAll('.gg-sample-row').length);
+  expect(sampleCount).toBeLessThanOrEqual(100);
+  await expect(page.locator('#ggImportList')).toContainText('已省略其余');
+
+  // 导入全部新手牌（排除 2 手重复）→ 落库确认后提示
+  await page.click('#ggImportAllBtn');
+  await expect(page.locator('#toast')).toContainText('成功导入 500 手牌');
+  await page.waitForSelector('#handBody tr[data-hand-id]', { timeout: 120000 });
+
+  // 重载持久化
+  await page.reload();
+  await page.waitForSelector('.version-tag');
+  await page.waitForFunction(
+    () => ((document.getElementById('storageHealth') || { getAttribute: () => '' }).getAttribute('title') || '').indexOf('500手牌') !== -1,
+    undefined,
+    { polling: 500 }
+  );
+  expect(getRealErrors(errors)).toEqual([]);
+});

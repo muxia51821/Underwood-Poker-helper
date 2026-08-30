@@ -7,7 +7,8 @@ import { Navigation } from './navigation.js';
 import { DecisionRadar } from './decisionRadar.js';  // [V7.10.2 新增] 复测基线快照与判定
 
 var STATUS_LABELS = { research: '研究中', 'candidate-adjustment': '候选调整', maintain: '维持现状' };
-var SOURCE_TYPE_LABELS = { video: '视频', article: '文章', book: '书', course: '课程', solver: 'Solver', personal: '个人观察' };
+var SOURCE_TYPE_LABELS = { video: '视频', article: '文章', book: '书', course: '课程', solver: 'Solver', mda: 'MDA', community: '社区', personal: '个人观察' };
+var EVIDENCE_LEVEL_LABELS = { conditional: '条件匹配', structural: '结构性参考', lead: '研究线索' };
 
 function _safeExternalUrl(value) {
   if (!value) return '';
@@ -369,7 +370,9 @@ export var StrategyDesk = {
       return '<article class="finding-card" data-evidence-id="' + Utils.escapeHtml(p.id) + '" style="cursor:pointer">' +
         '<div class="finding-card__header"><span><strong>' + Utils.escapeHtml(p.title || '(未命名)') + '</strong></span>' +
         '<span class="status-inline">' + Utils.escapeHtml(typeLabel) + '</span></div>' +
-        '<div class="finding-card__meta">' + (p.sourceRef ? Utils.escapeHtml(p.sourceRef) + ' · ' : '') + (p.capturedAt ? '取证 ' + Utils.escapeHtml(p.capturedAt) : '') + '</div>' +
+        '<div class="finding-card__meta">' + (p.sourceRef ? Utils.escapeHtml(p.sourceRef) + ' · ' : '') + (p.capturedAt ? '取证 ' + Utils.escapeHtml(p.capturedAt) : '') +
+          (p.evidenceLevel ? ' · ' + Utils.escapeHtml(EVIDENCE_LEVEL_LABELS[p.evidenceLevel] || p.evidenceLevel) : '') +
+          (p.reviewDueAt ? ' · 复查 ' + Utils.escapeHtml(p.reviewDueAt) : '') + '</div>' +
         (p.conditions ? '<div class="finding-card__meta">条件：' + Utils.escapeHtml(p.conditions) + '</div>' : '') +
         (p.transferBoundary ? '<div class="finding-card__meta">边界：' + Utils.escapeHtml(p.transferBoundary) + '</div>' : '') +
         (p.keyPoints ? '<div class="finding-card__meta">要点：' + Utils.escapeHtml(p.keyPoints) + '</div>' : '') +
@@ -505,7 +508,9 @@ export var StrategyDesk = {
       document.getElementById(id).value = '';
     });
     document.getElementById('evSourceType').value = 'article';
+    document.getElementById('evEvidenceLevel').value = 'lead';
     document.getElementById('evCapturedAt').value = Utils.getLocalDate();
+    document.getElementById('evReviewDueAt').value = '';
     const btn = document.getElementById('saveEvidenceBtn');
     btn.textContent = '保存证据包';
     btn.dataset.state = 'create';
@@ -518,10 +523,12 @@ export var StrategyDesk = {
     this.editingEvidenceId = id;
     document.getElementById('evTitle').value = ev.title || '';
     document.getElementById('evSourceType').value = ev.sourceType || 'article';
+    document.getElementById('evEvidenceLevel').value = ev.evidenceLevel || 'lead';
     document.getElementById('evSourceRef').value = ev.sourceRef || '';
     document.getElementById('evConditions').value = ev.conditions || '';
     document.getElementById('evMethodSample').value = ev.methodSample || '';
     document.getElementById('evCapturedAt').value = ev.capturedAt || '';
+    document.getElementById('evReviewDueAt').value = ev.reviewDueAt || '';
     document.getElementById('evTransferBoundary').value = ev.transferBoundary || '';
     document.getElementById('evKeyPoints').value = ev.keyPoints || '';
     const btn = document.getElementById('saveEvidenceBtn');
@@ -544,10 +551,12 @@ export var StrategyDesk = {
     const fields = {
       title: title,
       sourceType: document.getElementById('evSourceType').value,
+      evidenceLevel: document.getElementById('evEvidenceLevel').value,
       sourceRef: document.getElementById('evSourceRef').value.trim(),
       conditions: document.getElementById('evConditions').value.trim(),
       methodSample: document.getElementById('evMethodSample').value.trim(),
       capturedAt: document.getElementById('evCapturedAt').value,
+      reviewDueAt: document.getElementById('evReviewDueAt').value,
       transferBoundary: document.getElementById('evTransferBoundary').value.trim(),
       keyPoints: document.getElementById('evKeyPoints').value.trim(),
     };

@@ -9,6 +9,60 @@ import { Navigation } from './navigation.js';
 var THRESHOLDS = { minSpot: 8, minBaseline: 20, minDeviationPP: 15, maxSignals: 10 };
 var QUESTION_LABELS = { cbet: 'C-Bet', facebet: '面对下注弃牌' };
 
+function _actionCounts(observations) {
+  var counts = {};
+  (observations || []).forEach(function (observation) {
+    var key = observation.actionClass || 'unknown';
+    counts[key] = (counts[key] || 0) + 1;
+  });
+  return counts;
+}
+
+function _actionSummary(signal) {
+  var counts = signal.actionCounts || {};
+  var parts = [];
+  if (signal.question === 'cbet') {
+    if (counts.bet) parts.push('bet ' + counts.bet);
+    if (counts.check) parts.push('check ' + counts.check);
+  } else {
+    if (counts.fold) parts.push('fold ' + counts.fold);
+    if (counts.call) parts.push('call ' + counts.call);
+    if (counts.raise) parts.push('raise ' + counts.raise);
+  }
+  return parts.length ? parts.join(' / ') : '--';
+}
+
+// [V7.10.5 新增] 信号只分配复盘证据层级，不替代策略结论。
+// L1 宁可多给线索；L2 才值得投入逐手复盘；L3 才进入外部证据比对，仍须保留反例。
+function _triage(signal) {
+  if (signal.spotCount >= 30 && signal.baselineCount >= 60) {
+    return {
+      key: 'external', rank: 3, label: 'L3 · 可对照外部证据',
+      note: '个人模式已有足够样本进入 GTO/MDA 条件核验；不等于应立刻改策略。',
+    };
+  }
+  if (signal.spotCount >= 15 && signal.baselineCount >= 40) {
+    return {
+      key: 'review', rank: 2, label: 'L2 · 优先逐手复盘',
+      note: '先看行动线、对手类型和反例，再决定是否寻找外部证据。',
+    };
+  }
+  return {
+    key: 'sample', rank: 1, label: 'L1 · 样本线索',
+    note: '保留为候选；当前样本不足以判断是策略问题、桌况选择还是正常波动。',
+  };
+}
+
+function _investigationPrompt(signal) {
+  var direction = signal.deviationPP >= 0 ? '高于' : '低于';
+  if (signal.question === 'cbet') {
+    return '逐手检查 ' + signal.scenario + ' 的 ' + signal.boardCategory +
+      '：你 C-bet 频率' + direction + '自身基线。先按手牌强度、下注尺度与对手 flop 应对分组；找出哪些手并不属于同一决策，再决定是否需要 GTO/MDA 对照。';
+  }
+  return '逐手检查 ' + signal.scenario + ' 的 ' + signal.boardCategory +
+    '：你面对下注的弃牌频率' + direction + '自身基线。先按对手下注尺度、位置、已知对手特征和继续范围分组；不要由单纯的平均盈亏推出 fold/call 调整。';
+}
+
 function _freq(obs, metric) {
   if (!obs.length) return null;
   var hit = obs.filter(metric).length;
@@ -153,11 +207,20 @@ export var DecisionRadar = {
         deviationPP: deviation,
         avgSpotPBB: _avgPBB(spotObs),
         avgBaselinePBB: _avgPBB(baseObs),
+        actionCounts: _actionCounts(spotObs),
         sampleHandIds: spotObs.map(function (o) { return o.handId; }),
         observationVersion: OBSERVATION_VERSION,
       });
     });
-    signals.sort(function (a, b) { return Math.abs(b.deviationPP) - Math.abs(a.deviationPP); });
+    signals.forEach(function (signal) {
+      signal.triage = _triage(signal);
+      signal.investigationPrompt = _investigationPrompt(signal);
+    });
+    signals.sort(function (a, b) {
+      if (b.triage.rank !== a.triage.rank) return b.triage.rank - a.triage.rank;
+      if (Math.abs(b.deviationPP) !== Math.abs(a.deviationPP)) return Math.abs(b.deviationPP) - Math.abs(a.deviationPP);
+      return b.spotCount - a.spotCount;
+    });
     return signals.slice(0, t.maxSignals);
   },
 
@@ -211,6 +274,12 @@ export var DecisionRadar = {
     card.style.display = '';
     var dossiers = DossierRepo.getAll();
     var hands = HandRepo.getAll();
+    // [V7.10.5 修改] 已在核查的模式优先显示，避免复盘中的 Dossier 被新信号挤出首屏。
+    signals = signals.slice().sort(function (a, b) {
+      var aOpen = self.findDossierForSignal(a, dossiers, hands) ? 1 : 0;
+      var bOpen = self.findDossierForSignal(b, dossiers, hands) ? 1 : 0;
+      return bOpen - aOpen;
+    });
     var byFamily = {};
     signals.forEach(function (s) {
       if (!byFamily[s.scenario]) byFamily[s.scenario] = [];
@@ -233,8 +302,10 @@ export var DecisionRadar = {
           '<span class="finding-card__count">' + s.spotCount + ' 手</span></div>';
         html += '<div class="finding-card__meta">观察档案：' + Utils.escapeHtml(s.profileLabel || s.profileKey) + '</div>';
         html += '<div class="finding-card__title">你 ' + s.spotFreq + '% vs 基线 ' + s.baselineFreq + '%（偏离 ' + (s.deviationPP >= 0 ? '+' : '') + s.deviationPP + 'pp）</div>';
+        html += '<div class="finding-card__meta">行为构成：' + Utils.escapeHtml(_actionSummary(s)) + ' · ' + Utils.escapeHtml(s.triage.label) + '</div>';
         html += '<div class="finding-card__meta">Spot 平均盈亏 ' + (s.avgSpotPBB == null ? '--' : (s.avgSpotPBB >= 0 ? '+' : '') + s.avgSpotPBB + ' BB') +
           ' · 基线 ' + (s.avgBaselinePBB == null ? '--' : (s.avgBaselinePBB >= 0 ? '+' : '') + s.avgBaselinePBB + ' BB') + '（盈亏只提供语境）</div>';
+        html += '<div class="finding-card__meta">核查路径：' + Utils.escapeHtml(s.investigationPrompt) + '</div>';
         // [V7.10.5 修改] GTO 只显示结构性参考，绝不把来源频率与当前 Spot 做伪精确差值比较。
         const gtoMatches = self.matchGtoBaselines(GtoBaselineRepo.getAll(), s.scenario, s.question);
         if (gtoMatches.length) {
@@ -299,9 +370,10 @@ export var DecisionRadar = {
       var heroM = (h.desc || '').match(/Hero[^\n\[]*\[([^\]]+)\]/);
       var handHtml = heroM && heroM[1] ? Utils.renderCardBadges(heroM[1]) : '--';
       return '<tr data-radar-hand="' + Utils.escapeHtml(h.id) + '" style="cursor:pointer"><td>' + Utils.escapeHtml(h.date || '') + '</td><td>' +
-        Utils.escapeHtml(h.potType || '--') + '</td><td>' + handHtml + '</td><td>' + profitStr + '</td></tr>';
+        Utils.escapeHtml(h.potType || '--') + '</td><td>' + Utils.escapeHtml(h.board || '--') + '</td><td>' +
+        Utils.escapeHtml(h.actionLineOTF || '--') + '</td><td>' + handHtml + '</td><td>' + profitStr + '</td></tr>';
     }).join('');
-    return '<table class="session-table finding-hands-table"><thead><tr><th>时间</th><th>类型</th><th>手牌</th><th>盈亏</th></tr></thead><tbody>' + rows + '</tbody></table>';
+    return '<table class="session-table finding-hands-table"><thead><tr><th>时间</th><th>类型</th><th>牌面</th><th>翻牌行动</th><th>手牌</th><th>盈亏</th></tr></thead><tbody>' + rows + '</tbody></table>';
   },
 
   _toggleDossierEditor: function (signalId) {
@@ -324,7 +396,7 @@ export var DecisionRadar = {
     html += '</select></label>';
     html += '<textarea class="textarea" data-dossier-field="hypothesis" rows="2" placeholder="假设：为什么这里偏离？（如：对手never donk / 我对抗 passive 群体）" style="font-size:0.75em;margin-top:6px">' + Utils.escapeHtml(dossier ? dossier.hypothesis || '' : '') + '</textarea>';
     html += '<textarea class="textarea" data-dossier-field="counterexamples" rows="2" placeholder="反例：哪些手牌/情境不符合该假设？" style="font-size:0.75em;margin-top:6px">' + Utils.escapeHtml(dossier ? dossier.counterexamples || '' : '') + '</textarea>';
-    html += '<textarea class="textarea" data-dossier-field="nextSteps" rows="2" placeholder="下一步取证：需要补什么样本或对照？" style="font-size:0.75em;margin-top:6px">' + Utils.escapeHtml(dossier ? dossier.nextSteps || '' : '') + '</textarea>';
+    html += '<textarea class="textarea" data-dossier-field="nextSteps" rows="3" placeholder="下一步取证：需要补什么样本或对照？" style="font-size:0.75em;margin-top:6px">' + Utils.escapeHtml(dossier ? dossier.nextSteps || '' : signal.investigationPrompt) + '</textarea>';
     html += '<button class="btn--mini" data-radar-save="' + Utils.escapeHtml(signalId) + '" style="margin-top:6px">保存建档</button>';
     if (dossier) {
       html += '<button class="btn--mini" data-radar-strategy="' + Utils.escapeHtml(signalId) + '" style="margin-top:6px">转为策略修订</button>';

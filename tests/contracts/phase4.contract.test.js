@@ -21,7 +21,7 @@ const localStorage = createLocalStorage();
 globalThis.localStorage = localStorage;
 globalThis.window = { addEventListener() {} };
 
-const { Store, initStorage, LearningUnitRepo, OpponentNoteRepo } = await import('../../src/store/store.js');
+const { Store, initStorage, LearningUnitRepo, OpponentNoteRepo, EvidencePackRepo } = await import('../../src/store/store.js');
 const { DecisionRadar } = await import('../../src/modules/decisionRadar.js');
 const { OBSERVATION_VERSION } = await import('../../src/modules/analysisReadModel.js');
 
@@ -64,4 +64,48 @@ test('learning units and opponent notes persist through export/import merge', as
   assert.equal(OpponentNoteRepo.getAll().length, 2);
   // pa_ 前缀契约
   assert.ok(localStorage.keys().every((key) => key.startsWith('pa_')));
+});
+
+// [V7.10.5 新增] 公共证据进入既有 Evidence Pack，带等级与复查时间，不另建静态资料页。
+test('external evidence seeds preserve source conditions and user-editable records', async () => {
+  localStorage.clear();
+  await initStorage({ safeMode: true });
+  const packs = EvidencePackRepo.getAll();
+  const mda = packs.find((pack) => pack.id === 'ev-mda-freebetrange-cash-preflop');
+  const deepStack = packs.find((pack) => pack.id === 'ev-gto-wizard-deep-4bet-cash');
+  const community = packs.find((pack) => pack.id === 'ev-community-twoplustwo-mda-micros');
+  assert.equal(mda.evidenceLevel, 'lead');
+  assert.ok(mda.conditions.includes('3-6 max'));
+  assert.ok(mda.methodSample.includes('300M+'));
+  assert.ok(mda.transferBoundary.includes('postflop'));
+  assert.equal(mda.reviewDueAt, '2027-02-28');
+  assert.equal(deepStack.evidenceLevel, 'structural');
+  assert.ok(deepStack.transferBoundary.includes('SRP'));
+  assert.equal(community.evidenceLevel, 'lead');
+  const before = packs.length;
+  await initStorage({ safeMode: true });
+  assert.equal(EvidencePackRepo.getAll().length, before, 'repeated boot must not duplicate external sources');
+});
+
+// [V7.10.5 新增] Radar 信号必须给出可证伪的复盘层级和行动线核查路径，而不是宣告策略结论。
+test('radar signals expose triage and investigation prompts', () => {
+  const observations = [];
+  for (let i = 0; i < 65; i++) {
+    observations.push({
+      handId: 'base-' + i, scenario: 'BTNvsBB', boardCategory: 'paired_low', question: 'cbet',
+      actionClass: i < 30 ? 'bet' : 'check', didBet: i < 30, didFold: false, profileKey: '6max', profileLabel: '6max', pBB: 0,
+    });
+  }
+  for (let i = 0; i < 30; i++) {
+    observations.push({
+      handId: 'spot-' + i, scenario: 'BTNvsBB', boardCategory: 'monotone', question: 'cbet',
+      actionClass: i < 27 ? 'bet' : 'check', didBet: i < 27, didFold: false, profileKey: '6max', profileLabel: '6max', pBB: -1,
+    });
+  }
+  const signal = DecisionRadar.buildSignals(observations).find((item) => item.boardCategory === 'monotone');
+  assert.equal(signal.triage.key, 'external');
+  assert.equal(signal.actionCounts.bet, 27);
+  assert.equal(signal.actionCounts.check, 3);
+  assert.ok(signal.investigationPrompt.includes('下注尺度'));
+  assert.ok(!signal.investigationPrompt.includes('立刻改策略'));
 });

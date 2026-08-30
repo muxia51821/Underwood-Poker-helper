@@ -4,6 +4,7 @@ import { DB } from './db.js';  // [V6.17.0] DB 独立模块
 import { LocalStorageAdapter, IndexedDBAdapter, PersistenceCoordinator } from './storage.js';
 import { clearStatsCache } from '../modules/statsEngine.js';  // [V7.0.0] 数据变更时清统计缓存
 import { GTO_BASELINE_SEEDS, gtoSeedToEvidencePack, GTO_BASELINE_SEED_VERSION } from '../data/gtoBaselineSeed.js';  // [V7.10.4 新增] GTO 基线种子
+import { EXTERNAL_EVIDENCE_SEEDS, EXTERNAL_EVIDENCE_SEED_VERSION } from '../data/externalEvidenceSeed.js';  // [V7.10.5 新增] 免费外部证据候选
 
 const localStorageAdapter = new LocalStorageAdapter();
 const persistence = new PersistenceCoordinator({
@@ -754,6 +755,7 @@ export async function initStorage(opts) {
   migrateOldData();
   // [V7.10.5 修改] GTO 基线种子：一次性幂等播种；v2 仅校正未编辑的 v1 来源条件。
   _seedGtoBaselines();
+  _seedExternalEvidence();
 }
 
 // [V7.10.5 修改] 固定 id 的种子可升级，但绝不覆盖用户在编辑器中改过的记录。
@@ -786,6 +788,23 @@ function _seedGtoBaselines() {
     localStorage.setItem('pa_gto_baseline_seed_' + GTO_BASELINE_SEED_VERSION, 'true');
   } catch (e) {
     console.warn('GTO baseline seeding failed (will retry next boot):', e);
+  }
+}
+
+// [V7.10.5 新增] 公开研究来源进入既有 Evidence Pack，而非另建静态资料页。
+// 固定 ID 只在第一次播种时创建；用户删除或编辑后不自动复写，保留完全控制权。
+function _seedExternalEvidence() {
+  if (localStorage.getItem('pa_external_evidence_seed_' + EXTERNAL_EVIDENCE_SEED_VERSION)) return;
+  try {
+    const packs = EvidencePackRepo.getAll();
+    EXTERNAL_EVIDENCE_SEEDS.forEach(function (seed) {
+      if (packs.some(function (pack) { return pack.id === seed.id; })) return;
+      packs.push(JSON.parse(JSON.stringify(seed)));
+    });
+    EvidencePackRepo.saveAll(packs);
+    localStorage.setItem('pa_external_evidence_seed_' + EXTERNAL_EVIDENCE_SEED_VERSION, 'true');
+  } catch (e) {
+    console.warn('External evidence seeding failed (will retry next boot):', e);
   }
 }
 

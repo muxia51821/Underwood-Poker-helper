@@ -1144,3 +1144,23 @@ test('gto baselines persist through export/import merge', async () => {
   assert.equal(merged.isActive, true);
   assert.ok(GtoBaselineRepo.getAll().length >= before);
 });
+
+// [V7.10.5 新增] 批量导入 Session 聚合持久化语义
+
+test('import plan updates matched and target session aggregates', () => {
+  let n = 0;
+  const generateId = () => 'gen-' + (++n);
+  const hands = [
+    { handId: 'sp1', date: '2026-05-01 10:00', profitBB: 1, bbValue: 0.1 },
+    { handId: 'sp2', date: '2026-05-01 10:20', profitBB: 2, bbValue: 0.1 },
+  ];
+  // 自动分组命中既有 Session（同日同档位）→ 聚合累加，供导入层持久化
+  const auto = buildImportPlan(hands, [], [{ id: 's-ex', date: '2026-05-01', level: 'NL10', hands: 5, profit: 2 }], { generateId });
+  assert.equal(auto.summary.newSessions, 0);
+  assert.equal(auto.sessionMappings[0].session.hands, 7);
+  assert.equal(auto.sessionMappings[0].session.profit, 5);
+  // 目标 Session 路径同样更新聚合
+  const target = buildImportPlan(hands, [], [{ id: 's-t', date: '2026-05-01', level: 'NL10', hands: 1, profit: 0 }], { targetSessionId: 's-t', generateId });
+  assert.equal(target.sessionMappings[0].session.hands, 3);
+  assert.equal(target.sessionMappings[0].session.profit, 3);
+});
