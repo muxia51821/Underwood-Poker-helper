@@ -2432,6 +2432,9 @@ export const Review = {
     }
     if (!findings.length) {
       container.innerHTML = '<div class="empty-state">暂无值得关注的模式<br>导入 50+ 手牌后自动分析</div>';
+      // [V7.10.3 修改] findings 为空时同步隐藏 Radar 卡片，避免残留上一次的信号 DOM
+      const radarCard = document.getElementById('discoverRadarCard');
+      if (radarCard) radarCard.style.display = 'none';
       return;
     }
     // [V7.4.8] 读取 Quiz 进度用于标记弱项/已掌握

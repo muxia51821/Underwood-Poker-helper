@@ -194,12 +194,7 @@ export var StrategyDesk = {
         '<input type="checkbox" data-evidence-check="' + Utils.escapeHtml(p.id) + '" ' + (checked.indexOf(p.id) !== -1 ? 'checked' : '') + '>' +
         Utils.escapeHtml(label) + '</label>';
     }).join('');
-    // 编辑中的策略未保存前，用草稿 evidenceIds 勾选
-    if (this._draftEvidenceIds) {
-      el.querySelectorAll('[data-evidence-check]').forEach(function (cb) {
-        cb.checked = this._draftEvidenceIds.indexOf(cb.dataset.evidenceCheck) !== -1;
-      }, this);
-    }
+    // 编辑中的策略未保存前，勾选状态来自已保存记录（草稿字段已在表单中）
   },
 
   renderEvidenceList: function () {

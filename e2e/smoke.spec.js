@@ -536,3 +536,102 @@ test('手牌回放只读可视化与降级视图', async ({ page }) => {
   expect(degradedOpen).toBe(true);
   expect(getRealErrors(errors)).toEqual([]);
 });
+
+test('策略生成训练单元并跳转 Quiz（BTNvsBB）', async ({ page }) => {
+  const errors = captureRuntimeErrors(page);
+  await page.goto('/');
+  const hand = [
+    "Poker Hand #ST43A: Hold'em No Limit ($0.02/$0.05) - 2026/07/02 20:00:00",
+    `Table 'ST43' 2-max Seat #1 is the button`,
+    'Seat 1: Hero ($5.00 in chips)',
+    'Seat 2: Villain ($5.00 in chips)',
+    'Hero: posts small blind $0.02',
+    'Villain: posts big blind $0.05',
+    '*** HOLE CARDS ***',
+    'Dealt to Hero [As Kd]',
+    'Hero: raises $0.10 to $0.15',
+    'Villain: calls $0.10',
+    '*** FLOP *** [Ah Th 9h]',
+    'Villain: checks',
+    'Hero: bets $0.18',
+    'Villain: folds',
+    'Uncalled bet ($0.18) returned to Hero',
+    'Hero collected $0.30 from pot',
+    '*** SUMMARY ***',
+  ].join('\n');
+
+  await page.click('[data-tab="review"]');
+  await page.click('[data-sub="session"]');
+  await page.click('#importGGBtn');
+  await page.fill('#ggImportText', hand);
+  await page.click('#ggParseBtn');
+  await page.waitForFunction(() => document.querySelectorAll('.gg-import-check').length >= 1, undefined, { polling: 200 });
+  await page.click('.gg-sel-all-btn');
+  await page.click('#ggImportSelectedBtn');
+  await page.waitForSelector('#handBody tr[data-hand-id]', { timeout: 60000 });
+
+  // 新建策略修订（BTNvsBB|flop → 有 gtoRaw 数据 → 应生成 Quiz 型单元）
+  await page.click('[data-sub="strategy"]');
+  await page.fill('#stratTitle', 'e2e-strategy-unit');
+  await page.fill('#stratFamily', 'BTNvsBB|flop');
+  await page.click('#saveStrategyBtn');
+  await expect(page.locator('#strategyList')).toContainText('e2e-strategy-unit');
+  await page.click('[data-strategy-unit]');
+  await expect(page.locator('#toast')).toHaveText('已生成 Quiz 训练单元');
+
+  // 去 Quiz：Discover 面板场景自动选中 BTNvsBB
+  await page.click('[data-unit-quiz]');
+  await expect(page.locator('[data-sub="discover"]')).toHaveClass(/subnav__btn--active/);
+  await expect(page.locator('#quizScenario')).toHaveValue('BTNvsBB');
+  expect(getRealErrors(errors)).toEqual([]);
+});
+
+test('对手观察笔记与 Live 开关持久化', async ({ page }) => {
+  const errors = captureRuntimeErrors(page);
+  await page.goto('/');
+  const hand = [
+    "Poker Hand #OP43A: Hold'em No Limit ($0.02/$0.05) - 2026/07/02 21:00:00",
+    `Table 'OP43' 2-max Seat #1 is the button`,
+    'Seat 1: Hero ($5.00 in chips)',
+    'Seat 2: OppFish99 ($5.00 in chips)',
+    'Hero: posts small blind $0.02',
+    'OppFish99: posts big blind $0.05',
+    '*** HOLE CARDS ***',
+    'Dealt to Hero [Ah Kh]',
+    'OppFish99: checks',
+    'Hero: checks',
+    '*** SUMMARY ***',
+  ].join('\n');
+
+  await page.click('[data-tab="review"]');
+  await page.click('[data-sub="session"]');
+  await page.click('#importGGBtn');
+  await page.fill('#ggImportText', hand);
+  await page.click('#ggParseBtn');
+  await page.waitForFunction(() => document.querySelectorAll('.gg-import-check').length >= 1, undefined, { polling: 200 });
+  await page.click('.gg-sel-all-btn');
+  await page.click('#ggImportSelectedBtn');
+  await page.waitForSelector('#handBody tr[data-hand-id]', { timeout: 60000 });
+
+  // 对手面板：添加观察笔记 + 切 Live
+  await page.click('[data-sub="opponent"]');
+  const oppRow = page.locator('.opponent-row').first();
+  await oppRow.locator('[data-opp-note]').click();
+  const notePanel = page.locator('[id^="opp-notes-"]').first();
+  await notePanel.waitFor({ state: 'visible' });
+  await notePanel.locator('input[id^="opp-note-input-"]').fill('e2e-opp-note');
+  await notePanel.locator('[data-opp-note-add]').click();
+  await expect(page.locator('body')).toContainText('e2e-opp-note');
+  await oppRow.locator('[data-opp-live]').click();
+  await expect(oppRow).toContainText('LIVE');
+
+  // 重载后笔记与 Live 保持
+  await page.reload();
+  await page.click('[data-tab="review"]');
+  await page.click('[data-sub="opponent"]');
+  const rowAfter = page.locator('.opponent-row').first();
+  await rowAfter.locator('[data-opp-note]').click();
+  await expect(page.locator('body')).toContainText('e2e-opp-note');
+  await expect(rowAfter).toContainText('LIVE');
+  expect(getRealErrors(errors)).toEqual([]);
+});

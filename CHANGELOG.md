@@ -4,6 +4,9 @@
 
 ## 未发布
 
+- V7.10.3 修复 Radar 卡片陈旧显示：findings 为空时同步隐藏 Radar 区块，不再残留上一次的信号。
+- V7.10.3 Radar 扫描加数据纪元缓存（handDataChanged 失效），同一次访问内不再重复全量派生（4.3 万手场景的多次点击显著提速）；删除策略桌死字段；移除根目录残留的 86KB 静态演示文件（demo/ 版本保留）。
+- V7.10.3 补 Phase 4 e2e：策略生成训练单元跳转 Quiz（场景自动选中）、对手观察笔记与 Live 开关重载持久化。
 - V7.10.2 新增 Mastery & Ecology v1：策略可生成训练/复测单元（quiz 型仅限有 gtoRaw 数据的 BTNvsBB/SBvsBB，其余为基线快照复测）；复测判定 = 基线快照 vs 当前 Radar（频率变化 ≥15pp / 样本增长 ≥50% / 信号消失）。
 - V7.10.2 对手上下文 v1：Villain 面板每对手新增「观察」笔记（带时效，过期灰显）与 Live 标记开关（激活既有休眠写入）；导航新增 goToOpponent deep-link。
 - V7.10.2 存储新增 learningUnits / opponentNotes 集合（IndexedDB v5 平滑升级，导出/导入合并支持）。

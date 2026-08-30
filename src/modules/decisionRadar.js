@@ -1,7 +1,7 @@
 // [V7.9.2 新增] Decision Radar — Spot 级信号聚合：你的频率 vs 你自己的场景基线。
 // 只生成候选，不宣布结论；基线只用用户样本（旧 GTO 不参与，Phase 0 裁决）。
 // 信号不持久化（随 handDataChanged 重算）；Dossier 以确定性 signalId 锚定，重算不失效。
-import { Utils } from '../utils.js';
+import { Utils, PubSub } from '../utils.js';
 import { createLearningSnapshot, buildFlopObservations, OBSERVATION_VERSION } from './analysisReadModel.js';
 import { HandRepo, DossierRepo } from '../store/store.js';
 import { Navigation } from './navigation.js';
@@ -76,11 +76,26 @@ export var DecisionRadar = {
     return signals.slice(0, t.maxSignals);
   },
 
-  // 快照 → 信号（Discover 渲染入口共用同一 snapshot 口径）
+  // 快照 → 信号（Discover 渲染入口共用同一 snapshot 口径）。
+  // [V7.10.3 修改] 结果按手牌数据纪元缓存：handDataChanged（任何手牌增删改）后强制重算，
+  // 避免同一次访问内 renderInto/_findSignal/strategyDesk 重复全量派生（4.3 万手约数百毫秒/次）。
+  _scanCache: null,
+  _scanDirty: true,
   scan: function () {
+    if (!this._radarBound) {
+      this._radarBound = true;
+      var self = this;
+      PubSub.on('handDataChanged', function () {
+        self._scanCache = null;
+        self._scanDirty = true;
+      });
+    }
+    if (!this._scanDirty && this._scanCache) return this._scanCache;
     var snapshot = createLearningSnapshot(HandRepo.getAll());
     var derived = buildFlopObservations(snapshot.hands);
-    return { signals: this.buildSignals(derived.observations), stats: derived.stats };
+    this._scanCache = { signals: this.buildSignals(derived.observations), stats: derived.stats };
+    this._scanDirty = false;
+    return this._scanCache;
   },
 
   // [V7.10.2 新增] 策略复测判定：基线快照 vs 当前信号（纯函数）。
