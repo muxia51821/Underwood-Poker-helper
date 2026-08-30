@@ -12,6 +12,7 @@ export const CONSTANTS = {
   TILT_RESCUE_DURATION: 30,
   BIG_LOSS_THRESHOLD_BB: 40,
   MAX_STORAGE_MB: 4,
+  LOCAL_BACKUP_SAFE_CHARS: 2000000,  // [V7.9.0 新增] localStorage 备份安全字符数（约 4MB 字节），超过则提示改用导出备份
   INPUT_DEBOUNCE_MS: 300,
 };
 

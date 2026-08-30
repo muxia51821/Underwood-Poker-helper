@@ -139,6 +139,12 @@ User action → Repo.add/update/delete/saveAll()
 
 beforeunload:
   → Repo._flush() → coordinator 写入 localStorage (sync safety net)
+
+大数据导入 (GG import) [V7.9.0]:
+  → Repo.saveAll() → Repo.persistNow()（绕过防抖立即写入，返回 Promise）
+  → 写入完成后才提示"成功导入"（toast = 已落盘；43,680 手约需 30 秒，期间按钮显示"写入存储中…"）
+  → 记录数超过 LOCAL_BACKUP_SAFE_CHARS 时提示定期"迁移 → 导出"备份
+  （localStorage 配额为单源总量，超限备份静默跳过且无法通过分块绕过——导出文件是大数据集的唯一备份手段）
 ```
 
 ### GG Hand History Import

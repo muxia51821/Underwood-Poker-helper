@@ -230,20 +230,40 @@ export class BaseRepo {
   _scheduleDBWrite() {
     var self = this;
     if (this._writeTimer) clearTimeout(this._writeTimer);
+    // [V7.9.0 修改] 防抖写入复用 persistNow（同一套健康降级处理）
     this._writeTimer = setTimeout(function () {
-      self._storage.persistCollection(self._key, self._cache).then(function (result) {
-        self._backend = result.backend;
-        if (result.backend !== 'indexeddb') {
-          _healthMode = 'degraded';
-          console.warn('IndexedDB write failed for ' + self._key, result.error || 'fallback');
-        }
-      }).catch(function (e) {
-        self._backend = 'localstorage';
-        _healthMode = 'degraded';
-        _addHealthIssue(self._key + ' 持久化失败');
-        console.warn('Persistence failed for ' + self._key, e);
-      });
+      self._writeTimer = null;
+      self.persistNow();
     }, 300);
+  }
+  /**
+   * [V7.9.0 新增] 立即持久化当前缓存（绕过防抖），返回 Promise<{backend, ok}>。
+   * 大数据导入用它确保"提示成功 = 已落盘"；写入失败自动降级 localStorage 并标记健康状态。
+   */
+  persistNow() {
+    const self = this;
+    if (this._writeTimer) {
+      clearTimeout(this._writeTimer);
+      this._writeTimer = null;
+    }
+    if (this._backend !== 'indexeddb') {
+      const ok = this._storage.writeLocal(this._key, this._cache);
+      return Promise.resolve({ backend: 'localstorage', ok: ok });
+    }
+    return this._storage.persistCollection(this._key, this._cache).then(function (result) {
+      self._backend = result.backend;
+      if (result.backend !== 'indexeddb') {
+        _healthMode = 'degraded';
+        console.warn('IndexedDB write failed for ' + self._key, result.error || 'fallback');
+      }
+      return result;
+    }).catch(function (e) {
+      self._backend = 'localstorage';
+      _healthMode = 'degraded';
+      _addHealthIssue(self._key + ' 持久化失败');
+      console.warn('Persistence failed for ' + self._key, e);
+      return { backend: 'localstorage', ok: false, error: e };
+    });
   }
   _flush() {
     if (this._writeTimer) {

@@ -289,6 +289,54 @@ test('storage falls back to localStorage when IndexedDB write fails', async () =
   assert.equal(repo.isIndexedDBReady(), false);
 });
 
+test('repo persistNow resolves after IndexedDB write completes', async () => {
+  localStorage.clear();
+  let writeCount = 0;
+  const countingIndexedDB = {
+    isReady() { return true; },
+    readAll() { return Promise.resolve([]); },
+    writeAll() {
+      return new Promise((resolve) => { setTimeout(() => { writeCount++; resolve(); }, 50); });
+    },
+    count() { return Promise.resolve(writeCount); },
+  };
+  const testPersistence = new PersistenceCoordinator({
+    local: new LocalStorageAdapter(localStorage),
+    indexedDB: countingIndexedDB,
+  });
+  const repo = new BaseRepo('handReviews', 'id', testPersistence);
+  repo.markIndexedDBReady();
+  repo.saveAll([{ id: 'persist-now-1' }]);
+  assert.equal(writeCount, 0);  // 防抖尚未触发
+  const result = await repo.persistNow();
+  assert.equal(writeCount, 1);
+  assert.equal(result.backend, 'indexeddb');
+  assert.equal(result.ok, true);
+});
+
+test('repo persistNow falls back to localStorage immediately when IndexedDB write fails', async () => {
+  localStorage.clear();
+  const failingIndexedDB = {
+    isReady() { return true; },
+    readAll() { return Promise.resolve([]); },
+    writeAll() { return Promise.reject(new Error('simulated IndexedDB failure')); },
+    count() { return Promise.resolve(0); },
+  };
+  const testPersistence = new PersistenceCoordinator({
+    local: new LocalStorageAdapter(localStorage),
+    indexedDB: failingIndexedDB,
+  });
+  const repo = new BaseRepo('handReviews', 'id', testPersistence);
+  repo.markIndexedDBReady();
+  repo.saveAll([{ id: 'persist-now-2', decision: 'check' }]);
+  const result = await repo.persistNow();
+  assert.equal(result.backend, 'localstorage');
+  assert.deepEqual(JSON.parse(localStorage.getItem('pa_handReviews')), [
+    { id: 'persist-now-2', decision: 'check' },
+  ]);
+  assert.equal(repo.isIndexedDBReady(), false);
+});
+
 test('storage coordinator prefers IndexedDB and falls back on read failure', async () => {
   localStorage.clear();
   localStorage.setItem('pa_sessions', JSON.stringify([{ id: 'local-1' }]));

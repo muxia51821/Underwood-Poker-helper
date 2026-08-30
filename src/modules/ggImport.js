@@ -1,5 +1,6 @@
 // [V6.9.3] GG 手牌导入模块（从 app.js init 提取）
 // [V6.14.0 修改] 支持 Session 关联 + 文件拖拽导入
+import { CONSTANTS } from '../constants.js';  // [V7.9.0 新增]
 import { Utils } from '../utils.js';
 import { Store, HandRepo, SessionRepo } from '../store/store.js';
 import { Navigation } from './navigation.js';
@@ -308,18 +309,37 @@ export function initGGImport() {
     }
     // [V7.7.2 修改] 统一由导入计划一次性生成并写入记录，避免两套字段映射漂移。
     HandRepo.saveAll(existingReviews.concat(plan.records));
+    var persisted = [HandRepo.persistNow()];  // [V7.9.0 修改] 落库确认制
     if (!_targetSessionId && plan.summary.newSessions > 0) {
       SessionRepo.saveAll(plan.sessions);
+      persisted.push(SessionRepo.persistNow());
     }
-    document.getElementById('ggImportOverlay').classList.remove('is-active');
-    var targetText = _targetSessionId
-      ? ' 手牌到 Session'
-      : '手牌，分配到 ' + new Set(plan.sessionMappings.map(function (mapping) { return mapping.session.id; })).size + ' 个 Session' +
-        (plan.summary.newSessions > 0 ? '（其中 ' + plan.summary.newSessions + ' 个为新建）' : '');
-    Utils.showToast('成功导入 ' + plan.records.length + ' ' + targetText + '。');
-    _targetSessionId = null;
-    Navigation.refreshReview('all');
-    Navigation.goToReviewSubtab('hand', { resetPage: true });
+    // [V7.9.0 新增] 等待存储真正写入后再提示成功，消除"toast 已显示但数据未落盘"的丢失窗口
+    // （真实语料压测：43,680 手的 IndexedDB 写事务约需 30 秒，窗口内关闭页面会静默丢失）
+    var importBtn = document.getElementById('ggImportSelectedBtn');
+    var importBtnLabel = importBtn.textContent;
+    importBtn.disabled = true;
+    importBtn.textContent = '写入存储中…';
+    Promise.all(persisted).then(function (results) {
+      importBtn.disabled = false;
+      importBtn.textContent = importBtnLabel;
+      document.getElementById('ggImportOverlay').classList.remove('is-active');
+      var targetText = _targetSessionId
+        ? ' 手牌到 Session'
+        : '手牌，分配到 ' + new Set(plan.sessionMappings.map(function (mapping) { return mapping.session.id; })).size + ' 个 Session' +
+          (plan.summary.newSessions > 0 ? '（其中 ' + plan.summary.newSessions + ' 个为新建）' : '');
+      var suffix = '';
+      var writeFailed = results.some(function (r) { return !r || r.ok === false; });
+      if (writeFailed) {
+        suffix = '\n⚠️ 部分数据未能写入存储，请立即在"迁移"中导出备份。';
+      } else if (JSON.stringify(plan.records).length > CONSTANTS.LOCAL_BACKUP_SAFE_CHARS) {
+        suffix = '\n提示：数据量已超过本地备份容量，请定期在"迁移"中导出备份。';
+      }
+      Utils.showToast('成功导入 ' + plan.records.length + ' ' + targetText + '。' + suffix);
+      _targetSessionId = null;
+      Navigation.refreshReview('all');
+      Navigation.goToReviewSubtab('hand', { resetPage: true });
+    });
   }
   // [V6.14.0] 设置文件拖拽
   _setupFileDrop();
