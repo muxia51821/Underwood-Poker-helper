@@ -19,7 +19,7 @@ const localStorage = createLocalStorage();
 globalThis.localStorage = localStorage;
 globalThis.window = { addEventListener() {} };
 
-const { Store, SessionRepo, HandRepo, BaseRepo, initStorage } = await import('../../src/store/store.js');
+const { Store, SessionRepo, HandRepo, BaseRepo, initStorage, MarksRepo, ClosureRepo } = await import('../../src/store/store.js');
 const { LocalStorageAdapter, PersistenceCoordinator } = await import('../../src/store/storage.js');
 const { buildImportPlan, createOverwritePatch } = await import('../../src/modules/ggImportCoordinator.js');
 const { normalizeLearningHand, createLearningSnapshot, getLearningTarget } = await import('../../src/modules/analysisReadModel.js');
@@ -335,6 +335,111 @@ test('repo persistNow falls back to localStorage immediately when IndexedDB writ
     { id: 'persist-now-2', decision: 'check' },
   ]);
   assert.equal(repo.isIndexedDBReady(), false);
+});
+
+// [V7.9.1 新增] Phase 1 Session Closure：Mark 匹配、候选手牌、收尾生命周期、备份合并
+
+test('session closure proposes time-proximity matches with same-session priority', async () => {
+  const { SessionClosure } = await import('../../src/modules/sessionClosure.js');
+  const mark = { id: 'm1', time: '2026-06-01 21:30', sessionId: 's1' };
+  const hands = [
+    { id: 'h-far-other', date: '2026-06-01 21:34', sessionId: 's2' },
+    { id: 'h-near-other', date: '2026-06-01 21:28', sessionId: 's2' },
+    { id: 'h-near-same', date: '2026-06-01 21:31', sessionId: 's1' },
+    { id: 'h-out', date: '2026-06-01 21:50', sessionId: 's1' },
+  ];
+  const proposals = SessionClosure.proposeMatches(mark, hands);
+  assert.deepEqual(proposals.map((p) => p.hand.id), ['h-near-same', 'h-near-other', 'h-far-other']);
+  assert.equal(proposals[0].deltaMin, 1);
+  assert.equal(proposals[0].sameSession, true);
+  const narrow = SessionClosure.proposeMatches(mark, hands, 1);
+  assert.deepEqual(narrow.map((p) => p.hand.id), ['h-near-same']);
+  const broken = SessionClosure.proposeMatches({ id: 'm2', time: '' }, hands);
+  assert.deepEqual(broken, []);
+});
+
+test('buildCandidates dedupes by source priority with a cap', async () => {
+  const { SessionClosure } = await import('../../src/modules/sessionClosure.js');
+  const marks = [{ id: 'm1', status: 'matched', matchedHandId: 'h-mark' }];
+  const hands = [
+    { id: 'h-mark', pBB: 5 },
+    { id: 'h-both', pBB: -50, marked: true },
+    { id: 'h-big', pBB: -41 },
+    { id: 'h-lev1', pBB: 120 },
+    { id: 'h-lev2', pBB: 80 },
+    { id: 'h-lev3', pBB: 60 },
+    { id: 'h-lev4', pBB: 45 },
+    { id: 'h-star', marked: true },
+  ];
+  const list = SessionClosure.buildCandidates(hands, marks);
+  assert.equal(list.length, 7);  // h-lev4 不在 |pBB| 前 3，被排除
+  const byId = {};
+  list.forEach((c) => { byId[c.hand.id] = c.reasons; });
+  assert.deepEqual(byId['h-mark'], ['mark']);
+  assert.deepEqual(byId['h-both'], ['bigloss', 'star']);
+  assert.equal(list[0].hand.id, 'h-mark');
+  const capped = SessionClosure.buildCandidates(hands, marks, { limit: 3 });
+  assert.deepEqual(capped.map((c) => c.hand.id), ['h-mark', 'h-both', 'h-big']);
+});
+
+test('closure lifecycle: unfinished list, draft toggle, mark match, confirm', async () => {
+  localStorage.clear();
+  await initStorage({ safeMode: true });
+  const { SessionClosure } = await import('../../src/modules/sessionClosure.js');
+  SessionRepo.saveAll([{ id: 's-1', date: '2026-06-01', level: 'NL5', hands: 2, profit: 3 }]);
+  HandRepo.saveAll([
+    { id: 'c1', sessionId: 's-1', date: '2026-06-01 21:00', pBB: 2 },
+    { id: 'c2', sessionId: 's-1', date: '2026-06-01 21:05', pBB: 1 },
+  ]);
+  assert.deepEqual(
+    SessionClosure.getUnfinishedSessions(SessionRepo.getAll(), HandRepo.getAll(), ClosureRepo.getAll()).map((s) => s.id),
+    ['s-1']
+  );
+
+  SessionClosure.toggleReviewedHand('s-1', 'c1');
+  let closure = SessionClosure.getClosureFor('s-1');
+  assert.equal(closure.status, 'draft');
+  assert.deepEqual(closure.reviewedHandIds, ['c1']);
+  SessionClosure.toggleReviewedHand('s-1', 'c1');
+  assert.deepEqual(SessionClosure.getClosureFor('s-1').reviewedHandIds, []);
+
+  MarksRepo.saveAll([{ id: 'mk-1', time: '2026-06-01 21:01', note: 'x', sessionId: 's-1', status: 'open', matchedHandId: null }]);
+  SessionClosure.matchMark('mk-1', 'c1', 's-1');
+  assert.equal(MarksRepo.getAll()[0].status, 'matched');
+  assert.equal(MarksRepo.getAll()[0].matchedHandId, 'c1');
+  assert.deepEqual(SessionClosure.getClosureFor('s-1').matchedMarkIds, ['mk-1']);
+  SessionClosure.reopenMark('mk-1');
+  assert.equal(MarksRepo.getAll()[0].status, 'open');
+  assert.deepEqual(SessionClosure.getClosureFor('s-1').matchedMarkIds, []);
+  SessionClosure.matchMark('mk-1', 'c1', 's-1');
+  SessionClosure.dismissMark('mk-1');
+  assert.equal(MarksRepo.getAll()[0].status, 'dismissed');
+
+  SessionClosure.confirmClosure('s-1');
+  closure = SessionClosure.getClosureFor('s-1');
+  assert.equal(closure.status, 'closed');
+  assert.ok(closure.closedAt);
+  assert.deepEqual(SessionClosure.getUnfinishedSessions(SessionRepo.getAll(), HandRepo.getAll(), ClosureRepo.getAll()), []);
+});
+
+test('storage export/import covers marks and closures with merge-without-overwrite', async () => {
+  localStorage.clear();
+  await initStorage({ safeMode: true });
+  const data = Store.exportAll();
+  assert.ok(Array.isArray(data.marks));
+  assert.ok(Array.isArray(data.sessionClosures));
+  assert.throws(() => Store.importAll({ marks: {} }), /marks 应为数组/);
+  Store.importAll({
+    marks: [{ id: 'mk-9', note: 'keep' }],
+    sessionClosures: [{ id: 'cl-9', sessionId: 's-x', status: 'closed' }],
+  });
+  Store.importAll({
+    marks: [{ id: 'mk-9', note: 'imported-version' }, { id: 'mk-10' }],
+    sessionClosures: [{ id: 'cl-10' }],
+  });
+  assert.equal(MarksRepo.getAll().length, 2);
+  assert.equal(MarksRepo.getAll().filter((m) => m.id === 'mk-9')[0].note, 'keep');
+  assert.equal(ClosureRepo.getAll().length, 2);
 });
 
 test('storage coordinator prefers IndexedDB and falls back on read failure', async () => {

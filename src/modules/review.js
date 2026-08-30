@@ -1,13 +1,14 @@
 // [V6.9.2] 复盘模块（Session/手局/周级 + 统计 + 图表 + 数据迁徙）
 import { CONSTANTS } from '../constants.js';
 import { Utils } from '../utils.js';
-import { Store, SessionRepo, HandRepo, WeeklyRepo, TiltLogRepo } from '../store/store.js';
+import { Store, SessionRepo, HandRepo, WeeklyRepo, TiltLogRepo, MarksRepo, ClosureRepo } from '../store/store.js';  // [V7.9.1 修改] 新增 Marks/Closure
 import { analyze, getStatColor, STAT_TOOLTIPS, STAT_DEFINITIONS } from './statsEngine.js';  // [V6.18.4]
 import { Discover } from './discover.js';  // [V7.4.6]
 import { GTO_LEGACY_SCOPE } from '../data/strategy/gtoBaseline.js';  // [V7.9.0 新增] 旧 GTO 对照统一标注
 import { QuizTrainer } from './quizTrainer.js';  // [V7.4.7]
 import { getLearningTarget } from './analysisReadModel.js';
 import { openGGImportForSession } from './ggImport.js';  // [V6.14.0]
+import { SessionClosure } from './sessionClosure.js';  // [V7.9.1 新增] 每场收尾领域模块
 import { HandPicker } from './handPicker.js';  // [V6.15.0]
 import { Navigation } from './navigation.js';  // [V7.7.2]
 
@@ -365,6 +366,9 @@ export const Review = {
       const saved = this.saveHandReview();
       if (saved && this._quickCaptureActive) this.closeQuickCapture('saved');
     });
+    // [V7.9.1 新增] 桌面端 Mark 入口（Session 面板内，不开新 tab）
+    const quickMarkBtn = document.getElementById('quickMarkBtn');
+    if (quickMarkBtn) quickMarkBtn.addEventListener('click', () => this.openQuickCapture());
     // [V7.7.2 新增] Mobile quick capture reuses the existing Hand form and save path.
     document.getElementById('quickCaptureBtn').addEventListener('click', () => this.openQuickCapture());
     document.getElementById('quickCaptureCloseBtn').addEventListener('click', () => this.closeQuickCapture('cancel'));
@@ -409,6 +413,49 @@ export const Review = {
       if (editBtn) this.editSession(editBtn.dataset.editId);
       const expandBtn = e.target.closest('[data-expand-id]');
       if (expandBtn) { this.toggleSessionExpand(expandBtn.dataset.expandId, expandBtn); this.updateStatsForSession(expandBtn.dataset.expandId); }
+      // [V7.9.1 新增] Session 行收尾按钮：展开/收起收尾工作区
+      const closureBtn = e.target.closest('[data-closure-sid]');
+      if (closureBtn) { this.toggleSessionClosure(closureBtn.dataset.closureSid, closureBtn); return; }
+      // [V7.9.1 新增] 收尾工作区：Mark 匹配 / 候选复盘 / 确认收尾
+      const markMatchBtn = e.target.closest('[data-mark-match]');
+      if (markMatchBtn) {
+        const parts = markMatchBtn.dataset.markMatch.split('|');
+        const sid = this._closureSessionIdOf(markMatchBtn);
+        SessionClosure.matchMark(parts[0], parts[1], sid);
+        this._refreshClosureRow(sid);
+        return;
+      }
+      const markDismissBtn = e.target.closest('[data-mark-dismiss]');
+      if (markDismissBtn) {
+        const sid = this._closureSessionIdOf(markDismissBtn);
+        SessionClosure.dismissMark(markDismissBtn.dataset.markDismiss);
+        this._refreshClosureRow(sid);
+        return;
+      }
+      const markReopenBtn = e.target.closest('[data-mark-reopen]');
+      if (markReopenBtn) {
+        const sid = this._closureSessionIdOf(markReopenBtn);
+        SessionClosure.reopenMark(markReopenBtn.dataset.markReopen);
+        this._refreshClosureRow(sid);
+        return;
+      }
+      const candViewBtn = e.target.closest('[data-cand-view]');
+      if (candViewBtn) { Navigation.goToHand(candViewBtn.dataset.candView); return; }
+      const candReviewBtn = e.target.closest('[data-cand-review]');
+      if (candReviewBtn) {
+        const sid = this._closureSessionIdOf(candReviewBtn);
+        SessionClosure.toggleReviewedHand(sid, candReviewBtn.dataset.candReview);
+        this._refreshClosureRow(sid);
+        return;
+      }
+      const closureConfirmBtn = e.target.closest('[data-closure-confirm]');
+      if (closureConfirmBtn) {
+        const sid = this._closureSessionIdOf(closureConfirmBtn);
+        SessionClosure.confirmClosure(sid);
+        this.renderSessions();  // 更新未收尾徽章与计数
+        Utils.showToast('本场已收尾');
+        return;
+      }
       // [V6.18.6] Session 展开区手牌编辑 → 跳转 Hand 面板
       const sessHandEditBtn = e.target.closest('[data-hand-edit]');
       if (sessHandEditBtn) {
@@ -565,6 +612,34 @@ export const Review = {
     }
     this.clearSessionForm(); this.renderAll();
   },
+  // [V7.9.1 新增] Session 行收尾工作区的展开/收起
+  toggleSessionClosure(sessionId, btn) {
+    const existing = document.getElementById('closure-row-' + sessionId);
+    if (existing) { existing.remove(); btn.textContent = '🏁'; return; }
+    const session = this.getSessions().find(function (s) { return s.id === sessionId; });
+    if (!session) return;
+    const tr = document.createElement('tr');
+    tr.id = 'closure-row-' + sessionId;
+    const td = document.createElement('td');
+    td.colSpan = 8;
+    td.style.cssText = 'padding:0;background:#0a1628;border-top:1px solid #1e3a5f';
+    tr.appendChild(td);
+    const sessionRow = btn.closest('tr');
+    if (sessionRow && sessionRow.nextSibling) sessionRow.parentNode.insertBefore(tr, sessionRow.nextSibling);
+    else if (sessionRow) sessionRow.parentNode.appendChild(tr);
+    btn.textContent = '✕';
+    SessionClosure.renderInto(td, session);
+  },
+  _closureSessionIdOf(el) {
+    const host = el.closest('[data-closure-session]');
+    return host ? host.dataset.closureSession : null;
+  },
+  _refreshClosureRow(sessionId) {
+    if (!sessionId) return;
+    const td = document.querySelector('#closure-row-' + sessionId + ' > td');
+    const session = this.getSessions().find(function (s) { return s.id === sessionId; });
+    if (td && session) SessionClosure.renderInto(td, session);
+  },
   toggleSessionExpand(sessionId, btn, filterVal) {
     var existingRow = document.getElementById('expand-row-' + sessionId);
     if (existingRow) { existingRow.remove(); btn.textContent = '📋'; if (!filterVal) return; }
@@ -688,6 +763,11 @@ export const Review = {
   renderSessions() {
     var filter = document.getElementById('filterLevel').value;
     var sessions = Utils.sortByDateKey(this.getSessions());
+    // [V7.9.1 新增] 未收尾场次集合（有手牌且无 closed 收尾记录）
+    var unfinished = {};
+    SessionClosure.getUnfinishedSessions(sessions, HandRepo.getAll(), ClosureRepo.getAll()).forEach(function (s) { unfinished[s.id] = true; });
+    var pendingEl = document.getElementById('closurePendingCount');
+    if (pendingEl) pendingEl.textContent = Object.keys(unfinished).length ? Object.keys(unfinished).length + ' 场待收尾' : '无待收尾';
     var levels = []; var seenLevels = {};
     sessions.forEach(function (s) { if (!seenLevels[s.level]) { seenLevels[s.level] = true; levels.push(s.level); } });
     var sel = document.getElementById('filterLevel');
@@ -716,6 +796,15 @@ export const Review = {
       row.querySelector('[data-import-sid]').setAttribute('data-import-sid', s.id);
       row.querySelector('[data-edit-id]').setAttribute('data-edit-id', s.id);
       row.querySelector('[data-delete-id]').setAttribute('data-delete-id', s.id);
+      row.querySelector('[data-closure-sid]').setAttribute('data-closure-sid', s.id);  // [V7.9.1 新增]
+      // [V7.9.1 新增] 未收尾徽章
+      if (unfinished[s.id]) {
+        var badge = document.createElement('span');
+        badge.className = 'status-inline status-inline--danger';
+        badge.textContent = '未收尾';
+        badge.style.marginLeft = '4px';
+        row.querySelector('[data-bind="date"]').appendChild(badge);
+      }
       // [V6.14.0] 导入按钮点击
       var importSessionBtn = row.querySelector('[data-import-sid]');
       importSessionBtn.addEventListener('click', function (e) {
@@ -1726,7 +1815,7 @@ export const Review = {
     const pane = document.getElementById('handDetailPane');
     pane.classList.remove('is-editing');
     const saveBtn = document.getElementById('saveHandBtn');
-    saveBtn.textContent = '保存快速记录';
+    saveBtn.textContent = '保存 Mark';  // [V7.9.1 修改] 快速模式保存为 Mark
     saveBtn.dataset.state = 'quick';
     const sessionSelect = document.getElementById('handSessionSelect');
     if (preferredSessionId && sessionSelect.querySelector('option[value="' + preferredSessionId + '"]')) {
@@ -1740,7 +1829,8 @@ export const Review = {
     document.getElementById('handDesc').dispatchEvent(new Event('input'));
   },
   openQuickCapture() {
-    if (this._quickCaptureActive || !window.matchMedia('(max-width: 767px)').matches) return false;
+    // [V7.9.1 修改] 移除移动端宽度守卫：桌面端从 Session 面板的「快速记录 Mark」入口同样打开
+    if (this._quickCaptureActive) return false;
     const main = document.querySelector('.main');
     const activeSub = document.querySelector('#reviewSubNav .subnav__btn--active');
     this._quickCaptureOrigin = {
@@ -1792,7 +1882,7 @@ export const Review = {
     this._quickCaptureOrigin = null;
     this._quickCaptureSnapshot = null;
     trigger.focus({ preventScroll: true });
-    if (mode === 'saved') Utils.showToast('已快速记录，可稍后补全反思');
+    if (mode === 'saved') Utils.showToast('已记录 Mark，收尾时在 Session 中匹配手牌');  // [V7.9.1 修改]
   },
   handleQuickCaptureKeydown(event) {
     if (!this._quickCaptureActive) return;
@@ -1818,6 +1908,10 @@ export const Review = {
     }
   },
   saveHandReview() {
+    // [V7.9.1 修改] 快速捕获模式下保存为 Mark（时间指针+短备注），不再创建手牌记录
+    if (this._quickCaptureActive && document.getElementById('saveHandBtn').dataset.state === 'quick') {
+      return this._saveQuickMark();
+    }
     const sid = document.getElementById('handSessionSelect').value || null,
       desc = document.getElementById('handDesc').value.trim(),
       reflection = document.getElementById('handReflection').value.trim();
@@ -1845,6 +1939,26 @@ export const Review = {
     document.querySelectorAll('#handMistakeGroup .toggle-btn').forEach((b) => b.classList.remove('is-active'));
     document.getElementById('handMistakeCustom').value = '';
     this.renderHandReviews();
+    return true;
+  },
+  // [V7.9.1 新增] 快速捕获保存 Mark：时间指针 + 短备注，收尾时与导入手牌按时间匹配
+  _saveQuickMark() {
+    const note = document.getElementById('handDesc').value.trim();
+    const mistake = document.getElementById('handMistakeCustom').value.trim();
+    if (!note && !mistake) { Utils.showToast('写一句备注再保存 Mark'); return false; }
+    const mark = {
+      id: Utils.generateUUID(),
+      time: Utils.getLocalDatetime(),
+      note: note,
+      mistake: mistake,
+      sessionId: document.getElementById('handSessionSelect').value || null,
+      status: 'open',
+      matchedHandId: null,
+      createdAt: Utils.getLocalDatetime(),
+    };
+    MarksRepo.saveAll(MarksRepo.getAll().concat([mark]));
+    document.getElementById('handDesc').value = '';
+    document.getElementById('handMistakeCustom').value = '';
     return true;
   },
   deleteHandReview(id) { this._confirmDelete(() => this.getHandReviews(), (d) => this.saveHandReviews(d), () => this.renderHandReviews(), 'id', id); },

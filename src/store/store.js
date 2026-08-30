@@ -107,6 +107,8 @@ export const Store = {
       handReviews: HandRepo.getAll(),
       weeklyReviews: WeeklyRepo.getAll(),
       tiltLogs: TiltLogRepo.getAll(),
+      marks: MarksRepo.getAll(),  // [V7.9.1 新增]
+      sessionClosures: ClosureRepo.getAll(),  // [V7.9.1 新增]
       opponentAliases: Store.opponentAliases.get(),
       opponentLiveFlags: Store.opponentLiveFlags.get(),
       opponentMerges: Store.opponentMerges.get(),
@@ -122,6 +124,11 @@ export const Store = {
       throw new Error('导入数据格式错误：weeklyReviews 应为数组');
     if (data.tiltLogs !== undefined && !Array.isArray(data.tiltLogs))
       throw new Error('导入数据格式错误：tiltLogs 应为数组');
+    // [V7.9.1 新增] marks / sessionClosures 校验
+    if (data.marks !== undefined && !Array.isArray(data.marks))
+      throw new Error('导入数据格式错误：marks 应为数组');
+    if (data.sessionClosures !== undefined && !Array.isArray(data.sessionClosures))
+      throw new Error('导入数据格式错误：sessionClosures 应为数组');
     // V5.8.1 增量导入
     const mergeByKey = function (localArr, importArr, key) {
       const map = new Map();
@@ -141,6 +148,11 @@ export const Store = {
       TiltLogRepo.saveAll(mergeByKey(TiltLogRepo.getAll(), data.tiltLogs, 'time'));
     if (data.weeklyReviews)
       WeeklyRepo.saveAll(mergeByKey(WeeklyRepo.getAll(), data.weeklyReviews, 'week'));
+    // [V7.9.1 新增] marks / sessionClosures 增量合并
+    if (data.marks)
+      MarksRepo.saveAll(mergeByKey(MarksRepo.getAll(), data.marks, 'id'));
+    if (data.sessionClosures)
+      ClosureRepo.saveAll(mergeByKey(ClosureRepo.getAll(), data.sessionClosures, 'id'));
     if (data.logs && typeof data.logs === 'object') {
       Object.keys(data.logs).forEach(function (d) {
         const local = Store.logs.get(d);
@@ -339,9 +351,11 @@ export const SessionRepo = new BaseRepo('sessions');
 export const HandRepo = new BaseRepo('handReviews');
 export const WeeklyRepo = new BaseRepo('weeklyReviews', 'week');
 export const TiltLogRepo = new BaseRepo('tiltLogs', 'time');
+export const MarksRepo = new BaseRepo('marks');  // [V7.9.1 新增] Quick Capture 创建的 Mark
+export const ClosureRepo = new BaseRepo('sessionClosures');  // [V7.9.1 新增] 每场收尾记录
 
 async function migrateToIndexedDB() {
-  var tables = ['sessions', 'handReviews', 'weeklyReviews', 'tiltLogs'];
+  var tables = ['sessions', 'handReviews', 'weeklyReviews', 'tiltLogs', 'marks', 'sessionClosures'];  // [V7.9.1 修改]
   var allOk = true;
 
   for (var i = 0; i < tables.length; i++) {
@@ -368,11 +382,15 @@ async function migrateToIndexedDB() {
     persistence.removeLocal('handReviews');
     persistence.removeLocal('weeklyReviews');
     persistence.removeLocal('tiltLogs');
+    persistence.removeLocal('marks');  // [V7.9.1 新增]
+    persistence.removeLocal('sessionClosures');  // [V7.9.1 新增]
     // [V7.0.3] 先 ready 再标记，避免中间崩溃造成标记为真但 repo 未 ready
     SessionRepo.markIndexedDBReady();
     HandRepo.markIndexedDBReady();
     WeeklyRepo.markIndexedDBReady();
     TiltLogRepo.markIndexedDBReady();
+    MarksRepo.markIndexedDBReady();  // [V7.9.1 新增]
+    ClosureRepo.markIndexedDBReady();  // [V7.9.1 新增]
     localStorage.setItem('pa_migrated_v1', 'true');
   } else {
     console.warn('Migration incomplete, localStorage data preserved for next retry');
@@ -559,6 +577,8 @@ export async function initStorage(opts) {
     await HandRepo._init();
     await WeeklyRepo._init();
     await TiltLogRepo._init();
+    await MarksRepo._init();  // [V7.9.1 新增]
+    await ClosureRepo._init();  // [V7.9.1 新增]
 
     // 恢复机制
     var recoveryRepos = [
@@ -566,6 +586,8 @@ export async function initStorage(opts) {
       { repo: HandRepo, key: 'handReviews' },
       { repo: WeeklyRepo, key: 'weeklyReviews' },
       { repo: TiltLogRepo, key: 'tiltLogs' },
+      { repo: MarksRepo, key: 'marks' },  // [V7.9.1 新增]
+      { repo: ClosureRepo, key: 'sessionClosures' },  // [V7.9.1 新增]
     ];
     recoveryRepos.forEach(function (r) {
       var fallback = Store._getRaw(r.key);
@@ -592,6 +614,8 @@ export async function initStorage(opts) {
     HandRepo.replaceCache(Store._getRaw('handReviews') || []);
     WeeklyRepo.replaceCache(Store._getRaw('weeklyReviews') || []);
     TiltLogRepo.replaceCache(Store._getRaw('tiltLogs') || []);
+    MarksRepo.replaceCache(Store._getRaw('marks') || []);  // [V7.9.1 新增]
+    ClosureRepo.replaceCache(Store._getRaw('sessionClosures') || []);  // [V7.9.1 新增]
 
     if (persistence.isIndexedDBReady()) {
       await migrateToIndexedDB();
@@ -608,6 +632,8 @@ export async function initStorage(opts) {
     { name: 'HandReview', repo: HandRepo },
     { name: 'WeeklyReview', repo: WeeklyRepo },
     { name: 'TiltLog', repo: TiltLogRepo },
+    { name: 'Mark', repo: MarksRepo },  // [V7.9.1 新增]
+    { name: 'SessionClosure', repo: ClosureRepo },  // [V7.9.1 新增]
   ];
   var corruptions = [];
   repos.forEach(function (r) {
@@ -660,6 +686,8 @@ export function getStorageHealth() {
       handReviews: HandRepo.count(),
       weeklyReviews: WeeklyRepo.count(),
       tiltLogs: TiltLogRepo.count(),
+      marks: MarksRepo.count(),  // [V7.9.1 新增]
+      sessionClosures: ClosureRepo.count(),  // [V7.9.1 新增]
     },
   };
 }
@@ -675,4 +703,6 @@ window.addEventListener('beforeunload', function () {
   HandRepo._flush();
   WeeklyRepo._flush();
   TiltLogRepo._flush();
+  MarksRepo._flush();  // [V7.9.1 新增]
+  ClosureRepo._flush();  // [V7.9.1 新增]
 });

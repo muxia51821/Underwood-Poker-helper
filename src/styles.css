@@ -431,6 +431,33 @@ details summary,.tech-summary{color:var(--color-text-muted);border-color:var(--c
 #subHand.is-visible{grid-template-columns:minmax(0,1.08fr) minmax(360px,.92fr);grid-template-areas:"master detail" "picks detail"}
 .hand-master-pane{grid-area:master}.hand-picks-pane{grid-area:picks}.hand-detail-pane{grid-area:detail}
 .quick-capture__header{display:none}
+/* [V7.9.1 新增] 桌面端快速记录（Session 面板入口）：复用移动端对话框形态 */
+body.quick-capture-open{overflow:hidden}
+#handDetailPane.is-quick-capture{
+  position:fixed;inset:0;z-index:1000;display:flex;flex-direction:column;width:100%;height:100vh;height:100dvh;max-width:none;max-height:none;margin:0;padding:0 var(--space-4);
+  overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;background:var(--color-bg);border:0;border-radius:0;box-shadow:none
+}
+#handDetailPane.is-quick-capture>.quick-capture__header{
+  position:sticky;top:0;z-index:2;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:var(--space-2);
+  margin:0 calc(var(--space-4)*-1) var(--space-3);padding:var(--space-3) var(--space-4);
+  background:var(--color-surface-1);border-bottom:1px solid var(--color-border)
+}
+#handDetailPane.is-quick-capture>.hand-detail-title,
+#handDetailPane.is-quick-capture>.hand-reflection-field,
+#handDetailPane.is-quick-capture>.hand-extended-field,
+#handDetailPane.is-quick-capture>.hand-mistake-label,
+#handDetailPane.is-quick-capture>#handMistakeGroup,
+#handDetailPane.is-quick-capture>.hand-notes-help,
+#handDetailPane.is-quick-capture .player-cards,
+#handDetailPane.is-quick-capture .card-visual,
+#handDetailPane.is-quick-capture>.hand-core-fields{display:none!important}
+#handDetailPane.is-quick-capture>.hand-session-field{order:2}
+#handDetailPane.is-quick-capture>.hand-notes-field{order:4}
+#handDetailPane.is-quick-capture>.hand-mistake-custom-field{order:5}
+#handDetailPane.is-quick-capture>.quick-capture__save-bar{
+  position:sticky;bottom:0;z-index:2;order:6;margin-top:auto;padding:var(--space-3) 0;
+  background:var(--color-bg)
+}
 .hand-detail-pane{position:sticky;top:var(--space-4);max-height:calc(100vh - 32px);overflow:auto;scrollbar-color:var(--color-border-strong) transparent}
 .hand-detail-pane:focus,.session-detail-pane:focus{outline:none;box-shadow:var(--shadow-focus)}
 .hand-detail-pane.is-editing,.session-detail-pane.is-editing{border-color:var(--color-info);box-shadow:0 0 0 1px var(--color-info)}

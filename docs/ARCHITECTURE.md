@@ -53,6 +53,7 @@ src/
     handPicker.js    # 手牌精选（☆ 标记 + Picks 卡片 + Hand/Session 跳转）
     discover.js      # 自动模式发现（盈亏异常/自我矛盾/偏离GTO + 热力图数据）
     quizTrainer.js   # GTO 频率判断训练器（双阈值判分 + 错题集 + 掌握追踪 + 轮转出题）
+    sessionClosure.js # [V7.9.1 新增] 每场收尾领域模块（Mark 时间匹配 + 候选手牌 + 收尾记录）
 
   data/
     srpData.js       # GTO 策略速查表（从 gtoRaw 自动生成，import Utils + gtoRaw）
@@ -88,6 +89,7 @@ main.js
   ├── modules/review.js      → constants, utils, store, statsEngine, ggImport, handPicker, discover, quizTrainer, navigation, analysisReadModel, gtoBaseline (V7.9.0 scope 标注)
   ├── modules/statsEngine.js → constants
   ├── modules/handPicker.js  → constants, utils, store, navigation
+  ├── modules/sessionClosure.js → constants, utils, store (V7.9.1 新增：每场收尾)
   ├── modules/ggImport.js    → constants, utils, store, ggParser, ggImportCoordinator, navigation
   ├── modules/discover.js    → constants, utils, store, gtoBaseline, analysisReadModel
   ├── modules/navigation.js  → DOM adapter + App-configured callbacks
@@ -211,8 +213,10 @@ pa_quiz_mastery:   { "scenario|boardCode": { consecutiveCorrect, totalAttempts, 
 pa_discoverState:  { findings, scanHandCount, archive }
 ```
 
-IndexedDB: `pa_store` v1, 4 ObjectStores (`handReviews`/`sessions`/`weeklyReviews`/`tiltLogs`).
+IndexedDB: `pa_store` v2, 6 ObjectStores (`handReviews`/`sessions`/`weeklyReviews`/`tiltLogs`/`marks`/`sessionClosures`) [V7.9.1 升 v2].
 `handReviews` has 3 indexes: `sessionId`, `ggId`, `date`.
+// [V7.9.1 新增] marks: [{ id, time 'YYYY-MM-DD HH:MM', note, mistake, sessionId|null, status 'open'|'matched'|'dismissed', matchedHandId, createdAt }]
+// [V7.9.1 新增] sessionClosures: [{ id, sessionId（唯一）, status 'draft'|'closed', closedAt, reviewedHandIds[], matchedMarkIds[], note }]
 
 ## UI Navigation
 

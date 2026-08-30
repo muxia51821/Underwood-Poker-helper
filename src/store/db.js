@@ -4,7 +4,7 @@ import { CONSTANTS } from '../constants.js';
 const DB = {
   _db: null,
   _name: 'pa_store',
-  _version: 1,
+  _version: 2,  // [V7.9.1 修改] 新增 marks / sessionClosures 两个 object store
 
   isReady: function () {
     return Boolean(this._db);
@@ -28,6 +28,11 @@ const DB = {
           db.createObjectStore('weeklyReviews', { keyPath: 'week' });
         if (!db.objectStoreNames.contains('tiltLogs'))
           db.createObjectStore('tiltLogs', { keyPath: 'time' });
+        // [V7.9.1 新增] Phase 1 Session Closure：Mark 与收尾记录（contains 守卫保证旧库平滑升级）
+        if (!db.objectStoreNames.contains('marks'))
+          db.createObjectStore('marks', { keyPath: 'id' });
+        if (!db.objectStoreNames.contains('sessionClosures'))
+          db.createObjectStore('sessionClosures', { keyPath: 'id' });
       };
       req.onsuccess = function (e) {
         self._db = e.target.result;

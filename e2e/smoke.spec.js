@@ -175,11 +175,8 @@ test('移动端快速记录复用 Hand 表单并恢复来源上下文', async ({
   await expect(page.locator('#quickCaptureBtn')).toHaveAttribute('aria-expanded', 'false');
   await expect(page.locator('#handDesc')).toHaveValue(draftBeforeQuick);
 
-  // 成功保存后回到来源 Tab；随后进入 Review Hand 核查记录并清理。
+  // 成功保存后回到来源 Tab；快速记录现在是 Mark，不产生手牌行。
   await page.click('#quickCaptureBtn');
-  await page.selectOption('#handPotType', 'SIA');
-  await page.selectOption('#handPreflopScenario', 'BTNvsBB');
-  await page.selectOption('#handBoard', 'R');
   await page.fill('#handDesc', quickNote);
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
@@ -188,16 +185,12 @@ test('移动端快速记录复用 Hand 表单并恢复来源上下文', async ({
   await expect(page.locator('[data-tab="timer"]')).toHaveClass(/nav__btn--active/);
   await expect(page.locator('#handDetailPane')).not.toHaveClass(/is-quick-capture/);
   await expect(page.locator('body')).not.toHaveClass(/quick-capture-open/);
-  await expect(page.locator('#toast')).toHaveText('已快速记录，可稍后补全反思');
+  await expect(page.locator('#toast')).toHaveText('已记录 Mark，收尾时在 Session 中匹配手牌');
 
   await page.click('[data-tab="review"]');
   await page.click('[data-sub="hand"]');
   await expect(page.locator('#handDesc')).toHaveValue(draftBeforeQuick);
-  const createdRow = page.locator('#handBody tr[data-hand-id]').filter({ hasText: quickNote.slice(0, 20) });
-  await expect(createdRow).toHaveCount(1);
-  page.once('dialog', (dialog) => dialog.accept());
-  await createdRow.locator('[data-hand-delete]').evaluate((button) => button.click());
-  await expect(createdRow).toHaveCount(0);
+  await expect(page.locator('#handBody tr[data-hand-id]')).toHaveCount(0);
 
   // 第二个目标移动尺寸保持 dialog 无页面级横向溢出。
   await page.setViewportSize({ width: 430, height: 932 });
@@ -273,6 +266,78 @@ test('GG 多文件导入走解析预览并落库为手牌记录', async ({ page 
   // 导入后跳转 Hand 子面板，两条记录均已落库
   await expect(page.locator('[data-sub="hand"]')).toHaveClass(/subnav__btn--active/);
   await expect(page.locator('#handBody tr[data-hand-id]')).toHaveCount(2);
+  expect(getRealErrors(errors)).toEqual([]);
+});
+
+test('Session 收尾闭环：Mark 匹配、候选复盘与确认收尾', async ({ page }) => {
+  const errors = captureRuntimeErrors(page);
+  await page.goto('/');
+
+  // 两手"刚刚"的合成手牌（解析器按 UTC+8 换算，故文本时间 = 目标本地时间 - 8h）
+  const mk = (offsetMin, id) => {
+    const target = new Date(Date.now() - offsetMin * 60000);
+    const text = new Date(target.getTime() - (new Date().getTimezoneOffset() + 480) * 60000);
+    const p = (n) => String(n).padStart(2, '0');
+    const ymd = `${text.getUTCFullYear()}/${p(text.getUTCMonth() + 1)}/${p(text.getUTCDate())}`;
+    const hm = `${p(text.getUTCHours())}:${p(text.getUTCMinutes())}:${p(text.getUTCSeconds())}`;
+    return [
+      `Poker Hand #CL${id}: Hold'em No Limit ($0.02/$0.05) - ${ymd} ${hm}`,
+      `Table 'CL' 9-max Seat #1 is the button`,
+      'Seat 1: Hero ($5.00 in chips)',
+      'Seat 2: Villain ($5.00 in chips)',
+      'Villain: posts small blind $0.02',
+      'Hero: posts big blind $0.05',
+      '*** HOLE CARDS ***',
+      'Dealt to Hero [Ah Kh]',
+      'Villain: folds',
+      'Hero collected $0.07 from pot',
+      '*** SUMMARY ***',
+    ].join('\n');
+  };
+  const txt = mk(3, 'A') + '\n\n' + mk(2, 'B');
+
+  // 导入两手（自动建场）
+  await page.click('[data-tab="review"]');
+  await page.click('[data-sub="session"]');
+  await page.click('#importGGBtn');
+  await page.fill('#ggImportText', txt);
+  await page.click('#ggParseBtn');
+  await page.waitForFunction(
+    () => document.querySelectorAll('.gg-import-check').length >= 2,
+    undefined,
+    { polling: 200 }
+  );
+  await page.click('.gg-sel-all-btn');
+  await page.click('#ggImportSelectedBtn');
+  await expect(page.locator('[data-sub="hand"]')).toHaveClass(/subnav__btn--active/);
+  await page.click('[data-sub="session"]');
+
+  // 桌面端 Mark 入口（Session 面板内）→ 保存 Mark
+  await page.click('#quickMarkBtn');
+  await expect(page.locator('#handDetailPane')).toHaveClass(/is-quick-capture/);
+  await page.fill('#handDesc', 'closure-e2e-mark');
+  await page.click('#saveHandBtn');
+  await expect(page.locator('#toast')).toHaveText('已记录 Mark，收尾时在 Session 中匹配手牌');
+  await expect(page.locator('#closurePendingCount')).toHaveText('1 场待收尾');
+
+  // 展开该场收尾工作区
+  const row = page.locator('#sessionBody tr').filter({ hasText: '未收尾' }).first();
+  await row.locator('[data-closure-sid]').click();
+  const workspace = page.locator('[data-closure-session]').first();
+  await expect(workspace).toBeVisible();
+
+  // Mark 匹配：确认关联（关联后出现"取消关联"）
+  await workspace.locator('[data-mark-match]').first().click();
+  await expect(workspace.locator('[data-mark-reopen]').first()).toBeVisible();
+
+  // 候选复盘：标为已看
+  await workspace.locator('[data-cand-review]').first().click();
+  await expect(workspace.locator('[data-cand-review]').first()).toContainText('已看');
+
+  // 确认收尾
+  await page.click('[data-closure-confirm]');
+  await expect(page.locator('#toast')).toHaveText('本场已收尾');
+  await expect(page.locator('#closurePendingCount')).toHaveText('无待收尾');
   expect(getRealErrors(errors)).toEqual([]);
 });
 

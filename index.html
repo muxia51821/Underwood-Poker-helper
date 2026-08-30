@@ -497,7 +497,7 @@
               <!-- [V7.7.2 新增] Mobile quick capture header; desktop hidden. -->
               <header class="quick-capture__header">
                 <button id="quickCaptureCloseBtn" class="quick-capture__header-btn" type="button">关闭</button>
-                <h2 id="quickCaptureTitle">快速记录手牌</h2>
+                <h2 id="quickCaptureTitle">快速记录 Mark</h2>
                 <button id="quickCaptureFullBtn" class="quick-capture__header-btn" type="button">完整编辑</button>
               </header>
               <div class="card__title hand-detail-title">手牌详情与反思</div>
@@ -917,6 +917,15 @@ OTR河牌 牌面：    行动：</textarea
                 <div class="text-muted">点击 Session 行或从 Picks 选择查看</div>
               </div>
               <div class="filter-row">
+                <!-- [V7.9.1 新增] 桌面端 Mark 入口（Review 内，不开新 tab） -->
+                <button
+                  id="quickMarkBtn"
+                  class="btn--mini btn--accent"
+                  title="快速记录 Mark（时间指针+短备注），收尾时匹配手牌"
+                >
+                  ⚡ 快速记录 Mark
+                </button>
+                <span id="closurePendingCount" class="text-muted" style="font-size: 0.75em"></span>
                 <select id="filterLevel" class="select">
                   <option value="all">全部级别</option></select
                 ><button id="refreshSessionsBtn" class="btn--mini">刷新</button
@@ -1124,6 +1133,8 @@ OTR河牌 牌面：    行动：</textarea
         <td data-bind="mistake"></td>
         <td>
           <button class="btn--mini" data-expand-id="">▶</button>
+          <!-- [V7.9.1 新增] 每场收尾入口 -->
+          <button class="btn--mini" data-closure-sid="" title="本场收尾">🏁</button>
           <button
             class="btn--mini"
             data-import-sid=""
