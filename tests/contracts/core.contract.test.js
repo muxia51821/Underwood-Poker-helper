@@ -329,3 +329,158 @@ test('safe-mode startup is idempotent and preserves imported data', async () => 
   await initStorage({ safeMode: true });
   assert.deepEqual(SessionRepo.getAll(), [{ id: 'stable-session', profit: 3 }]);
 });
+
+// [V7.9.0 新增] Phase 0a：按块盲注 / 去重 / 事实落库 / Session 等级派生 / Discover 缓存失效
+
+const nl5MergedHand = [
+  'Poker Hand #MIXNL5A: Hold\'em No Limit ($0.02/$0.05) - 2026/06/01 10:00:00',
+  'Table \'T5\' 9-max Seat #1 is the button',
+  'Seat 1: Hero ($5.00 in chips)',
+  'Seat 2: Villain ($5.00 in chips)',
+  'Villain: posts small blind $0.02',
+  'Hero: posts big blind $0.05',
+  '*** HOLE CARDS ***',
+  'Dealt to Hero [Ah Kh]',
+  'Villain: folds',
+  'Hero collected $0.07 from pot',
+  '*** SUMMARY ***',
+].join('\n');
+
+const nl10MergedHand = [
+  'Poker Hand #MIXNL10A: Hold\'em No Limit ($0.05/$0.1) - 2026/06/01 10:05:00',
+  'Table \'T10\' 9-max Seat #1 is the button',
+  'Seat 1: Hero ($10.00 in chips)',
+  'Seat 2: Villain ($10.00 in chips)',
+  'Villain: posts small blind $0.05',
+  'Hero: posts big blind $0.10',
+  '*** HOLE CARDS ***',
+  'Dealt to Hero [As Kd]',
+  'Villain: folds',
+  'Hero collected $0.15 from pot',
+  '*** SUMMARY ***',
+].join('\n');
+
+test('GG parser derives big blind per block for mixed-stake merges', () => {
+  const hands = GGParser.parse(nl5MergedHand + '\n\n' + nl10MergedHand);
+  assert.equal(hands.length, 2);
+  assert.equal(hands[0].bbValue, 0.05);
+  assert.ok(Math.abs(hands[0].profitBB - 0.4) < 0.01);
+  assert.equal(hands[1].bbValue, 0.1);
+  assert.ok(Math.abs(hands[1].profitBB - 0.5) < 0.01);
+});
+
+test('GG parser falls back to the posts line when the header big blind is anomalous', () => {
+  const anomalous = nl10MergedHand
+    .replace('($0.05/$0.1)', '($0.05/$0.0)')
+    .replace('#MIXNL10A', '#MIXBADB');
+  const [hand] = GGParser.parse(anomalous);
+  assert.equal(hand.bbValue, 0.1);
+  assert.ok(Math.abs(hand.profitBB - 0.5) < 0.01);
+});
+
+test('import plan deduplicates hands repeated across merged files', () => {
+  let nextId = 0;
+  const generateId = () => 'gen-' + (++nextId);
+  const plan = buildImportPlan(
+    [
+      { handId: 'same-1', date: '2026-05-01 10:00', profitBB: 2 },
+      { handId: 'same-1', date: '2026-05-01 10:05', profitBB: 2 },
+    ],
+    [],
+    [],
+    { generateId }
+  );
+  assert.equal(plan.summary.duplicates, 1);
+  assert.equal(plan.summary.imported, 1);
+  assert.equal(plan.records.length, 1);
+});
+
+test('import records persist hero fact fields and overwrite patch refreshes them', () => {
+  let nextId = 0;
+  const generateId = () => 'gen-' + (++nextId);
+  const parsedHand = {
+    handId: 'facts-1', date: '2026-05-01 10:00', profitBB: 3,
+    boardCode: 'AhJh2h', boardCategory: 'monotone', opponentId: 'Villain',
+    heroPosition: 'BB', heroCards: 'Ah Kh', bbValue: 0.05,
+    heroStartStack: 10, heroEndStack: 10.15,
+  };
+  const plan = buildImportPlan([parsedHand], [], [], { generateId });
+  const record = plan.records[0];
+  assert.equal(record.heroPosition, 'BB');
+  assert.equal(record.heroCards, 'Ah Kh');
+  assert.equal(record.bbValue, 0.05);
+  assert.equal(record.heroStartStack, 10);
+  assert.equal(record.heroEndStack, 10.15);
+  assert.equal(record.marked, false);
+
+  const patch = createOverwritePatch(parsedHand);
+  assert.equal(patch.heroPosition, 'BB');
+  assert.equal(patch.heroCards, 'Ah Kh');
+  assert.equal(patch.bbValue, 0.05);
+  assert.equal(patch.heroStartStack, 10);
+  assert.equal(patch.heroEndStack, 10.15);
+  assert.equal('decision' in patch, false);
+  assert.equal('mistake' in patch, false);
+  assert.equal('reflection' in patch, false);
+  assert.equal('sessionId' in patch, false);
+  assert.equal('marked' in patch, false);
+});
+
+test('import derives session level from blinds and splits stake changes', () => {
+  let nextId = 0;
+  const generateId = () => 'gen-' + (++nextId);
+  const nl10Hands = [
+    { handId: 'l1', date: '2026-05-01 10:00', profitBB: 1, bbValue: 0.1 },
+    { handId: 'l2', date: '2026-05-01 10:20', profitBB: 2, bbValue: 0.1 },
+  ];
+  // 同日同档位的既有 Session 被复用
+  const planMatched = buildImportPlan(nl10Hands, [], [{ id: 's-old', date: '2026-05-01', level: 'NL10' }], { generateId });
+  assert.equal(planMatched.sessionMappings[0].session.id, 's-old');
+  assert.equal(planMatched.summary.newSessions, 0);
+  // 同日但档位不同的既有 Session 不再被错并，按盲注新建 NL10
+  const planSplit = buildImportPlan(nl10Hands, [], [{ id: 's-nl5', date: '2026-05-01', level: 'NL5' }], { generateId });
+  assert.equal(planSplit.summary.newSessions, 1);
+  assert.equal(planSplit.sessionMappings[0].session.level, 'NL10');
+  // 同小时内档位变化强制切组
+  const planMixed = buildImportPlan(
+    [
+      { handId: 'm1', date: '2026-05-01 10:00', profitBB: 1, bbValue: 0.1 },
+      { handId: 'm2', date: '2026-05-01 10:10', profitBB: 1, bbValue: 0.25 },
+    ],
+    [],
+    [],
+    { generateId }
+  );
+  assert.equal(planMixed.summary.newSessions, 2);
+  assert.deepEqual(planMixed.sessionMappings.map((mapping) => mapping.session.level), ['NL10', 'NL25']);
+});
+
+test('discover scan cache invalidates on hand data changes with unchanged count', async () => {
+  localStorage.clear();
+  await initStorage({ safeMode: true });
+  const { Discover } = await import('../../src/modules/discover.js');
+  const losingHands = [];
+  for (let i = 0; i < 55; i++) {
+    losingHands.push({
+      id: 'dh' + i,
+      boardCategory: 'monotone',
+      preflopScenario: 'BTNvsBB',
+      actionLineOTF: 'B60',
+      pBB: -2,
+      desc: '',
+    });
+  }
+  HandRepo.saveAll(losingHands);
+  Discover.init();
+  const firstScan = Discover.scan();
+  assert.ok(firstScan.some((finding) => finding.type === 'profit_anomaly'));
+
+  // 手牌数量不变、仅修改内容：修复前 Discover 会返回陈旧缓存
+  const winningHands = losingHands.map(function (hand) {
+    return Object.assign({}, hand, { pBB: 5 });
+  });
+  HandRepo.saveAll(winningHands);
+  const secondScan = Discover.scan();
+  assert.ok(!secondScan.some((finding) => finding.type === 'profit_anomaly'));
+  assert.equal(Discover.getScanHandCount(), 55);
+});

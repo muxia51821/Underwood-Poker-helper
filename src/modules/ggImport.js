@@ -97,16 +97,18 @@ function _setupFileDrop() {
     }
     if (!txtFiles.length) return;
     // [V6.15.2] 批量读取多个 .txt 文件
-    var allContent = '';
+    // [V7.9.0 修改] 按选择顺序索引装配，不再依赖 FileReader 完成顺序（异步竞态会导致合并顺序不确定）
+    var loadedTexts = new Array(txtFiles.length);
     var loaded = 0, failed = 0;
-    txtFiles.forEach(function (file) {
+    txtFiles.forEach(function (file, fileIdx) {
       var reader = new FileReader();
       reader.onload = function () {
-        allContent += reader.result + '\n\n';
+        loadedTexts[fileIdx] = String(reader.result || '');
         loaded++;
         _checkAllDone();
       };
       reader.onerror = function () {
+        loadedTexts[fileIdx] = '';
         failed++;
         Utils.showToast('文件 "' + file.name + '" 读取失败，已跳过。');
         _checkAllDone();
@@ -115,6 +117,7 @@ function _setupFileDrop() {
     });
     function _checkAllDone() {
       if (loaded + failed < txtFiles.length) return;
+      var allContent = loadedTexts.filter(function (t) { return t && t.trim(); }).join('\n\n');
       if (!allContent.trim()) {
         Utils.showToast('所有文件均读取失败或无有效内容。');
         return;

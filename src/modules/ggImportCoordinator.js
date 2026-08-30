@@ -18,14 +18,17 @@ function _groupBySessionGap(parsedHands, gapHours) {
   sorted.forEach(function (hand) {
     var time = hand.date ? new Date(hand.date.replace(' ', 'T') + ':00') : null;
     var timeMs = time ? time.getTime() : 0;
+    // [V7.9.0 修改] 档位（bbValue）变化时强制切组，防止混合档位手牌被并入同一场
+    var sameStake =
+      hand.bbValue == null || current.bbValue == null || hand.bbValue === current.bbValue;
     if (!current.startTime) {
-      current = { hands: [hand], startTime: time, endTime: time };
-    } else if (timeMs - current.endTime.getTime() <= gapMs) {
+      current = { hands: [hand], startTime: time, endTime: time, bbValue: hand.bbValue };
+    } else if (timeMs - current.endTime.getTime() <= gapMs && sameStake) {
       current.endTime = time;
       current.hands.push(hand);
     } else {
       groups.push(current);
-      current = { hands: [hand], startTime: time, endTime: time };
+      current = { hands: [hand], startTime: time, endTime: time, bbValue: hand.bbValue };
     }
   });
   if (current.hands.length) groups.push(current);
@@ -59,15 +62,35 @@ function _makeReviewRecord(hand, sessionId, generateId) {
     oHash: hand.oHash || Utils.normalizeOpponentName(hand.opponentId),
     rake: hand.rake || 0,
     jackpot: hand.jackpot || 0,
+    // [V7.9.0 新增] 持久化解析器已有的手牌事实，供后续结构化 Hero 决策派生使用
+    heroPosition: hand.heroPosition || '',
+    heroCards: hand.heroCards || '',
+    bbValue: hand.bbValue || 0,
+    heroStartStack: hand.heroStartStack || 0,
+    heroEndStack: hand.heroEndStack || 0,
+    marked: false,
   };
+}
+
+// [V7.9.0 新增] Session 等级按盲注派生：0.05→NL5、0.1→NL10、0.25→NL25；无盲注信息时回退 NL5（旧行为）
+function _deriveSessionLevel(group) {
+  var bb = null;
+  for (var i = 0; i < group.hands.length; i++) {
+    if (group.hands[i].bbValue != null && group.hands[i].bbValue > 0) {
+      bb = group.hands[i].bbValue;
+      break;
+    }
+  }
+  return bb ? 'NL' + Math.round(bb * 100) : 'NL5';
 }
 
 function _makeSession(group, existingSessions, generateId) {
   var startStr = group.startTime ? group.startTime.toISOString().split('T')[0] : '';
   var hour = group.startTime ? group.startTime.getHours() : 0;
   var period = hour < 6 ? '凌晨' : hour < 12 ? '上午' : hour < 18 ? '下午' : '晚间';
+  var level = _deriveSessionLevel(group);  // [V7.9.0 修改] 取代硬编码 'NL5'
   var matched = existingSessions.find(function (session) {
-    return session.date === startStr && session.level === 'NL5';
+    return session.date === startStr && session.level === level;
   });
   if (matched) return { session: matched, isNew: false };
 
@@ -77,7 +100,7 @@ function _makeSession(group, existingSessions, generateId) {
     session: {
       id: generateId(),
       date: startStr,
-      level: 'NL5',
+      level: level,
       duration: Math.max(0.5, Math.round(group.hands.length * 0.02 * 10) / 10),
       hands: group.hands.length,
       profit: parseFloat(totalProfit.toFixed(1)),
@@ -127,6 +150,12 @@ export function createOverwritePatch(hand) {
     oHash: hand.oHash || Utils.normalizeOpponentName(hand.opponentId),
     rake: hand.rake || 0,
     jackpot: hand.jackpot || 0,
+    // [V7.9.0 新增] 覆盖时同步刷新手牌事实字段；marked 与决策/反思/Session 关联一样保留用户数据，不进 patch
+    heroPosition: hand.heroPosition || '',
+    heroCards: hand.heroCards || '',
+    bbValue: hand.bbValue || 0,
+    heroStartStack: hand.heroStartStack || 0,
+    heroEndStack: hand.heroEndStack || 0,
   };
 }
 

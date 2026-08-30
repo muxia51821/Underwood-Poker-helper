@@ -374,6 +374,8 @@
           <div class="card">
             <details id="srpDetails">
               <summary class="tech-summary">📊 GTO 翻牌频率速查</summary>
+              <!-- [V7.9.0 新增] 旧 GTO 适用范围声明，内容由 app.js 从 gtoBaseline.GTO_LEGACY_SCOPE 注入 -->
+              <div id="srpScopeNote" style="font-size:0.7em;color:#8b949e;margin:6px 0 0"></div>
               <div class="row" style="gap:8px;margin:8px 0">
                 <label class="field">场景<select id="filterScenario" class="select">
                   <option value="SBvsBB">SB vs BB</option>
@@ -752,7 +754,7 @@ OTR河牌 牌面：    行动：</textarea
                 Heatmap
                 <div class="row" style="gap:4px">
                   <button class="toggle-btn hm-view-btn is-active" data-hm-view="profit">盈亏 BB/手</button>
-                  <button class="toggle-btn hm-view-btn" data-hm-view="cbet">CBet 偏离%</button>
+                  <button class="toggle-btn hm-view-btn" data-hm-view="cbet">CBet vs 旧GTO%</button><!-- [V7.9.0 修改] 对照对象是旧 GTO 参考 -->
                 </div>
               </div>
               <div id="discoverHeatmapChart"></div>
@@ -762,6 +764,8 @@ OTR河牌 牌面：    行动：</textarea
               <details id="discoverQuizDetails" open>
                 <summary class="card__title">Quiz 训练</summary>
                 <div class="quiz-card">
+                  <!-- [V7.9.0 新增] 旧 GTO 适用范围声明，内容由 review.js 从 gtoBaseline.GTO_LEGACY_SCOPE 注入 -->
+                  <div id="quizScopeNote" style="font-size:0.7em;color:#8b949e;margin-bottom:6px"></div>
                   <div class="quiz-controls">
                     <select id="quizScenario" class="quiz-select"></select>
                     <select id="quizStage" class="quiz-select">
@@ -1065,7 +1069,7 @@ OTR河牌 牌面：    行动：</textarea
             line-height: 1.4;
           "
         >
-          拖拽 .txt 牌谱文件到下方区域，或粘贴 GG 手牌历史文本。导入后自动按 3 小时间隔分配到
+          拖拽 .txt 牌谱文件到下方区域，或粘贴 GG 手牌历史文本。导入后自动按 1 小时间隔分配到
           Session。
         </div>
         <!-- [V6.14.0] 文件拖放区 -->
@@ -1087,7 +1091,8 @@ OTR河牌 牌面：    行动：</textarea
             >或点击选择文件</span
           >
         </div>
-        <input type="file" id="ggFileInput" accept=".txt,.json" style="display: none" />
+        <!-- [V7.9.0 修改] multiple：文件选择器支持一次选中多份 .txt（与拖拽行为一致） -->
+        <input type="file" id="ggFileInput" accept=".txt,.json" multiple style="display: none" />
         <div style="text-align: center; color: #475569; margin-bottom: 8px; font-size: 0.75em">
           ── 或粘贴文本 ──
         </div>

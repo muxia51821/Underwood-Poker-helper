@@ -220,6 +220,62 @@ test('移动端快速记录复用 Hand 表单并恢复来源上下文', async ({
   expect(getRealErrors(errors)).toEqual([]);
 });
 
+test('GG 多文件导入走解析预览并落库为手牌记录', async ({ page }) => {
+  const errors = captureRuntimeErrors(page);
+  await page.goto('/');
+  await page.click('[data-tab="review"]');
+  // 导入入口位于 Session 子面板
+  await page.click('[data-sub="session"]');
+  await page.click('#importGGBtn');
+  await expect(page.locator('#ggImportOverlay')).toHaveClass(/is-active/);
+
+  // 两份不同档位的合成 .txt：验证多文件选择器、确定性合并与按块盲注换算
+  const fileA = [
+    "Poker Hand #E2E100A: Hold'em No Limit ($0.02/$0.05) - 2026/06/01 10:00:00",
+    "Table 'E2EA' 9-max Seat #1 is the button",
+    'Seat 1: Hero ($5.00 in chips)',
+    'Seat 2: Villain ($5.00 in chips)',
+    'Villain: posts small blind $0.02',
+    'Hero: posts big blind $0.05',
+    '*** HOLE CARDS ***',
+    'Dealt to Hero [Ah Kh]',
+    'Villain: folds',
+    'Hero collected $0.07 from pot',
+    '*** SUMMARY ***',
+  ].join('\n');
+  const fileB = [
+    "Poker Hand #E2E200B: Hold'em No Limit ($0.05/$0.1) - 2026/06/01 10:05:00",
+    "Table 'E2EB' 9-max Seat #1 is the button",
+    'Seat 1: Hero ($10.00 in chips)',
+    'Seat 2: Villain ($10.00 in chips)',
+    'Villain: posts small blind $0.05',
+    'Hero: posts big blind $0.10',
+    '*** HOLE CARDS ***',
+    'Dealt to Hero [As Kd]',
+    'Villain: folds',
+    'Hero collected $0.15 from pot',
+    '*** SUMMARY ***',
+  ].join('\n');
+
+  await page.setInputFiles('#ggFileInput', [
+    { name: 'e2e-nl5.txt', mimeType: 'text/plain', buffer: Buffer.from(fileA, 'utf8') },
+    { name: 'e2e-nl10.txt', mimeType: 'text/plain', buffer: Buffer.from(fileB, 'utf8') },
+  ]);
+
+  // 解析预览出现两行新手牌，且各按自己的盲注换算 BB 盈亏
+  await expect(page.locator('#ggImportList .gg-import-check')).toHaveCount(2);
+  await expect(page.locator('#ggImportList')).toContainText('+0.4 BB');
+  await expect(page.locator('#ggImportList')).toContainText('+0.5 BB');
+
+  await page.click('.gg-sel-all-btn');
+  await page.click('#ggImportSelectedBtn');
+
+  // 导入后跳转 Hand 子面板，两条记录均已落库
+  await expect(page.locator('[data-sub="hand"]')).toHaveClass(/subnav__btn--active/);
+  await expect(page.locator('#handBody tr[data-hand-id]')).toHaveCount(2);
+  expect(getRealErrors(errors)).toEqual([]);
+});
+
 test('PWA manifest 与图标资源可读取且 Chromium 可解析', async ({ page }) => {
   const errors = captureRuntimeErrors(page);
   await page.goto('/');

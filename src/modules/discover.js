@@ -1,8 +1,9 @@
 // [V7.4.6] Discover — 自动模式发现引擎
-// 三种发现类型：自我矛盾 / 盈亏异常 / 偏离 GTO
-import { Utils } from '../utils.js';
+// [V7.9.0 修改] 发现类型：自我矛盾 / 盈亏异常（自动"偏离 GTO"发现已移除：旧 GTO 数据无适用范围元数据，
+// 只作 scoped legacy reference，不再对主线手牌自动打"偏离 GTO"标记）
+import { Utils, PubSub } from '../utils.js';
 import { HandRepo } from '../store/store.js';
-import { detectExtremes, getGTOReference } from '../data/strategy/gtoBaseline.js';  // [V7.4.8]
+import { getGTOReference } from '../data/strategy/gtoBaseline.js';  // [V7.9.0 修改] detectExtremes 已随自动偏离发现移除
 import { createLearningSnapshot, getLearningTarget } from './analysisReadModel.js';
 
 // 分类标签
@@ -34,6 +35,15 @@ export var Discover = {
     // 清理 7 天前的已改善记录
     var now = Date.now();
     this._state.archive = (this._state.archive || []).filter(function (a) { return now - a.archivedAt < 7 * 86400000; });
+    // [V7.9.0 新增] 订阅手牌数据变更：任何增删改/导入/恢复后强制下次重扫，
+    // 不再只依赖"手牌总数未变"判断缓存（修复编辑同数量手牌后 Discover 不刷新）
+    if (!this._handDataSubscribed) {
+      this._handDataSubscribed = true;
+      PubSub.on('handDataChanged', function () {
+        Discover._findings = [];
+        Discover._state.scanHandCount = 0;
+      });
+    }
   },
 
   _scanning: false,
@@ -93,7 +103,7 @@ export var Discover = {
             var ref = getGTOReference(sc, g.hands[0].boardCode);
             if (ref) {
               var gtoTotal = (ref.bet75||0) + (ref.bet50||0) + (ref.bet33||0);
-              gtoRef = 'GTO 参考 CBet ' + Math.round(gtoTotal) + '%';
+              gtoRef = '旧GTO参考 CBet ' + Math.round(gtoTotal) + '%';  // [V7.9.0 修改] 标明旧数据来源
             }
           } catch(e) {}
           findings.push({
@@ -108,27 +118,10 @@ export var Discover = {
         }
     });
 
-    // 类型 3：偏离 GTO（极端阈值：>90% 或 <5%）
-    hands.forEach(function (h) {
-      if (!h.boardCode || !h.preflopScenario) return;
-      try {
-        var extremes = detectExtremes(h);
-        if (extremes && extremes.length) {
-          findings.push({
-            id: 'gto_' + (h.id || h.handId),
-            type: 'gto_deviation',
-            priority: 3,
-            title: extremes[0],
-            handCount: 1,
-            handIds: [h.id],
-            category: h.boardCategory || 'unknown',
-            scenario: h.preflopScenario || 'unknown',
-          });
-        }
-      } catch (e) { /* scenario not supported by gtoBaseline */ }
-    });
+    // [V7.9.0 移除] 类型 3"偏离 GTO"（极端阈值逐手打标）：旧 GTO 数据无适用范围元数据，
+    // 不满足条件的手牌会被误标"偏离 GTO"；保留 getGTOReference 供自我矛盾参考与热力图对照。
 
-    // 排序：盈亏异常 > 自我矛盾 > 偏离 GTO
+    // 排序：盈亏异常 > 自我矛盾
     findings.sort(function (a, b) { return a.priority - b.priority; });
     this._findings = findings;
 

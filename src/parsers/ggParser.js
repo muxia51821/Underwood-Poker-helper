@@ -133,7 +133,8 @@ export const GGParser = {
       return Utils.safeFixed(parseFloat(d) / bbValue, 1) + 'bb';
     });
   },
-  // 文本切分 + BB 检测
+  // 文本切分
+  // [V7.9.0 修改] 盲注值改为 parseDetailed 内逐块检测，此处不再整段取单一 bbValue
   _splitBlocks: function (raw) {
     var parts = raw.split(/Poker Hand #/);
     var blocks = [];
@@ -141,15 +142,7 @@ export const GGParser = {
       var b = ('Poker Hand #' + parts[p]).trim();
       if (b) blocks.push(b);
     }
-    var bbValue = 0.05;
-    for (var i = 0; i < blocks.length; i++) {
-      var bbM = blocks[i].match(/posts big blind \$([\d.]+)/);
-      if (bbM) {
-        bbValue = parseFloat(bbM[1]);
-        break;
-      }
-    }
-    return { blocks: blocks, bbValue: bbValue };
+    return { blocks: blocks };
   },
   /**
    * 盈亏计算（纯投入法）：投入 = 盲注+ante+主动投入 - uncalled返还，profit = 赢取 - 投入
@@ -207,7 +200,8 @@ export const GGParser = {
   parseDetailed: function (text) {
     var split = this._splitBlocks(text);
     var blocks = split.blocks;
-    var bbValue = split.bbValue;
+    // [V7.9.0 修改] bbValue 逐块更新：块内 posts big blind，缺失时沿用上一块的值；toBB 等闭包按当前值读取
+    var bbValue = 0.05;
     var results = [];
     var failures = [];
     var self = this;
@@ -248,6 +242,19 @@ export const GGParser = {
             String(bjDate.getUTCMinutes()).padStart(2, '0');
         } else {
           hand.date = '';
+        }
+        // [V7.9.0 修改] 每块独立检测盲注：优先取牌局头部的 ($sb/$bb) 结构（GG 偶发异常 post 行时该来源更可靠），
+        // 缺失回退块内 posts big blind，再回退上一块的值；混合档位多文件导入时各手 pBB 不再失真
+        var stakeM = block.match(/\(\$([\d.]+)\/\$([\d.]+)/);
+        var blockBBM = block.match(/posts big blind \$([\d.]+)/);
+        // [V7.9.0 修改] 每块独立检测盲注：优先取牌局头部的 ($sb/$bb) 结构（GG 偶发异常 post 行时该来源更可靠），
+        // 头部大盲为 0/NaN（GG 导出异常）或缺失时回退块内 posts big blind，再回退上一块的值；
+        // 混合档位多文件导入时各手 pBB 不再失真
+        var stakeBB = stakeM ? parseFloat(stakeM[2]) : 0;
+        if (stakeBB > 0) {
+          bbValue = stakeBB;
+        } else if (blockBBM && parseFloat(blockBBM[1]) > 0) {
+          bbValue = parseFloat(blockBBM[1]);
         }
         hand.bbValue = bbValue;
         var pm = self._posMap(block);

@@ -4,6 +4,7 @@ import { Utils } from '../utils.js';
 import { Store, SessionRepo, HandRepo, WeeklyRepo, TiltLogRepo } from '../store/store.js';
 import { analyze, getStatColor, STAT_TOOLTIPS, STAT_DEFINITIONS } from './statsEngine.js';  // [V6.18.4]
 import { Discover } from './discover.js';  // [V7.4.6]
+import { GTO_LEGACY_SCOPE } from '../data/strategy/gtoBaseline.js';  // [V7.9.0 新增] 旧 GTO 对照统一标注
 import { QuizTrainer } from './quizTrainer.js';  // [V7.4.7]
 import { getLearningTarget } from './analysisReadModel.js';
 import { openGGImportForSession } from './ggImport.js';  // [V6.14.0]
@@ -2185,8 +2186,9 @@ export const Review = {
     // [V7.4.8] 读取 Quiz 进度用于标记弱项/已掌握
     var quizStages = {};
     try { QuizTrainer.getStages().forEach(function (s) { quizStages[s.key] = s.accuracy; }); } catch(e) {}
-    var typeLabels = { profit_anomaly: '盈亏异常', self_contradiction: '自我矛盾', gto_deviation: '偏离 GTO' };
-    var typeClasses = { profit_anomaly: 'finding-card--profit', self_contradiction: 'finding-card--contradiction', gto_deviation: 'finding-card--gto' };
+    // [V7.9.0 修改] 自动"偏离 GTO"发现已移除，类型映射随之精简
+    var typeLabels = { profit_anomaly: '盈亏异常', self_contradiction: '自我矛盾' };
+    var typeClasses = { profit_anomaly: 'finding-card--profit', self_contradiction: 'finding-card--contradiction' };
     container.innerHTML = '<section class="learning-findings"><div class="card__title">模式发现</div>' +
       '<div class="learning-findings__summary">基于 ' + Discover.getScanHandCount() + ' 手牌自动分析，发现 ' + findings.length + ' 条模式</div><div class="finding-list">' +
       findings.map(function (f) {
@@ -2409,7 +2411,7 @@ function _drawHeatmap(data, view) {
           var html = '<b>' + (CAT_LABELS_SHORT[h.category] || h.category) + ' &times; ' + h.scenario + '</b><br>';
           if (cd && cd.handCount >= 5) {
             html += '手数: ' + cd.handCount + '<br>盈亏: ' + (cd.avgProfit >= 0 ? '+' : '') + Utils.safeFixed(cd.avgProfit, 1) + ' BB/手<br>CBet: ' + cd.cbetFreq + '%';
-            if (cd.gtoAvgCbet != null) html += ' (GTO ' + cd.gtoAvgCbet + '%)';
+            if (cd.gtoAvgCbet != null) html += ' (旧GTO ' + cd.gtoAvgCbet + '%)';  // [V7.9.0 修改]
           } else { html += '数据不足 (' + (cd ? cd.handCount : 0) + ' 手)'; }
           tt.innerHTML = html; tt.style.display = 'block';
           tt.style.left = Math.min(mx + 14, W - 160) + 'px';
@@ -2434,7 +2436,8 @@ function _drawHeatmap(data, view) {
   var legEl = document.getElementById('discoverHeatmapLegend');
   if (legEl) {
     if (view === 'profit') legEl.innerHTML = '<span style="color:#f85149">■</span> 亏损 &larr; <span style="color:#8b949e">■</span> 持平 &rarr; <span style="color:#2ea043">■</span> 盈利 &nbsp; BB/手';
-    else legEl.innerHTML = '<span style="color:#58a6ff">■</span> 低于GTO &larr; <span style="color:#8b949e">■</span> 吻合GTO &rarr; <span style="color:#f85149">■</span> 高于GTO &nbsp; 偏离% &nbsp; <span style="color:#555">灰色=N/A</span>';
+    // [V7.9.0 修改] 旧 GTO 对照改标注并注明适用范围未验证（scoped legacy reference）
+    else legEl.innerHTML = '<span style="color:#58a6ff">■</span> 低于旧GTO &larr; <span style="color:#8b949e">■</span> 吻合 &rarr; <span style="color:#f85149">■</span> 高于旧GTO &nbsp; 偏离% &nbsp; <span style="color:#555">灰色=N/A</span><br><span style="color:#8b949e;font-size:0.9em">' + Utils.escapeHtml(GTO_LEGACY_SCOPE.note) + '</span>';
   }
 }
 
@@ -2452,6 +2455,9 @@ function _bindQuizUI() {
   var nextBtn = document.getElementById('quizNextBtn');
   var statsEl = document.getElementById('quizStats');
   if (!scenarioSel || !stageSel) return; // Quiz HTML 未加载
+  // [V7.9.0 新增] 旧 GTO 适用范围声明（单一来源：gtoBaseline.GTO_LEGACY_SCOPE）
+  var quizScopeEl = document.getElementById('quizScopeNote');
+  if (quizScopeEl) quizScopeEl.textContent = GTO_LEGACY_SCOPE.note;
   var chosenAction = null;
   var scenarios = QuizTrainer.getScenarios();
   scenarioSel.innerHTML = scenarios.map(function (s) { return '<option value="' + s.key + '">' + s.label.split(' —')[0] + '</option>'; }).join('');

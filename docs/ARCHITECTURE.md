@@ -82,10 +82,10 @@ main.js
   ├── parsers/ggParser.js    → constants, utils
   ├── store/db.js            (zero deps)
   ├── store/store.js         → constants, utils, db, statsEngine.clearStatsCache
-  ├── modules/app.js         → constants, utils, store, srpData, actionLines, 全部子模块
+  ├── modules/app.js         → constants, utils, store, srpData, actionLines, gtoBaseline, 全部子模块
   ├── modules/timer.js       → constants, utils, store, [beep/vibrate/notify from app]
   ├── modules/odds.js        → constants, utils
-  ├── modules/review.js      → constants, utils, store, statsEngine, ggImport, handPicker, discover, quizTrainer, navigation, analysisReadModel
+  ├── modules/review.js      → constants, utils, store, statsEngine, ggImport, handPicker, discover, quizTrainer, navigation, analysisReadModel, gtoBaseline (V7.9.0 scope 标注)
   ├── modules/statsEngine.js → constants
   ├── modules/handPicker.js  → constants, utils, store, navigation
   ├── modules/ggImport.js    → constants, utils, store, ggParser, ggImportCoordinator, navigation
@@ -144,11 +144,14 @@ beforeunload:
 ### GG Hand History Import
 
 ```
-User pastes GG text in overlay
+User pastes GG text / selects multiple .txt (V7.9.0: picker multiple + 拖拽多文件)
+  → handleFiles(): FileReader 按选择顺序索引装配（消除完成顺序竞态）
   → GGParser.parseDetailed(raw)
       → Return { hands, failures, total }
+      → [V7.9.0] bbValue 逐块检测：优先牌局头部 ($sb/$bb)，异常/缺失回退块内 posts 行，再回退上一块
   → ggImportCoordinator.buildImportPlan()
-      → duplicate / overwrite / Session 分组 / record mapping
+      → duplicate (ggId, 含同批跨文件) / overwrite / Session 分组 / record mapping
+      → [V7.9.0] Session 等级按盲注派生 (NL5/NL10/NL25...)，档位变化强制切组
   → User selects/deselects hands → HandRepo.saveAll(plan.records)
   → Navigation.refreshReview() + Navigation.goToReviewSubtab('hand')
 ```
@@ -189,7 +192,9 @@ sessions:          [ { id, date, level, duration, hands, profit, tilt, mistake, 
 handReviews:       [ { id, sessionId, date, potType, board, boardCode, boardCategory,
                        preflopScenario, actionLineOTF, actionLineOTT, actionLineOTR,
                        desc, mistake, reflection, pBB,
-                       gg?, ggId?, oId?, oCards?, oHash?, rake, jackpot, marked } ]
+                       gg?, ggId?, oId?, oCards?, oHash?, rake, jackpot, marked,
+                       heroPosition?, heroCards?, bbValue?, heroStartStack?, heroEndStack? } ]
+                       // [V7.9.0] 尾部五字段 + marked 由 GG 导入新记录携带；旧记录无这些字段，读取方需容错
 weeklyReviews:     [ { week: 'YYYY-Www', weakness, plan } ]
 tiltLogs:          [ { date, time, trigger, intensity, note } ]
 // Quiz & Discover (localStorage)
@@ -273,9 +278,11 @@ HandRepo.getAll()
   → analysisReadModel.createLearningSnapshot()
   → filter hands (boardCategory + actionLineOTF + Hero preflop fold)
   → group by category × scenario
-  → detect: profit_anomaly (< -0.5BB) / self_contradiction (CBet deviation >10pp) / gto_deviation
+  → detect: profit_anomaly (< -0.5BB) / self_contradiction (CBet deviation >10pp)
+    [V7.9.0] gto_deviation 自动发现已移除：旧 GTO 数据无适用范围元数据（scoped legacy reference）
   → try-finally release _scanning lock
   → cache: skip re-scan if hand count unchanged
+    [V7.9.0] HandRepo.saveAll → PubSub 'handDataChanged' → Discover 强制重扫（修复编辑同数量手牌不刷新）
 
 Discover.getHeatmapData()
   → return full category×scenario grid (not just anomalies)

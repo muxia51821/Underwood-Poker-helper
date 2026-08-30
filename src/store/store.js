@@ -1,5 +1,5 @@
 import { CONSTANTS } from '../constants.js';
-import { Utils } from '../utils.js';
+import { Utils, PubSub } from '../utils.js';
 import { DB } from './db.js';  // [V6.17.0] DB 独立模块
 import { LocalStorageAdapter, IndexedDBAdapter, PersistenceCoordinator } from './storage.js';
 import { clearStatsCache } from '../modules/statsEngine.js';  // [V7.0.0] 数据变更时清统计缓存
@@ -210,7 +210,12 @@ export class BaseRepo {
   saveAll(items) {
     this._cache = items;
     // [V7.0.0] 手牌数据变更时清除统计缓存（context + analyze 两层）
-    if (this._key === 'handReviews') clearStatsCache();
+    if (this._key === 'handReviews') {
+      clearStatsCache();
+      // [V7.9.0 新增] 手牌任何增删改/导入/恢复都发布变更事件，Discover 订阅后强制重扫
+      // （修复：编辑同数量手牌后 Discover 因"总数未变"一直返回陈旧缓存）
+      PubSub.emit('handDataChanged');
+    }
     if (this._backend === 'indexeddb') {
       this._scheduleDBWrite();
     } else {

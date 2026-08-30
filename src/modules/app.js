@@ -2,6 +2,7 @@ import { CONSTANTS } from '../constants.js';
 import { Utils, PubSub } from '../utils.js';
 import { Store, SessionRepo, WeeklyRepo, TiltLogRepo } from '../store/store.js';
 import { srpData, ACTION_SHORT } from '../data/srpData.js';
+import { GTO_LEGACY_SCOPE } from '../data/strategy/gtoBaseline.js';  // [V7.9.0 新增] 旧 GTO 对照统一标注
 import { underBluff, overBluff } from '../data/actionLines.js';
 
 import { DataSync } from './dataSync.js';
@@ -121,6 +122,9 @@ export const App = {
             if (srpDetails) {
               srpDetails.addEventListener('toggle', function () {
                 if (this.open && !App._srpLoaded) {
+                  // [V7.9.0 新增] 旧 GTO 适用范围声明（单一来源：gtoBaseline.GTO_LEGACY_SCOPE）
+                  var srpScopeNote = document.getElementById('srpScopeNote');
+                  if (srpScopeNote) srpScopeNote.textContent = GTO_LEGACY_SCOPE.note;
                   App.renderSRPTable();
                   var filterScenario = document.getElementById('filterScenario');
                   var filterHigh = document.getElementById('filterHigh');
