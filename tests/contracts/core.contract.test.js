@@ -387,6 +387,13 @@ test('GG parser records tableMax from the -max marker and stays 0 when absent', 
   assert.equal(unknown.tableMax, 0);
 });
 
+test('GG parser reports hands with unparseable dates as failures instead of silent drops', () => {
+  const result = GGParser.parseDetailed(nl5MergedHand.replace('2026/06/01', '2026/06/100'));
+  assert.equal(result.hands.length, 0);
+  assert.equal(result.total, 1);
+  assert.ok(result.failures.some((failure) => failure.reason.includes('时间')));
+});
+
 test('import plan deduplicates hands repeated across merged files', () => {
   let nextId = 0;
   const generateId = () => 'gen-' + (++nextId);
@@ -464,6 +471,38 @@ test('import derives session level from blinds and splits stake changes', () => 
   );
   assert.equal(planMixed.summary.newSessions, 2);
   assert.deepEqual(planMixed.sessionMappings.map((mapping) => mapping.session.level), ['NL10', 'NL25']);
+});
+
+test('import aggregates session hands and profit across split groups', () => {
+  let nextId = 0;
+  const generateId = () => 'gen-' + (++nextId);
+  // 同日同档位被 >1h 间隔切成两个分组：Session 统计应取总和而非首个分片
+  const hands = [
+    { handId: 'g1', date: '2026-05-01 10:00', profitBB: 1, bbValue: 0.1 },
+    { handId: 'g2', date: '2026-05-01 15:00', profitBB: 2.5, bbValue: 0.1 },
+    { handId: 'g3', date: '2026-05-01 15:10', profitBB: -0.5, bbValue: 0.1 },
+  ];
+  const plan = buildImportPlan(hands, [], [], { generateId });
+  assert.equal(plan.summary.newSessions, 1);
+  assert.equal(plan.sessionMappings[0].session.hands, 3);
+  assert.equal(plan.sessionMappings[0].session.profit, 3);
+  // 同日混档位各自成场，互不串数
+  const mixed = buildImportPlan(
+    [
+      { handId: 'm1', date: '2026-05-02 10:00', profitBB: 1, bbValue: 0.1 },
+      { handId: 'm2', date: '2026-05-02 10:05', profitBB: 2, bbValue: 0.25 },
+    ],
+    [],
+    [],
+    { generateId }
+  );
+  assert.equal(mixed.summary.newSessions, 2);
+  const byLevel = {};
+  mixed.sessionMappings.forEach((mapping) => { byLevel[mapping.session.level] = mapping.session; });
+  assert.equal(byLevel.NL10.hands, 1);
+  assert.equal(byLevel.NL10.profit, 1);
+  assert.equal(byLevel.NL25.hands, 1);
+  assert.equal(byLevel.NL25.profit, 2);
 });
 
 test('discover scan cache invalidates on hand data changes with unchanged count', async () => {

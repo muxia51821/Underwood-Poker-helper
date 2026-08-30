@@ -198,6 +198,29 @@ export function buildImportPlan(parsedHands, existingReviews, existingSessions, 
       records.push(_makeReviewRecord(hand, mapping.session.id, generateId));
     });
   });
+  // [V7.9.0 修改] 按唯一 Session 聚合手数/盈亏：多桌混档位或分批导入时，同一 Session 会由多个分组
+  // 累积而成，只在创建时取首个分片会让 Session 统计严重偏小（真实语料实测暴露）。
+  var preExistingIds = new Set((existingSessions || []).map(function (session) { return session.id; }));
+  var agg = {};
+  mappings.forEach(function (mapping) {
+    var profit = 0;
+    mapping.hands.forEach(function (hand) { profit += hand.profitBB || 0; });
+    if (!agg[mapping.session.id]) agg[mapping.session.id] = { hands: 0, profit: 0 };
+    agg[mapping.session.id].hands += mapping.hands.length;
+    agg[mapping.session.id].profit += profit;
+  });
+  sessions.forEach(function (session) {
+    var a = agg[session.id];
+    if (!a) return;
+    if (preExistingIds.has(session.id)) {
+      session.hands = (session.hands || 0) + a.hands;
+      session.profit = parseFloat(((session.profit || 0) + a.profit).toFixed(1));
+    } else {
+      session.hands = a.hands;
+      session.profit = parseFloat(a.profit.toFixed(1));
+      session.duration = Math.max(0.5, Math.round(session.hands * 0.02 * 10) / 10);
+    }
+  });
   return {
     valid: true,
     parsedHands: annotated,

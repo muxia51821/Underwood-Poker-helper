@@ -243,6 +243,11 @@ export const GGParser = {
         } else {
           hand.date = '';
         }
+        // [V7.9.0 修改] 头部时间无法解析的手牌按失败上报，禁止静默进入导入计划（实测畸形日期会被分组逻辑静默丢弃）
+        if (!hand.date) {
+          failures.push({ handId: hand.handId, reason: '无法解析手牌时间' });
+          continue;
+        }
         // [V7.9.0 修改] 每块独立检测盲注：优先取牌局头部的 ($sb/$bb) 结构（GG 偶发异常 post 行时该来源更可靠），
         // 缺失回退块内 posts big blind，再回退上一块的值；混合档位多文件导入时各手 pBB 不再失真
         var stakeM = block.match(/\(\$([\d.]+)\/\$([\d.]+)/);

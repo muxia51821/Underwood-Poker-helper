@@ -314,7 +314,7 @@ export function initGGImport() {
     document.getElementById('ggImportOverlay').classList.remove('is-active');
     var targetText = _targetSessionId
       ? ' 手牌到 Session'
-      : '手牌，分配到 ' + plan.sessionMappings.length + ' 个 Session' +
+      : '手牌，分配到 ' + new Set(plan.sessionMappings.map(function (mapping) { return mapping.session.id; })).size + ' 个 Session' +
         (plan.summary.newSessions > 0 ? '（其中 ' + plan.summary.newSessions + ' 个为新建）' : '');
     Utils.showToast('成功导入 ' + plan.records.length + ' ' + targetText + '。');
     _targetSessionId = null;
