@@ -1,13 +1,13 @@
 {
   "name": "poker-table-agent",
   "private": true,
-  "version": "7.9.1",
+  "version": "7.10.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test:contracts": "node --test tests/contracts/core.contract.test.js",
+    "test:contracts": "node --test tests/contracts/core.contract.test.js tests/contracts/phase4.contract.test.js",
     "test:build-output": "node scripts/build-output-contract.mjs",
     "test:e2e": "playwright test --config=e2e/playwright.config.js",
     "check": "node scripts/check.mjs"

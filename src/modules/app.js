@@ -14,6 +14,7 @@ import { initGGImport } from './ggImport.js';
 import { HandPicker } from './handPicker.js';  // [V6.15.0]
 import { Discover } from './discover.js';      // [V7.4.6]
 import { Navigation } from './navigation.js';  // [V7.7.2]
+import { StrategyDesk } from './strategyDesk.js';  // [V7.10.1 新增] Evidence & Strategy
 
 export const App = {
           sound: true,
@@ -75,6 +76,7 @@ export const App = {
                   HandPicker.render();
                 }
                 if (name === 'discover') Review.renderDiscover(options);
+                if (name === 'strategy') StrategyDesk.render();  // [V7.9.3 新增]
                 if (name === 'weekly') {
                   Review.generateWeeklyStats();
                   Review.renderWeeklyReviews();
@@ -84,6 +86,8 @@ export const App = {
               onTargetHand: function (handId) { Review.focusHand(handId); },
               onTargetSession: function (sessionId) { Review.focusSession(sessionId); },
               onLearningTarget: function (target) { Review.startLearningTarget(target); },
+              onTargetStrategy: function (strategyId) { StrategyDesk.editStrategy(strategyId); },  // [V7.10.1 新增]
+              onTargetOpponent: function (oHash) { Review.focusOpponent(oHash); },  // [V7.10.2 新增]
               onRefresh: function (scope) {
                 if (scope === 'hand') Review.renderHandReviews();
                 else if (scope === 'session') Review.renderSessions();

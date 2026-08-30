@@ -19,10 +19,11 @@ const localStorage = createLocalStorage();
 globalThis.localStorage = localStorage;
 globalThis.window = { addEventListener() {} };
 
-const { Store, SessionRepo, HandRepo, BaseRepo, initStorage, MarksRepo, ClosureRepo } = await import('../../src/store/store.js');
+const { Store, SessionRepo, HandRepo, BaseRepo, initStorage, MarksRepo, ClosureRepo, DossierRepo, EvidencePackRepo, StrategyRepo } = await import('../../src/store/store.js');
 const { LocalStorageAdapter, PersistenceCoordinator } = await import('../../src/store/storage.js');
 const { buildImportPlan, createOverwritePatch } = await import('../../src/modules/ggImportCoordinator.js');
 const { normalizeLearningHand, createLearningSnapshot, getLearningTarget } = await import('../../src/modules/analysisReadModel.js');
+const { HandReplay } = await import('../../src/modules/handReplay.js');
 
 const uncalledHand = [
   'Poker Hand #RC100001',
@@ -442,6 +443,98 @@ test('storage export/import covers marks and closures with merge-without-overwri
   assert.equal(ClosureRepo.getAll().length, 2);
 });
 
+// [V7.9.2 新增] Phase 2 Decision Radar：观察派生、信号阈值、Dossier 持久化
+
+test('flop observations attribute hero actions by scenario flop order', async () => {
+  const { buildFlopObservations, OBSERVATION_VERSION } = await import('../../src/modules/analysisReadModel.js');
+  const hands = [
+    // BTNvsBB 加注者（后行动）：BB 过牌 → 第二 token 是 C-bet 决策
+    { id: 'o1', heroPosition: 'BTN', preflopScenario: 'BTNvsBB', boardCategory: 'monotone', actionLineOTF: 'X-B60-C', pBB: 5 },
+    // BTNvsBB 加注者：BB 先下注（donk）→ v1 排除
+    { id: 'o2', heroPosition: 'BTN', preflopScenario: 'BTNvsBB', boardCategory: 'monotone', actionLineOTF: 'B40-C', pBB: -2 },
+    // BTNvsBB 加注者：过牌到底
+    { id: 'o3', heroPosition: 'BTN', preflopScenario: 'BTNvsBB', boardCategory: 'monotone', actionLineOTF: 'X-C', pBB: 1 },
+    // BTNvsBB 跟注者（先行动，OOP）：过牌后面对 C-bet 弃牌
+    { id: 'o4', heroPosition: 'BB', preflopScenario: 'BTNvsBB', boardCategory: 'dryAHigh', actionLineOTF: 'X-B60-F', pBB: -3 },
+    // COvsBTN 加注者（先行动，OOP）：直接 C-bet
+    { id: 'o5', heroPosition: 'CO', preflopScenario: 'COvsBTN', boardCategory: 'monotone', actionLineOTF: 'B60-C', pBB: 4 },
+    // SBvsBB 加注者（后行动）：BB 过牌后 C-bet
+    { id: 'o11', heroPosition: 'SB', preflopScenario: 'SBvsBB', boardCategory: 'monotone', actionLineOTF: 'X-B60-C', pBB: 4 },
+    // SBvsBB 加注者：BB 先下注 → donk 排除
+    { id: 'o10', heroPosition: 'SB', preflopScenario: 'SBvsBB', boardCategory: 'monotone', actionLineOTF: 'B60-C', pBB: 2 },
+    // SBvsBB 跟注者（BB，先行动）→ 翻牌先行动无"面对下注"，排除
+    { id: 'o6', heroPosition: 'BB', preflopScenario: 'SBvsBB', boardCategory: 'monotone', actionLineOTF: 'X-C', pBB: 0 },
+    // 场景 other → 排除
+    { id: 'o7', heroPosition: 'MP', preflopScenario: 'other', boardCategory: 'monotone', actionLineOTF: 'B60-C', pBB: 2 },
+    // 尺寸分桶：低 / 高
+    { id: 'o8', heroPosition: 'BTN', preflopScenario: 'BTNvsBB', boardCategory: 'dryAHigh', actionLineOTF: 'X-B30-C', pBB: 2 },
+    { id: 'o9', heroPosition: 'BTN', preflopScenario: 'BTNvsBB', boardCategory: 'dryAHigh', actionLineOTF: 'X-B80-C', pBB: 2 },
+  ];
+  const { observations, stats } = buildFlopObservations(hands);
+  assert.equal(stats.total, 11);
+  assert.equal(stats.attributed, 7);
+  assert.equal(stats.donkExcluded, 2);
+  assert.equal(stats.checkedThroughExcluded, 1);
+  const byId = {};
+  observations.forEach((o) => { byId[o.handId] = o; });
+  assert.equal(byId['o1'].didBet, true);
+  assert.equal(byId['o1'].sizingBucket, 'mid');
+  assert.equal(byId['o1'].question, 'cbet');
+  assert.equal(byId['o1'].role, 'aggressor');
+  assert.equal(byId['o3'].didBet, false);
+  assert.equal(byId['o4'].question, 'facebet');
+  assert.equal(byId['o4'].didFold, true);
+  assert.equal(byId['o5'].question, 'cbet');
+  assert.equal(byId['o11'].question, 'cbet');
+  assert.equal(byId['o8'].sizingBucket, 'low');
+  assert.equal(byId['o9'].sizingBucket, 'high');
+  assert.equal(observations.every((o) => o.observationVersion === OBSERVATION_VERSION), true);
+});
+
+test('radar signals use deterministic ids and deviation thresholds', async () => {
+  const { DecisionRadar } = await import('../../src/modules/decisionRadar.js');
+  const obs = [];
+  // 8 手 BTNvsBB·monotone 全 C-bet
+  for (let i = 0; i < 8; i++) {
+    obs.push({ handId: 'sig' + i, scenario: 'BTNvsBB', boardCategory: 'monotone', question: 'cbet', didBet: true, didFold: false, pBB: 4 });
+  }
+  // 基线补充 12 手其他牌面（8 手 C-bet，使该 spot 自身偏差 <15pp）
+  for (let i = 0; i < 12; i++) {
+    obs.push({ handId: 'base' + i, scenario: 'BTNvsBB', boardCategory: 'dryAHigh', question: 'cbet', didBet: i < 8, didFold: false, pBB: 1 });
+  }
+  const signals = DecisionRadar.buildSignals(obs);
+  assert.equal(signals.length, 1);
+  assert.equal(signals[0].id, 'radar|BTNvsBB|flop|monotone|cbet');
+  assert.equal(signals[0].spotFreq, 100);
+  assert.equal(signals[0].baselineFreq, 80);
+  assert.equal(signals[0].deviationPP, 20);
+  assert.equal(signals[0].sampleHandIds.length, 8);
+  // 样本不足（7 手 spot）→ 无信号
+  assert.equal(DecisionRadar.buildSignals(obs.slice(1)).length, 0);
+  // 偏差不足（基线同样全 C-bet）→ 无信号
+  const flat = obs.map((o) => Object.assign({}, o, { didBet: true }));
+  assert.equal(DecisionRadar.buildSignals(flat).length, 0);
+});
+
+test('dossier lifecycle persists through export/import merge', async () => {
+  localStorage.clear();
+  await initStorage({ safeMode: true });
+  const { OBSERVATION_VERSION } = await import('../../src/modules/analysisReadModel.js');
+  DossierRepo.saveAll([{
+    id: 'd-1', signalId: 'radar|X', spotKey: 'X', title: 'T', status: 'open',
+    hypothesis: 'h1', counterexamples: '', nextSteps: '', sampleHandIds: ['a'],
+    observationVersion: OBSERVATION_VERSION, createdAt: '2026-08-30 10:00', updatedAt: '2026-08-30 10:00',
+  }]);
+  const data = Store.exportAll();
+  assert.ok(Array.isArray(data.dossiers));
+  assert.throws(() => Store.importAll({ dossiers: {} }), /dossiers 应为数组/);
+  Store.importAll({ dossiers: [{ id: 'd-1', status: 'open' }, { id: 'd-2', signalId: 'radar|Y' }] });
+  const all = DossierRepo.getAll();
+  assert.equal(all.length, 2);
+  assert.equal(all.filter((d) => d.id === 'd-1')[0].hypothesis, 'h1');  // 合并不覆盖
+  assert.ok(all.filter((d) => d.id === 'd-2')[0]);
+});
+
 test('storage coordinator prefers IndexedDB and falls back on read failure', async () => {
   localStorage.clear();
   localStorage.setItem('pa_sessions', JSON.stringify([{ id: 'local-1' }]));
@@ -686,4 +779,238 @@ test('discover scan cache invalidates on hand data changes with unchanged count'
   const secondScan = Discover.scan();
   assert.ok(!secondScan.some((finding) => finding.type === 'profit_anomaly'));
   assert.equal(Discover.getScanHandCount(), 55);
+});
+
+// ---- Hand Replay（V7.10.0）：回放解析纯函数与只读约束 ----
+
+// [V7.10.0 新增] 把 GG 解析结果映射成 handReviews 存储记录形状（_makeReviewRecord 同构）
+function buildStoredRecordFromParser(block, id) {
+  const parsed = GGParser.parseDetailed(block).hands[0];
+  return {
+    id: id,
+    sessionId: null,
+    date: parsed.date,
+    potType: parsed.potType,
+    board: parsed.board,
+    boardCode: parsed.boardCode || '',
+    boardCategory: parsed.boardCategory || '',
+    preflopScenario: parsed.preflopScenario || 'other',
+    actionLineOTF: parsed.actionLineOTF || '',
+    actionLineOTT: parsed.actionLineOTT || '',
+    actionLineOTR: parsed.actionLineOTR || '',
+    desc: parsed.desc,
+    pBB: parsed.profitBB != null ? parsed.profitBB : null,
+    gg: true,
+    ggId: parsed.handId,
+    oCards: parsed.opponentCards || '',
+    heroPosition: parsed.heroPosition || '',
+    heroCards: parsed.heroCards || '',
+    bbValue: parsed.bbValue || 0,
+    heroStartStack: parsed.heroStartStack || 0,
+    heroEndStack: parsed.heroEndStack || 0,
+    tableMax: parsed.tableMax || 0,
+  };
+}
+
+const fullStreetBlock = [
+  "Poker Hand #RP900: Hold'em No Limit ($0.02/$0.05) - 2026/06/01 10:00:00",
+  "Table 'NLH' 6-max Seat #1 is the button",
+  'Seat 1: Hero ($5.00 in chips)',
+  'Seat 2: Villain ($5.00 in chips)',
+  'Seat 3: Fish ($5.00 in chips)',
+  'Hero: posts small blind $0.02',
+  'Villain: posts big blind $0.05',
+  'Fish: folds',
+  '*** HOLE CARDS ***',
+  'Dealt to Hero [Ah Kd]',
+  'Villain: raises $0.10 to $0.15',
+  'Hero: calls $0.10',
+  '*** FLOP *** [Ah 7c 2d]',
+  'Hero: checks',
+  'Villain: bets $0.16',
+  'Hero: calls $0.16',
+  '*** TURN *** [Qs]',
+  'Hero: checks',
+  'Villain: bets $0.25',
+  'Hero: calls $0.25',
+  '*** RIVER *** [3h]',
+  'Hero: checks',
+  'Villain: bets $0.50',
+  'Hero: folds',
+  '*** SUMMARY ***',
+  'Total pot $1.34 | Rake $0.02',
+  'Board [Ah 7c 2d Qs 3h]',
+].join('\n');
+
+test('hand replay parses a full four-street GG hand with accumulated board', () => {
+  const record = buildStoredRecordFromParser(fullStreetBlock, 'replay-full');
+  const model = HandReplay.parseReplay(record);
+  assert.equal(model.degraded, false);
+  assert.deepEqual(model.streets.map((s) => s.key), ['preflop', 'flop', 'turn', 'river']);
+  const heroSeg = model.streets[0].actions.find((a) => a.kind === 'hero');
+  assert.ok(heroSeg && heroSeg.pos, 'preflop hero segment carries a position');
+  assert.deepEqual(model.hero.cards, ['Ah', 'Kd']);
+  assert.deepEqual(model.streets[1].actions.map((a) => a.kind), ['check', 'bet', 'call']);
+  assert.ok(model.streets[1].investedBB > 0);
+  const flopAcc = [];
+  model.streets.slice(0, 2).forEach((s) => flopAcc.push(...s.newCards));
+  assert.equal(flopAcc.length, 3);
+  assert.deepEqual(model.board, ['Ah', '7c', '2d', 'Qs', '3h']);
+  assert.equal(model.result.pBB, record.pBB);
+});
+
+test('hand replay degrades on manual records and unknown hole cards without throwing', () => {
+  const manual = HandReplay.parseReplay({
+    id: 'replay-manual',
+    desc: 'preflop 行动：Hero /[Xx Xx] \nOTF翻牌 牌面：    行动：\nOTT转牌 牌面：    行动：\nOTR河牌 牌面：    行动：',
+    pBB: null,
+  });
+  assert.equal(manual.degraded, true);
+  assert.equal(manual.degradedReason, 'manual_record');
+  const unknownCards = HandReplay.parseReplay({
+    id: 'replay-unknown',
+    gg: true,
+    desc: 'preflop 行动：Hero BTN/[??] raises to 2.5bb, BB Call',
+    heroCards: '??',
+  });
+  assert.equal(unknownCards.degraded, true);
+  assert.equal(unknownCards.degradedReason, 'no_hero_cards');
+  assert.equal(HandReplay.parseReplay(null).degraded, true);
+  assert.equal(HandReplay.parseReplay({ gg: true, desc: '' }).degraded, true);
+});
+
+test('hand replay degrades safely on inconsistent streets and renders partial runouts', () => {
+  const conflict = HandReplay.parseReplay({
+    id: 'replay-conflict',
+    gg: true,
+    heroCards: 'Ah Kd',
+    desc: 'preflop 行动：Hero BTN/[Ah Kd] calls 2.0bb, SB Raise 3.0bb\nOTF翻牌 Ah 7c 2d    行动：X C\nOTT转牌 Ah    行动：X',
+  });
+  assert.equal(conflict.degraded, true);
+  assert.equal(conflict.degradedReason, 'board_conflict');
+  const partial = HandReplay.parseReplay({
+    id: 'replay-partial',
+    gg: true,
+    heroCards: 'Ah Kd',
+    heroPosition: 'BTN',
+    pBB: -3.2,
+    desc: 'preflop 行动：Hero BTN/[Ah Kd] calls 2.0bb, SB Raise 3.0bb\nOTF翻牌 Ah 7c 2d    行动：X C',
+  });
+  assert.equal(partial.degraded, false);
+  assert.deepEqual(partial.streets.map((s) => s.key), ['preflop', 'flop']);
+});
+
+test('hand replay parsing never mutates the hand record or stored data', async () => {
+  localStorage.clear();
+  await initStorage({ safeMode: true });
+  const record = buildStoredRecordFromParser(fullStreetBlock, 'replay-readonly');
+  HandRepo.saveAll([record]);
+  const beforeRepo = JSON.stringify(HandRepo.getAll());
+  const beforeLS = localStorage.getItem('pa_handReviews');
+  const beforeHand = JSON.stringify(record);
+  const model = HandReplay.parseReplay(record);
+  assert.equal(model.degraded, false);
+  assert.equal(JSON.stringify(record), beforeHand);
+  assert.equal(JSON.stringify(HandRepo.getAll()), beforeRepo);
+  assert.equal(localStorage.getItem('pa_handReviews'), beforeLS);
+  // 结构性只读保证：回放模块源码不 import store 模块、不调用任何写路径方法
+  const { readFileSync } = await import('node:fs');
+  const src = readFileSync(new URL('../../src/modules/handReplay.js', import.meta.url), 'utf8');
+  assert.ok(!/from ['"].*store|saveAll|persistNow/.test(src), 'handReplay.js must not import store or call write paths');
+});
+
+// [V7.10.1 新增] Phase 3 Evidence & Strategy
+
+test('strategy desk converts a dossier into a strategy draft', async () => {
+  const { StrategyDesk } = await import('../../src/modules/strategyDesk.js');
+  const draft = StrategyDesk.buildDraftFromDossier({
+    id: 'dossier-1',
+    spotKey: 'BTNvsBB|flop|monotone|cbet',
+    title: 'C-Bet · monotone · BTNvsBB',
+    nextSteps: '补 30 手干燥面样本',
+  });
+  assert.equal(draft.familyKey, 'BTNvsBB|flop');
+  assert.deepEqual(draft.spotKeys, ['BTNvsBB|flop|monotone|cbet']);
+  assert.deepEqual(draft.dossierIds, ['dossier-1']);
+  assert.equal(draft.status, 'candidate-adjustment');
+  assert.ok(draft.reviewCondition.includes('30 手'));
+});
+
+test('evidence packs and strategy revisions persist through export/import merge', async () => {
+  localStorage.clear();
+  await initStorage({ safeMode: true });
+  const now = '2026-08-30 10:00';
+  EvidencePackRepo.saveAll([{
+    id: 'ev-1', title: '视频笔记', sourceType: 'video', sourceRef: 'https://example.com/v1',
+    conditions: '6max 100bb', methodSample: '样本 500 手', capturedAt: '2026-08-01',
+    transferBoundary: '勿直接用于 9max', keyPoints: 'BTN 开池尺寸', createdAt: now, updatedAt: now,
+  }]);
+  StrategyRepo.saveAll([{
+    id: 'st-1', familyKey: 'BTNvsBB|flop', spotKeys: ['BTNvsBB|flop|monotone|cbet'],
+    title: 'BTNvsBB 翻牌策略', status: 'candidate-adjustment', scope: '9max 100-200bb',
+    statement: '天花面高频 C-bet', evidenceIds: ['ev-1'], dossierIds: ['d-1'],
+    reviewCondition: '样本 +50', baselineSnapshot: null, createdAt: now, updatedAt: now,
+  }]);
+  const data = Store.exportAll();
+  assert.ok(Array.isArray(data.evidencePacks));
+  assert.ok(Array.isArray(data.strategyRevisions));
+  assert.throws(() => Store.importAll({ evidencePacks: 'x' }), /evidencePacks 应为数组/);
+  assert.throws(() => Store.importAll({ strategyRevisions: 'x' }), /strategyRevisions 应为数组/);
+  Store.importAll({
+    evidencePacks: [{ id: 'ev-1', title: '导入版' }, { id: 'ev-2' }],
+    strategyRevisions: [{ id: 'st-2', familyKey: 'SBvsBB|flop' }],
+  });
+  assert.equal(EvidencePackRepo.getAll().length, 2);
+  assert.equal(EvidencePackRepo.getAll().find((p) => p.id === 'ev-1').title, '视频笔记');  // 合并不覆盖
+  assert.equal(StrategyRepo.getAll().length, 2);
+  assert.equal(StrategyRepo.getAll().find((s) => s.id === 'st-1').evidenceIds[0], 'ev-1');
+});
+
+const showdownBlock = [
+  "Poker Hand #RP980: Hold'em No Limit ($0.02/$0.05) - 2026/06/01 10:00:00",
+  "Table 'NLH' 6-max Seat #1 is the button",
+  'Seat 1: Hero ($5.00 in chips)',
+  'Seat 2: Villain ($5.00 in chips)',
+  'Hero: posts small blind $0.02',
+  'Villain: posts big blind $0.05',
+  '*** HOLE CARDS ***',
+  'Dealt to Hero [Ah Kd]',
+  'Villain: raises $0.10 to $0.15',
+  'Hero: calls $0.10',
+  '*** FLOP *** [Ah 7c 2d]',
+  'Hero: checks',
+  'Villain: bets $0.16',
+  'Hero: calls $0.16',
+  '*** TURN *** [Qs]',
+  'Hero: checks',
+  'Villain: bets $0.25',
+  'Hero: calls $0.25',
+  '*** RIVER *** [3h]',
+  'Hero: checks',
+  'Villain: bets $0.50',
+  'Hero: calls $0.50',
+  'Hero shows [Ah Kd] (one pair)',
+  'Villain: shows [Qh Jh] (flush)',
+  '*** SHOWDOWN ***',
+  'Villain collected $1.84 from pot',
+  '*** SUMMARY ***',
+  'Total pot $1.84 | Rake $0.02',
+  'Board [Ah 7c 2d Qs 3h]',
+  'Seat 2: Villain ($5.13 in chips) showed [Qh Jh] and won ($1.84) with (a flush)',
+].join('\n');
+
+test('hand replay extracts showdown shows suffix and opponent lines', () => {
+  const record = buildStoredRecordFromParser(showdownBlock, 'replay-showdown');
+  const model = HandReplay.parseReplay(record);
+  assert.equal(model.degraded, false);
+  // 末街行尾 shows 后缀已剥离，不混入动作 token
+  assert.deepEqual(model.streets[3].actions.map((a) => a.kind), ['check', 'bet', 'call']);
+  assert.deepEqual(model.showdown.hero.cards, ['Ah', 'Kd']);
+  assert.equal(model.showdown.hero.desc, 'one pair');
+  assert.equal(model.showdown.opponents.length, 1);
+  const opp = model.showdown.opponents[0];
+  assert.equal(opp.who, 'BB');
+  assert.deepEqual(opp.cards, ['Qh', 'Jh']);
+  assert.equal(opp.result, 'won');
+  assert.ok(opp.amountText.indexOf('$1.84') !== -1);
 });

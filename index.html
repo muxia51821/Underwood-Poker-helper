@@ -458,6 +458,7 @@
             <div class="review-rail__group">
               <div class="review-rail__label">学习</div>
               <button class="subnav__btn" data-sub="discover">Discover 与 Quiz</button>
+              <button class="subnav__btn" data-sub="strategy">策略</button><!-- [V7.9.3 新增] Evidence & Strategy -->
             </div>
             <div class="review-rail__group">
               <div class="review-rail__label">报告</div>
@@ -760,6 +761,14 @@ OTR河牌 牌面：    行动：</textarea
               <div id="discoverHeatmapChart"></div>
               <div id="discoverHeatmapLegend" style="font-size:0.7em;margin-top:4px;color:#8b949e"></div>
             </div>
+            <!-- [V7.9.2 新增] Decision Radar：Spot 级信号 + Finding Dossier -->
+            <div class="card learning-radar-pane" id="discoverRadarCard" style="display:none">
+              <div class="card__title">🎯 Decision Radar</div>
+              <div class="learning-findings__summary">
+                信号 = Spot 频率 vs 你自己的场景基线（归属为启发式）；对可疑信号「建档研究」，记录假设、反例与下一步取证。
+              </div>
+              <div id="radarBody"></div>
+            </div>
             <div class="card learning-quiz-pane" id="discoverQuizCard">
               <details id="discoverQuizDetails" open>
                 <summary class="card__title">Quiz 训练</summary>
@@ -954,6 +963,59 @@ OTR河牌 牌面：    行动：</textarea
                   <tbody id="sessionBody"></tbody>
                 </table>
               </div>
+            </div>
+          </div>
+          <div id="subStrategy" class="sub-panel">
+            <!-- [V7.9.3 新增] Phase 3 Evidence & Strategy -->
+            <div class="card strategy-master-pane">
+              <div class="card__title">策略修订</div>
+              <div id="strategyPendingHint" class="learning-findings__summary"></div>
+              <div id="strategyList"><div class="empty-state">还没有策略修订。从 Radar 信号建档转化，或直接新建。</div></div>
+            </div>
+            <div class="card strategy-detail-pane" id="strategyEditorPane" tabindex="-1">
+              <div class="card__title">策略编辑</div>
+              <label class="field">标题<input id="stratTitle" class="input" placeholder="如：BTNvsBB 翻牌 C-bet 策略" /></label>
+              <label class="field">Family（场景|街道）<input id="stratFamily" class="input" placeholder="BTNvsBB|flop" /></label>
+              <label class="field">状态
+                <select id="stratStatus" class="select">
+                  <option value="research">研究中</option>
+                  <option value="candidate-adjustment">候选调整</option>
+                  <option value="maintain">维持现状</option>
+                </select>
+              </label>
+              <label class="field">适用范围（场景/桌型/筹码条件）<textarea id="stratScope" class="textarea" rows="2" placeholder="如：9max 现金 100-200bb，对手群体 passive"></textarea></label>
+              <label class="field">策略陈述<textarea id="stratStatement" class="textarea" rows="4" placeholder="当前工作策略：在这个 spot 我目前怎么做、为什么"></textarea></label>
+              <label class="field">复测条件<textarea id="stratReviewCondition" rows="2" placeholder="什么情况下重新评估：样本 +X / 频率偏离 / 对手群体变化"></textarea></label>
+              <label class="field">关联证据<input type="hidden" id="stratDossierIds" value="" /><div id="stratDossierHint" class="text-muted" style="font-size:0.75em"></div><div id="stratEvidenceChecks" style="max-height:140px;overflow:auto"></div></label>
+              <div class="row" style="gap:8px">
+                <button id="saveStrategyBtn" class="btn" data-state="create">保存策略</button>
+                <button id="clearStrategyBtn" class="btn--mini">清空</button>
+              </div>
+              <div class="card__title" style="margin-top:14px">证据包 <button id="addEvidenceBtn" class="btn--mini" style="float:right">+ 新建证据包</button></div>
+              <div id="evidenceEditor" style="display:none;border:1px solid #1e3a5f;border-radius:8px;padding:8px;margin-bottom:8px">
+                <label class="field">标题<input id="evTitle" class="input" placeholder="资料标题" /></label>
+                <label class="field">类型
+                  <select id="evSourceType" class="select">
+                    <option value="video">视频</option>
+                    <option value="article">文章</option>
+                    <option value="book">书</option>
+                    <option value="course">课程</option>
+                    <option value="solver">Solver</option>
+                    <option value="personal">个人观察</option>
+                  </select>
+                </label>
+                <label class="field">来源（链接/出处）<input id="evSourceRef" class="input" placeholder="URL 或书名章节" /></label>
+                <label class="field">适用条件<textarea id="evConditions" class="textarea" rows="2" placeholder="该资料的条件：桌型/盲注/筹码/对手池"></textarea></label>
+                <label class="field">方法/样本<textarea id="evMethodSample" class="textarea" rows="2" placeholder="方法与样本量（solver 配置/视频手数/样本期）"></textarea></label>
+                <label class="field">取证时间<input id="evCapturedAt" class="input" type="date" /></label>
+                <label class="field">转移边界<textarea id="evTransferBoundary" class="textarea" rows="2" placeholder="不能推广到哪里（如：6max 数据勿用于 9max 主线）"></textarea></label>
+                <label class="field">要点<textarea id="evKeyPoints" class="textarea" rows="2" placeholder="核心结论摘录"></textarea></label>
+                <div class="row" style="gap:8px">
+                  <button id="saveEvidenceBtn" class="btn--mini btn--accent" data-state="create">保存证据包</button>
+                  <button id="cancelEvidenceBtn" class="btn--mini">取消</button>
+                </div>
+              </div>
+              <div id="evidenceList"><div class="empty-state">暂无证据包。</div></div>
             </div>
           </div>
           <div id="subWeekly" class="sub-panel">

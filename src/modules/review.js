@@ -1,7 +1,7 @@
 // [V6.9.2] 复盘模块（Session/手局/周级 + 统计 + 图表 + 数据迁徙）
 import { CONSTANTS } from '../constants.js';
 import { Utils } from '../utils.js';
-import { Store, SessionRepo, HandRepo, WeeklyRepo, TiltLogRepo, MarksRepo, ClosureRepo } from '../store/store.js';  // [V7.9.1 修改] 新增 Marks/Closure
+import { Store, SessionRepo, HandRepo, WeeklyRepo, TiltLogRepo, MarksRepo, ClosureRepo, DossierRepo, OpponentNoteRepo } from '../store/store.js';  // [V7.10.2 修改] 新增 DossierRepo/OpponentNoteRepo
 import { analyze, getStatColor, STAT_TOOLTIPS, STAT_DEFINITIONS } from './statsEngine.js';  // [V6.18.4]
 import { Discover } from './discover.js';  // [V7.4.6]
 import { GTO_LEGACY_SCOPE } from '../data/strategy/gtoBaseline.js';  // [V7.9.0 新增] 旧 GTO 对照统一标注
@@ -9,7 +9,10 @@ import { QuizTrainer } from './quizTrainer.js';  // [V7.4.7]
 import { getLearningTarget } from './analysisReadModel.js';
 import { openGGImportForSession } from './ggImport.js';  // [V6.14.0]
 import { SessionClosure } from './sessionClosure.js';  // [V7.9.1 新增] 每场收尾领域模块
+import { DecisionRadar } from './decisionRadar.js';  // [V7.9.2 新增] Decision Radar
 import { HandPicker } from './handPicker.js';  // [V6.15.0]
+import { HandReplay } from './handReplay.js';  // [V7.10.0 新增] 手牌回放（只读派生视图）
+import { StrategyDesk } from './strategyDesk.js';  // [V7.10.1 新增] Evidence & Strategy
 import { Navigation } from './navigation.js';  // [V7.7.2]
 
 // [V7.5.1] 位置对抗速查 — 10 种 6-max 对抗策略要点
@@ -369,6 +372,8 @@ export const Review = {
     // [V7.9.1 新增] 桌面端 Mark 入口（Session 面板内，不开新 tab）
     const quickMarkBtn = document.getElementById('quickMarkBtn');
     if (quickMarkBtn) quickMarkBtn.addEventListener('click', () => this.openQuickCapture());
+    // [V7.10.1 新增] 策略域编辑器绑定
+    StrategyDesk.init();
     // [V7.7.2 新增] Mobile quick capture reuses the existing Hand form and save path.
     document.getElementById('quickCaptureBtn').addEventListener('click', () => this.openQuickCapture());
     document.getElementById('quickCaptureCloseBtn').addEventListener('click', () => this.closeQuickCapture('cancel'));
@@ -400,6 +405,13 @@ export const Review = {
     });
     // [V7.6.1] Heatmap 视图切换委托
     document.getElementById('reviewPanel').addEventListener('click', function (e) {
+      // [V7.10.1 新增] Radar 已建档信号 → 策略修订草稿（处理放在此处避免 decisionRadar → strategyDesk 循环依赖）
+      const radarStrategyBtn = e.target.closest('[data-radar-strategy]');
+      if (radarStrategyBtn) {
+        const dossier = DossierRepo.getAll().find((d) => d.signalId === radarStrategyBtn.dataset.radarStrategy);
+        if (dossier) StrategyDesk.openEditorWithDossierDraft(dossier);
+        return;
+      }
       var btn = e.target.closest('.hm-view-btn');
       if (!btn) return;
       document.querySelectorAll('.hm-view-btn').forEach(function (b) { b.classList.remove('is-active'); });
@@ -491,6 +503,9 @@ export const Review = {
       // [V6.15.1] 展开行内的标记按钮
       const expMarkBtn = e.target.closest('[data-hand-mark]');
       if (expMarkBtn && expMarkBtn.dataset.handMark) { _toggleMarkHand(expMarkBtn.dataset.handMark, expMarkBtn); }
+      // [V7.10.0 新增] 手牌回放切换（只读派生视图；首次显示时渲染，之后仅切换显示）
+      const replayBtn = e.target.closest('[data-hand-replay]');
+      if (replayBtn) { this.toggleHandReplay(replayBtn.dataset.handReplay); }
     });
     document.getElementById('weeklyBody').addEventListener('click', (e) => {
       const delBtn = e.target.closest('[data-week-delete]');
@@ -1555,6 +1570,13 @@ export const Review = {
     var aliases = Store.opponentAliases.get();
     var liveFlags = Store.opponentLiveFlags.get();
     var stats = this.getOpponentStats();
+    // [V7.10.2 新增] 未过期观察笔记计数（按 oHash）
+    var nowStr = Utils.getLocalDatetime();
+    var oppNoteCounts = {};
+    OpponentNoteRepo.getAll().forEach(function (n) {
+      if (n.expiresAt && String(n.expiresAt).localeCompare(nowStr) < 0) return;
+      oppNoteCounts[n.oHash] = (oppNoteCounts[n.oHash] || 0) + 1;
+    });
     var bar = document.getElementById('opponentStatsBar');
     var list = document.getElementById('opponentList');
     if (!stats.length) {
@@ -1614,7 +1636,11 @@ export const Review = {
       html += '<div style="display:flex;justify-content:space-between;align-items:center">';
       var isLive = liveFlags[p.name];
       html += '<div><span style="font-weight:bold;color:#d4a853">' + (isLive ? '<span style="color:#dc2626;font-size:0.6em;vertical-align:middle">LIVE</span> ' : '') + Utils.escapeHtml(displayName) + '</span>' + (hasAlias ? ' <span style="font-size:0.65em;color:#a8afba">' + Utils.escapeHtml(p.name) + '</span>' : '') + ' <span style="font-size:0.75em;color:#a8afba">×' + p.totalHands + '</span></div>';
-      html += '<div style="display:flex;align-items:center;gap:8px"><span style="color:' + profitColor + ';font-weight:bold">' + profitStr + '</span> <span style="font-size:0.75em;color:#a8afba">' + winRate + '%胜</span> <button class="btn--mini alias-edit-btn" data-oid="' + Utils.escapeHtml(p.name) + '" style="font-size:0.65em;padding:2px 6px;cursor:pointer">✎</button></div>';
+      html += '<div style="display:flex;align-items:center;gap:8px"><span style="color:' + profitColor + ';font-weight:bold">' + profitStr + '</span> <span style="font-size:0.75em;color:#a8afba">' + winRate + '%胜</span>' +
+        // [V7.10.2 新增] Live 开关（激活休眠写入）+ 观察笔记入口
+        '<button class="btn--mini opp-live-btn" data-opp-live="' + Utils.escapeHtml(p.name) + '" style="font-size:0.65em;padding:2px 6px;' + (isLive ? 'background:#dc2626;color:#fff' : '') + '" title="切换 Live 标记">LIVE</button>' +
+        '<button class="btn--mini opp-note-btn" data-opp-note="' + Utils.escapeHtml(p.oHash) + '" style="font-size:0.65em;padding:2px 6px" title="观察笔记">📝' + (oppNoteCounts[p.oHash] || '') + '</button>' +
+        ' <button class="btn--mini alias-edit-btn" data-oid="' + Utils.escapeHtml(p.name) + '" style="font-size:0.65em;padding:2px 6px;cursor:pointer">✎</button></div>';
       html += '</div>';
       html += '<div class="opponent-detail" id="oppDetail-' + i + '" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid #334155;font-size:0.75em;color:#a8afba">';
       html += '摊牌 ' + p.showdowns + ' 次 | 最近 ' + p.lastDate.substring(0, 10);
@@ -1648,6 +1674,60 @@ export const Review = {
         else { delete aliases[oid]; }
         Store.opponentAliases.save(aliases);
         self.renderOpponentProfiles();
+        return;
+      }
+      // 1b. [V7.10.2 新增] Live 标记切换（激活休眠写入）
+      var liveToggleBtn = e.target.closest('[data-opp-live]');
+      if (liveToggleBtn) {
+        e.stopPropagation();
+        var liveKey = liveToggleBtn.dataset.oppLive;
+        var flagsNow = Store.opponentLiveFlags.get();
+        flagsNow[liveKey] = !flagsNow[liveKey];
+        Store.opponentLiveFlags.save(flagsNow);
+        self.renderOpponentProfiles();
+        return;
+      }
+      // 1c. [V7.10.2 新增] 观察笔记面板开关
+      var noteOpenBtn = e.target.closest('[data-opp-note]');
+      if (noteOpenBtn) {
+        e.stopPropagation();
+        self.toggleOpponentNotes(noteOpenBtn.dataset.oppNote, noteOpenBtn.closest('.opponent-row'));
+        return;
+      }
+      // 1d. [V7.10.2 新增] 观察笔记添加
+      var noteAddBtn = e.target.closest('[data-opp-note-add]');
+      if (noteAddBtn) {
+        e.stopPropagation();
+        var addHash = noteAddBtn.dataset.oppNoteAdd;
+        var noteInput = document.getElementById('opp-note-input-' + addHash);
+        var expInput = document.getElementById('opp-note-exp-' + addHash);
+        var noteText = noteInput ? noteInput.value.trim() : '';
+        if (!noteText) { Utils.showToast('写一句观察再添加'); return; }
+        var noteList = OpponentNoteRepo.getAll();
+        noteList.push({
+          id: Utils.generateUUID(),
+          oHash: addHash,
+          note: noteText,
+          createdAt: Utils.getLocalDatetime(),
+          expiresAt: expInput && expInput.value ? expInput.value : null,
+        });
+        OpponentNoteRepo.saveAll(noteList);
+        var addPanel = noteAddBtn.closest('.opponent-detail');
+        var addAnchor = addPanel ? addPanel.previousElementSibling : null;
+        if (addPanel) addPanel.remove();
+        if (addAnchor && addAnchor.classList.contains('opponent-row')) self.toggleOpponentNotes(addHash, addAnchor);
+        return;
+      }
+      // 1e. [V7.10.2 新增] 观察笔记删除
+      var noteDelBtn = e.target.closest('[data-opp-note-del]');
+      if (noteDelBtn) {
+        e.stopPropagation();
+        var delPanelEl = noteDelBtn.closest('.opponent-detail');
+        var delAnchorRow = delPanelEl ? delPanelEl.previousElementSibling : null;
+        var delHashKey = delPanelEl && delPanelEl.id ? delPanelEl.id.replace('opp-notes-', '') : '';
+        OpponentNoteRepo.saveAll(OpponentNoteRepo.getAll().filter(function (n) { return n.id !== noteDelBtn.dataset.oppNoteDel; }));
+        if (delPanelEl) delPanelEl.remove();
+        if (delAnchorRow && delAnchorRow.classList.contains('opponent-row')) self.toggleOpponentNotes(delHashKey, delAnchorRow);
         return;
       }
       // 2. 查看手局
@@ -1731,6 +1811,47 @@ export const Review = {
         self.renderOpponentProfiles(curSortBy, curSortDir, !filterLive);
       });
     }
+  },
+  // [V7.10.2 新增] 对手观察笔记面板：带时效的用户观察（ Ecology & Opponent Memory ）
+  toggleOpponentNotes: function (oHash, rowEl) {
+    if (!rowEl) return;
+    var existing = document.getElementById('opp-notes-' + oHash);
+    if (existing) { existing.remove(); return; }
+    var notes = OpponentNoteRepo.getAll().filter(function (n) { return n.oHash === oHash; })
+      .sort(function (a, b) { return String(b.createdAt || '').localeCompare(String(a.createdAt || '')); });
+    var now = Utils.getLocalDatetime();
+    var html = '<div style="font-weight:bold;color:#a8afba;margin-bottom:4px">📝 观察笔记（带时效，过期仅供参考）</div>';
+    if (!notes.length) html += '<div style="color:#666;font-size:0.7em">暂无观察记录。</div>';
+    notes.forEach(function (n) {
+      var expired = n.expiresAt && String(n.expiresAt).localeCompare(now) < 0;
+      html += '<div style="font-size:0.7em;color:' + (expired ? '#666' : '#cbd5e1') + ';margin:2px 0">' +
+        '<span style="color:#a8afba">' + Utils.escapeHtml(n.createdAt || '') + (n.expiresAt ? ' → ' + Utils.escapeHtml(n.expiresAt) : '') + (expired ? '（已过期）' : '') + '</span> ' +
+        Utils.escapeHtml(n.note) +
+        ' <button class="btn--mini opp-note-del" data-opp-note-del="' + Utils.escapeHtml(n.id) + '" style="font-size:0.6em;padding:1px 4px">✕</button></div>';
+    });
+    html += '<div style="display:flex;gap:6px;margin-top:6px">';
+    html += '<input class="input" id="opp-note-input-' + Utils.escapeHtml(oHash) + '" placeholder="观察：如 3bet 极少诈唬 / 河牌爱超池" style="font-size:0.7em;flex:1">';
+    html += '<input class="input" id="opp-note-exp-' + Utils.escapeHtml(oHash) + '" type="date" title="时效（可选）" style="font-size:0.7em;width:120px">';
+    html += '<button class="btn--mini opp-note-add" data-opp-note-add="' + Utils.escapeHtml(oHash) + '" style="font-size:0.65em">添加</button>';
+    html += '</div>';
+    var panel = document.createElement('div');
+    panel.className = 'opponent-detail';  // 复用"detail 内部点击不触发行展开"守卫
+    panel.id = 'opp-notes-' + oHash;
+    panel.style.cssText = 'margin-top:8px;padding:8px 10px;border:1px solid #1e3a5f;border-radius:8px;background:#0a1628';
+    panel.innerHTML = html;
+    rowEl.after(panel);
+  },
+  // [V7.10.2 新增] 跨 Tab 导航：定位对手并展开
+  focusOpponent: function (oHash) {
+    var stats = this.getOpponentStats();
+    var idx = stats.findIndex(function (p) { return p.oHash === oHash; });
+    if (idx < 0) { Utils.showToast('未找到该对手'); return false; }
+    var row = document.querySelector('.opponent-row[data-opp-idx="' + idx + '"]');
+    if (!row) return false;
+    var detail = document.getElementById('oppDetail-' + idx);
+    if (detail && detail.style.display === 'none') row.click();
+    if (row.scrollIntoView) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return true;
   },
   getHandReviews() { return HandRepo.getAll(); },
   saveHandReviews(r) { HandRepo.saveAll(r); },
@@ -2010,6 +2131,8 @@ export const Review = {
     td.colSpan = 7;
     td.style.cssText = 'padding:10px 14px;background:#0a1628;font-size:0.78em;border-top:1px solid #1e3a5f;line-height:1.6';
     var html = '';
+    // [V7.10.0 新增] 回放容器（置于 desc 原文之前；点击「回放」时懒渲染，只读派生视图）
+    html += '<div id="hand-replay-' + r.id + '" class="hand-replay-slot" style="display:none"></div>';
     // 手牌详情
     html += '<div style="color:#cbd5e1;white-space:pre-wrap;margin-bottom:6px">' + Utils.escapeHtml(r.desc || '--') + '</div>';
     // 错误 + 反思
@@ -2017,6 +2140,7 @@ export const Review = {
     if (r.reflection) html += '<div style="margin-bottom:6px"><span style="color:#a8afba">反思：</span><span style="color:#c8ccd0">' + Utils.escapeHtml(r.reflection) + '</span></div>';
     // 操作按钮
     html += '<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">';
+    html += '<button class="btn--mini" data-hand-replay="' + r.id + '">⏵ 回放</button>';
     html += '<button class="btn--mini" data-hand-edit="' + r.id + '">✎ 编辑</button>';
     html += '<button class="btn--mini btn--danger" data-hand-delete="' + r.id + '">✕ 删除</button>';
     var markIcon = r.marked ? '★' : '☆';
@@ -2026,6 +2150,19 @@ export const Review = {
     td.innerHTML = html;
     tr.appendChild(td);
     btn.closest('tr').after(tr);
+  },
+  // [V7.10.0 新增] 回放显示切换：首次打开时用当前记录渲染（只读），此后仅切换可见性
+  toggleHandReplay: function (handId) {
+    var slot = document.getElementById('hand-replay-' + handId);
+    if (!slot) return;
+    if (slot.style.display !== 'none') { slot.style.display = 'none'; return; }
+    if (!slot.dataset.rendered) {
+      var r = HandRepo.getAll().find(function (x) { return x.id === handId; });
+      if (!r) return;
+      HandReplay.render(slot, r);
+      slot.dataset.rendered = '1';
+    }
+    slot.style.display = '';
   },
   // [V6.16.0] 行点击选中——批量栏 UI 状态同步
   _updateHandBatchUI() {
@@ -2326,6 +2463,8 @@ export const Review = {
           '</article>';
       }).join('') + '</div></section>';
     _bindDiscoverQuiz();
+    // [V7.9.2 新增] Decision Radar：Spot 级信号 + Finding Dossier（与既有发现并存）
+    try { DecisionRadar.renderInto(); } catch (e) { console.warn('Radar render failed:', e); }
 
     // 点击查看手牌 → 展开列表（仅绑定一次）
     if (!container.dataset.discoverBound) {

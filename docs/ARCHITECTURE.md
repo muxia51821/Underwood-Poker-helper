@@ -19,7 +19,7 @@
 | Notifications | Disabled | Enabled |
 | Storage | IndexedDB + localStorage | 同左 |
 
-## Module Map (28 ES modules, ~9000 lines)
+## Module Map (30 ES modules, ~10000 lines)
 
 ```
 src/
@@ -54,6 +54,9 @@ src/
     discover.js      # 自动模式发现（盈亏异常/自我矛盾/偏离GTO + 热力图数据）
     quizTrainer.js   # GTO 频率判断训练器（双阈值判分 + 错题集 + 掌握追踪 + 轮转出题）
     sessionClosure.js # [V7.9.1 新增] 每场收尾领域模块（Mark 时间匹配 + 候选手牌 + 收尾记录）
+    decisionRadar.js # [V7.9.2 新增] Decision Radar（Spot 信号聚合 + Finding Dossier 渲染）
+    strategyDesk.js  # [V7.10.1 新增] Evidence & Strategy（证据包 + 策略修订）
+    handReplay.js    # [V7.10.0 新增] 手牌可视化回放（只读派生层：desc 解析 + 逐街视图，零 store import）
 
   data/
     srpData.js       # GTO 策略速查表（从 gtoRaw 自动生成，import Utils + gtoRaw）
@@ -90,6 +93,9 @@ main.js
   ├── modules/statsEngine.js → constants
   ├── modules/handPicker.js  → constants, utils, store, navigation
   ├── modules/sessionClosure.js → constants, utils, store (V7.9.1 新增：每场收尾)
+  ├── modules/decisionRadar.js → utils, analysisReadModel, store, navigation (V7.9.2 新增：Decision Radar)
+  ├── modules/strategyDesk.js → utils, store, navigation (V7.10.1 新增：Evidence & Strategy)
+  ├── modules/handReplay.js  → utils (V7.10.0 新增：手牌回放，纯只读派生，不 import store)
   ├── modules/ggImport.js    → constants, utils, store, ggParser, ggImportCoordinator, navigation
   ├── modules/discover.js    → constants, utils, store, gtoBaseline, analysisReadModel
   ├── modules/navigation.js  → DOM adapter + App-configured callbacks
@@ -213,10 +219,11 @@ pa_quiz_mastery:   { "scenario|boardCode": { consecutiveCorrect, totalAttempts, 
 pa_discoverState:  { findings, scanHandCount, archive }
 ```
 
-IndexedDB: `pa_store` v2, 6 ObjectStores (`handReviews`/`sessions`/`weeklyReviews`/`tiltLogs`/`marks`/`sessionClosures`) [V7.9.1 升 v2].
+IndexedDB: `pa_store` v5, 11 ObjectStores (`handReviews`/`sessions`/`weeklyReviews`/`tiltLogs`/`marks`/`sessionClosures`/`dossiers`/`evidencePacks`/`strategyRevisions`/`learningUnits`/`opponentNotes`) [V7.10.2 升 v5].
 `handReviews` has 3 indexes: `sessionId`, `ggId`, `date`.
 // [V7.9.1 新增] marks: [{ id, time 'YYYY-MM-DD HH:MM', note, mistake, sessionId|null, status 'open'|'matched'|'dismissed', matchedHandId, createdAt }]
 // [V7.9.1 新增] sessionClosures: [{ id, sessionId（唯一）, status 'draft'|'closed', closedAt, reviewedHandIds[], matchedMarkIds[], note }]
+// [V7.9.2 新增] dossiers: [{ id, signalId（确定性锚 radar|{spotKey}）, spotKey, title, status 'open'|'checking'|'resolved'|'maintain', hypothesis, counterexamples, nextSteps, sampleHandIds[], observationVersion, createdAt, updatedAt }]
 
 ## UI Navigation
 

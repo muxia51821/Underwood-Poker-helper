@@ -40,7 +40,7 @@ test('页面加载无 Console 报错', async ({ page }) => {
   }
 
   // 复盘子 Tab
-  for (const sub of ['hand', 'session', 'discover', 'weekly', 'total', 'opponent']) {
+  for (const sub of ['hand', 'session', 'discover', 'strategy', 'weekly', 'total', 'opponent']) {
     await page.click(`[data-sub="${sub}"]`);
     await page.waitForTimeout(200);
     const panelName = sub.charAt(0).toUpperCase() + sub.slice(1);
@@ -82,7 +82,7 @@ test('Timer 与 Review 在目标视口无页面级横向溢出', async ({ page }
       .toBe(true);
 
     await page.click('[data-tab="review"]');
-    for (const sub of ['hand', 'session', 'discover', 'weekly', 'total', 'opponent']) {
+    for (const sub of ['hand', 'session', 'discover', 'strategy', 'weekly', 'total', 'opponent']) {
       await page.click(`[data-sub="${sub}"]`);
       await expect
         .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
@@ -341,6 +341,70 @@ test('Session 收尾闭环：Mark 匹配、候选复盘与确认收尾', async (
   expect(getRealErrors(errors)).toEqual([]);
 });
 
+test('Decision Radar：Spot 信号、建档与重载持久化', async ({ page }) => {
+  const errors = captureRuntimeErrors(page);
+  await page.goto('/');
+
+  // 50 手合成 BTNvsBB：10 手天花面全 C-bet、40 手干燥面过牌到底 → monotone spot 高频信号
+  const hands = [];
+  for (let i = 0; i < 50; i++) {
+    const isMono = i < 10;
+    const flop = isMono
+      ? '*** FLOP *** [Ah Th 9h]\nVillain: checks\nHero: bets $0.18\nVillain: folds\nUncalled bet ($0.18) returned to Hero\nHero collected $0.30 from pot'
+      : '*** FLOP *** [As Kd 2c]\nVillain: checks\nHero: checks\nVillain: checks';
+    hands.push([
+      `Poker Hand #R2D${String(i).padStart(3, '0')}: Hold'em No Limit ($0.02/$0.05) - 2026/07/01 20:00:00`,
+      `Table 'R2D' 2-max Seat #1 is the button`,
+      'Seat 1: Hero ($5.00 in chips)',
+      'Seat 2: Villain ($5.00 in chips)',
+      'Hero: posts small blind $0.02',
+      'Villain: posts big blind $0.05',
+      '*** HOLE CARDS ***',
+      'Dealt to Hero [As Kd]',
+      'Hero: raises $0.10 to $0.15',
+      'Villain: calls $0.10',
+      flop,
+      '*** SUMMARY ***',
+    ].join('\n'));
+  }
+
+  await page.click('[data-tab="review"]');
+  await page.click('[data-sub="session"]');
+  await page.click('#importGGBtn');
+  await page.fill('#ggImportText', hands.join('\n\n'));
+  await page.click('#ggParseBtn');
+  await page.waitForFunction(
+    () => document.querySelectorAll('.gg-import-check').length >= 50,
+    undefined,
+    { polling: 200 }
+  );
+  await page.click('.gg-sel-all-btn');
+  await page.click('#ggImportSelectedBtn');
+  await page.click('[data-sub="discover"]');
+
+  const radarCard = page.locator('#discoverRadarCard');
+  await expect(radarCard).toBeVisible();
+  const signalCard = radarCard.locator('.finding-card--radar').filter({ hasText: 'monotone' }).first();
+  await expect(signalCard).toContainText('C-Bet');
+
+  // 建档研究：填假设并保存
+  await signalCard.locator('[data-radar-dossier]').click();
+  const editor = page.locator('[data-radar-editor]').first();
+  await editor.locator('[data-dossier-field="hypothesis"]').fill('e2e-hypothesis');
+  await editor.locator('[data-radar-save]').click();
+  await expect(page.locator('#toast')).toHaveText('Dossier 已保存');
+  await expect(radarCard.locator('.status-inline--success').first()).toBeVisible();
+
+  // 重载后 Dossier 持久化
+  await page.reload();
+  await page.click('[data-tab="review"]');
+  await page.click('[data-sub="discover"]');
+  await expect(page.locator('#discoverRadarCard .status-inline--success').first()).toBeVisible();
+  await page.locator('#discoverRadarCard [data-radar-dossier]').first().click();
+  await expect(page.locator('[data-dossier-field="hypothesis"]')).toHaveValue('e2e-hypothesis');
+  expect(getRealErrors(errors)).toEqual([]);
+});
+
 test('PWA manifest 与图标资源可读取且 Chromium 可解析', async ({ page }) => {
   const errors = captureRuntimeErrors(page);
   await page.goto('/');
@@ -377,5 +441,98 @@ test('PWA manifest 与图标资源可读取且 Chromium 可解析', async ({ pag
   ]);
   await cdp.detach();
 
+  expect(getRealErrors(errors)).toEqual([]);
+});
+
+test('手牌回放只读可视化与降级视图', async ({ page }) => {
+  const errors = captureRuntimeErrors(page);
+  await page.goto('/');
+  await page.click('[data-tab="review"]');
+  await page.click('[data-sub="session"]');
+  await page.click('#importGGBtn');
+  // 四街 + 摊牌合成手牌（与契约测试同构）
+  const block = [
+    "Poker Hand #E2E900: Hold'em No Limit ($0.02/$0.05) - 2026/06/01 10:00:00",
+    "Table 'NLH' 6-max Seat #1 is the button",
+    'Seat 1: Hero ($5.00 in chips)',
+    'Seat 2: Villain ($5.00 in chips)',
+    'Hero: posts small blind $0.02',
+    'Villain: posts big blind $0.05',
+    '*** HOLE CARDS ***',
+    'Dealt to Hero [Ah Kd]',
+    'Villain: raises $0.10 to $0.15',
+    'Hero: calls $0.10',
+    '*** FLOP *** [Ah 7c 2d]',
+    'Hero: checks',
+    'Villain: bets $0.16',
+    'Hero: calls $0.16',
+    '*** TURN *** [Qs]',
+    'Hero: checks',
+    'Villain: bets $0.25',
+    'Hero: calls $0.25',
+    '*** RIVER *** [3h]',
+    'Hero: checks',
+    'Villain: bets $0.50',
+    'Hero: calls $0.50',
+    'Hero shows [Ah Kd] (one pair)',
+    'Villain: shows [Qh Jh] (flush)',
+    '*** SHOWDOWN ***',
+    'Villain collected $1.84 from pot',
+    '*** SUMMARY ***',
+    'Total pot $1.84 | Rake $0.02',
+    'Board [Ah 7c 2d Qs 3h]',
+    'Seat 2: Villain ($5.13 in chips) showed [Qh Jh] and won ($1.84) with (a flush)',
+  ].join('\n');
+  await page.setInputFiles('#ggFileInput', [
+    { name: 'replay-e2e.txt', mimeType: 'text/plain', buffer: Buffer.from(block, 'utf8') },
+  ]);
+  await expect(page.locator('#ggImportList .gg-import-check')).toHaveCount(1);
+  await page.click('.gg-sel-all-btn');
+  await page.click('#ggImportSelectedBtn');
+  await expect(page.locator('[data-sub="hand"]')).toHaveClass(/subnav__btn--active/);
+
+  // 展开首行并打开回放：分步条 → 公共牌随街累积 3→4→5
+  const firstRow = page.locator('#handBody tr[data-hand-id]').first();
+  await firstRow.locator('[data-hand-expand]').click();
+  const expandRow = page.locator('tr[id^="hand-expand-row"]').first();
+  await expandRow.locator('[data-hand-replay]').click();
+  const replay = page.locator('.hand-replay').first();
+  await expect(replay).toBeVisible();
+  const boardBadges = replay.locator('.replay-board .card-badge');
+  await expect(boardBadges).toHaveCount(0);  // 翻前无公共牌
+  await replay.getByRole('button', { name: '翻牌', exact: true }).click();
+  await expect(boardBadges).toHaveCount(3);
+  await replay.getByRole('button', { name: '转牌', exact: true }).click();
+  await expect(boardBadges).toHaveCount(4);
+  await replay.getByRole('button', { name: '河牌', exact: true }).click();
+  await expect(boardBadges).toHaveCount(5);
+  await replay.getByRole('button', { name: '结果', exact: true }).click();
+  await expect(replay.locator('.replay-showdown__row')).toHaveCount(2);  // Hero 摊牌 + 对手摊牌
+  await expect(replay.locator('.replay-result')).toContainText('盈亏');
+  // 全街回顾静态可见 + 桌面无横向溢出
+  await expect(replay.locator('.replay-review__row')).toHaveCount(7);
+  const overflow = await page.evaluate(function () {
+    return document.documentElement.scrollWidth > document.documentElement.clientWidth;
+  });
+  expect(overflow).toBe(false);
+
+  // 手工记录 → 降级视图不报错
+  await page.fill('#handDesc', '翻前拿AK在CO加注被大盲 3bet 后弃牌。回放降级测试手工标记：仅自由文本。');
+  await page.click('#saveHandBtn');
+  const dataRows = page.locator('#handBody tr[data-hand-id]');
+  const rowCount = await dataRows.count();
+  let degradedOpen = false;
+  for (let i = 0; i < rowCount && !degradedOpen; i++) {
+    await dataRows.nth(i).locator('[data-hand-expand]').click();
+    const markerRow = page.locator('tr[id^="hand-expand-row"]', { hasText: '回放降级测试手工标记' });
+    if ((await markerRow.count()) > 0) {
+      await markerRow.locator('[data-hand-replay]').click();
+      await expect(page.locator('.replay-degraded__banner')).toBeVisible();
+      degradedOpen = true;
+    } else {
+      await dataRows.nth(i).locator('[data-hand-expand]').click();  // 收起，试下一行
+    }
+  }
+  expect(degradedOpen).toBe(true);
   expect(getRealErrors(errors)).toEqual([]);
 });

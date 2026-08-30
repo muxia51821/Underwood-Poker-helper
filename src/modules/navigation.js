@@ -5,6 +5,8 @@ var _handlers = {
   onTargetHand: function () {},
   onTargetSession: function () {},
   onLearningTarget: function () {},
+  onTargetStrategy: function () {},  // [V7.10.1 新增]
+  onTargetOpponent: function () {},  // [V7.10.2 新增]
   onRefresh: function () {},
 };
 
@@ -48,6 +50,8 @@ export const Navigation = {
       onTargetHand: opts.onTargetHand || function () {},
       onTargetSession: opts.onTargetSession || function () {},
       onLearningTarget: opts.onLearningTarget || function () {},
+      onTargetStrategy: opts.onTargetStrategy || function () {},  // [V7.10.1 新增]
+      onTargetOpponent: opts.onTargetOpponent || function () {},  // [V7.10.2 新增]
       onRefresh: opts.onRefresh || function () {},
     };
   },
@@ -100,6 +104,20 @@ export const Navigation = {
     var moved = this.goToReviewSubtab('discover', { learningTarget: target });
     if (moved) _handlers.onLearningTarget(target);
     return moved;
+  },
+
+  goToStrategy(strategyId) {
+    // [V7.10.1 新增] 策略域 deep-link
+    if (!this.goToReviewSubtab('strategy')) return false;
+    _handlers.onTargetStrategy(strategyId);
+    return true;
+  },
+
+  goToOpponent(oHash) {
+    // [V7.10.2 新增] 对手上下文 deep-link
+    if (!this.goToReviewSubtab('opponent')) return false;
+    _handlers.onTargetOpponent(oHash);
+    return true;
   },
 
   refreshReview(scope) {

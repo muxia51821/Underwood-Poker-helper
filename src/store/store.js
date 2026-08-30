@@ -109,6 +109,11 @@ export const Store = {
       tiltLogs: TiltLogRepo.getAll(),
       marks: MarksRepo.getAll(),  // [V7.9.1 新增]
       sessionClosures: ClosureRepo.getAll(),  // [V7.9.1 新增]
+      dossiers: DossierRepo.getAll(),  // [V7.9.2 新增]
+      evidencePacks: EvidencePackRepo.getAll(),  // [V7.9.3 新增]
+      strategyRevisions: StrategyRepo.getAll(),  // [V7.9.3 新增]
+      learningUnits: LearningUnitRepo.getAll(),  // [V7.10.2 新增]
+      opponentNotes: OpponentNoteRepo.getAll(),  // [V7.10.2 新增]
       opponentAliases: Store.opponentAliases.get(),
       opponentLiveFlags: Store.opponentLiveFlags.get(),
       opponentMerges: Store.opponentMerges.get(),
@@ -129,6 +134,19 @@ export const Store = {
       throw new Error('导入数据格式错误：marks 应为数组');
     if (data.sessionClosures !== undefined && !Array.isArray(data.sessionClosures))
       throw new Error('导入数据格式错误：sessionClosures 应为数组');
+    // [V7.9.2 新增] dossiers 校验
+    if (data.dossiers !== undefined && !Array.isArray(data.dossiers))
+      throw new Error('导入数据格式错误：dossiers 应为数组');
+    // [V7.9.3 新增] evidencePacks / strategyRevisions 校验
+    if (data.evidencePacks !== undefined && !Array.isArray(data.evidencePacks))
+      throw new Error('导入数据格式错误：evidencePacks 应为数组');
+    if (data.strategyRevisions !== undefined && !Array.isArray(data.strategyRevisions))
+      throw new Error('导入数据格式错误：strategyRevisions 应为数组');
+    // [V7.10.2 新增] learningUnits / opponentNotes 校验
+    if (data.learningUnits !== undefined && !Array.isArray(data.learningUnits))
+      throw new Error('导入数据格式错误：learningUnits 应为数组');
+    if (data.opponentNotes !== undefined && !Array.isArray(data.opponentNotes))
+      throw new Error('导入数据格式错误：opponentNotes 应为数组');
     // V5.8.1 增量导入
     const mergeByKey = function (localArr, importArr, key) {
       const map = new Map();
@@ -153,6 +171,19 @@ export const Store = {
       MarksRepo.saveAll(mergeByKey(MarksRepo.getAll(), data.marks, 'id'));
     if (data.sessionClosures)
       ClosureRepo.saveAll(mergeByKey(ClosureRepo.getAll(), data.sessionClosures, 'id'));
+    // [V7.9.2 新增] dossiers 增量合并
+    if (data.dossiers)
+      DossierRepo.saveAll(mergeByKey(DossierRepo.getAll(), data.dossiers, 'id'));
+    // [V7.9.3 新增] evidencePacks / strategyRevisions 增量合并
+    if (data.evidencePacks)
+      EvidencePackRepo.saveAll(mergeByKey(EvidencePackRepo.getAll(), data.evidencePacks, 'id'));
+    if (data.strategyRevisions)
+      StrategyRepo.saveAll(mergeByKey(StrategyRepo.getAll(), data.strategyRevisions, 'id'));
+    // [V7.10.2 新增] learningUnits / opponentNotes 增量合并
+    if (data.learningUnits)
+      LearningUnitRepo.saveAll(mergeByKey(LearningUnitRepo.getAll(), data.learningUnits, 'id'));
+    if (data.opponentNotes)
+      OpponentNoteRepo.saveAll(mergeByKey(OpponentNoteRepo.getAll(), data.opponentNotes, 'id'));
     if (data.logs && typeof data.logs === 'object') {
       Object.keys(data.logs).forEach(function (d) {
         const local = Store.logs.get(d);
@@ -353,9 +384,14 @@ export const WeeklyRepo = new BaseRepo('weeklyReviews', 'week');
 export const TiltLogRepo = new BaseRepo('tiltLogs', 'time');
 export const MarksRepo = new BaseRepo('marks');  // [V7.9.1 新增] Quick Capture 创建的 Mark
 export const ClosureRepo = new BaseRepo('sessionClosures');  // [V7.9.1 新增] 每场收尾记录
+export const DossierRepo = new BaseRepo('dossiers');  // [V7.9.2 新增] Finding Dossier
+export const EvidencePackRepo = new BaseRepo('evidencePacks');  // [V7.9.3 新增] 证据包
+export const StrategyRepo = new BaseRepo('strategyRevisions');  // [V7.9.3 新增] 策略修订
+export const LearningUnitRepo = new BaseRepo('learningUnits');  // [V7.10.2 新增] 训练/复测单元
+export const OpponentNoteRepo = new BaseRepo('opponentNotes');  // [V7.10.2 新增] 对手观察笔记
 
 async function migrateToIndexedDB() {
-  var tables = ['sessions', 'handReviews', 'weeklyReviews', 'tiltLogs', 'marks', 'sessionClosures'];  // [V7.9.1 修改]
+  var tables = ['sessions', 'handReviews', 'weeklyReviews', 'tiltLogs', 'marks', 'sessionClosures', 'dossiers', 'evidencePacks', 'strategyRevisions', 'learningUnits', 'opponentNotes'];  // [V7.10.2 修改]
   var allOk = true;
 
   for (var i = 0; i < tables.length; i++) {
@@ -384,6 +420,11 @@ async function migrateToIndexedDB() {
     persistence.removeLocal('tiltLogs');
     persistence.removeLocal('marks');  // [V7.9.1 新增]
     persistence.removeLocal('sessionClosures');  // [V7.9.1 新增]
+    persistence.removeLocal('dossiers');  // [V7.9.2 新增]
+    persistence.removeLocal('evidencePacks');  // [V7.9.3 新增]
+    persistence.removeLocal('strategyRevisions');  // [V7.9.3 新增]
+    persistence.removeLocal('learningUnits');  // [V7.10.2 新增]
+    persistence.removeLocal('opponentNotes');  // [V7.10.2 新增]
     // [V7.0.3] 先 ready 再标记，避免中间崩溃造成标记为真但 repo 未 ready
     SessionRepo.markIndexedDBReady();
     HandRepo.markIndexedDBReady();
@@ -391,6 +432,11 @@ async function migrateToIndexedDB() {
     TiltLogRepo.markIndexedDBReady();
     MarksRepo.markIndexedDBReady();  // [V7.9.1 新增]
     ClosureRepo.markIndexedDBReady();  // [V7.9.1 新增]
+    DossierRepo.markIndexedDBReady();  // [V7.9.2 新增]
+    EvidencePackRepo.markIndexedDBReady();  // [V7.9.3 新增]
+    StrategyRepo.markIndexedDBReady();  // [V7.9.3 新增]
+    LearningUnitRepo.markIndexedDBReady();  // [V7.10.2 新增]
+    OpponentNoteRepo.markIndexedDBReady();  // [V7.10.2 新增]
     localStorage.setItem('pa_migrated_v1', 'true');
   } else {
     console.warn('Migration incomplete, localStorage data preserved for next retry');
@@ -579,6 +625,11 @@ export async function initStorage(opts) {
     await TiltLogRepo._init();
     await MarksRepo._init();  // [V7.9.1 新增]
     await ClosureRepo._init();  // [V7.9.1 新增]
+    await DossierRepo._init();  // [V7.9.2 新增]
+    await EvidencePackRepo._init();  // [V7.9.3 新增]
+    await StrategyRepo._init();  // [V7.9.3 新增]
+    await LearningUnitRepo._init();  // [V7.10.2 新增]
+    await OpponentNoteRepo._init();  // [V7.10.2 新增]
 
     // 恢复机制
     var recoveryRepos = [
@@ -588,6 +639,11 @@ export async function initStorage(opts) {
       { repo: TiltLogRepo, key: 'tiltLogs' },
       { repo: MarksRepo, key: 'marks' },  // [V7.9.1 新增]
       { repo: ClosureRepo, key: 'sessionClosures' },  // [V7.9.1 新增]
+      { repo: DossierRepo, key: 'dossiers' },  // [V7.9.2 新增]
+      { repo: EvidencePackRepo, key: 'evidencePacks' },  // [V7.9.3 新增]
+      { repo: StrategyRepo, key: 'strategyRevisions' },  // [V7.9.3 新增]
+      { repo: LearningUnitRepo, key: 'learningUnits' },  // [V7.10.2 新增]
+      { repo: OpponentNoteRepo, key: 'opponentNotes' },  // [V7.10.2 新增]
     ];
     recoveryRepos.forEach(function (r) {
       var fallback = Store._getRaw(r.key);
@@ -616,6 +672,11 @@ export async function initStorage(opts) {
     TiltLogRepo.replaceCache(Store._getRaw('tiltLogs') || []);
     MarksRepo.replaceCache(Store._getRaw('marks') || []);  // [V7.9.1 新增]
     ClosureRepo.replaceCache(Store._getRaw('sessionClosures') || []);  // [V7.9.1 新增]
+    DossierRepo.replaceCache(Store._getRaw('dossiers') || []);  // [V7.9.2 新增]
+    EvidencePackRepo.replaceCache(Store._getRaw('evidencePacks') || []);  // [V7.9.3 新增]
+    StrategyRepo.replaceCache(Store._getRaw('strategyRevisions') || []);  // [V7.9.3 新增]
+    LearningUnitRepo.replaceCache(Store._getRaw('learningUnits') || []);  // [V7.10.2 新增]
+    OpponentNoteRepo.replaceCache(Store._getRaw('opponentNotes') || []);  // [V7.10.2 新增]
 
     if (persistence.isIndexedDBReady()) {
       await migrateToIndexedDB();
@@ -634,6 +695,11 @@ export async function initStorage(opts) {
     { name: 'TiltLog', repo: TiltLogRepo },
     { name: 'Mark', repo: MarksRepo },  // [V7.9.1 新增]
     { name: 'SessionClosure', repo: ClosureRepo },  // [V7.9.1 新增]
+    { name: 'Dossier', repo: DossierRepo },  // [V7.9.2 新增]
+    { name: 'EvidencePack', repo: EvidencePackRepo },  // [V7.9.3 新增]
+    { name: 'StrategyRevision', repo: StrategyRepo },  // [V7.9.3 新增]
+    { name: 'LearningUnit', repo: LearningUnitRepo },  // [V7.10.2 新增]
+    { name: 'OpponentNote', repo: OpponentNoteRepo },  // [V7.10.2 新增]
   ];
   var corruptions = [];
   repos.forEach(function (r) {
@@ -688,6 +754,11 @@ export function getStorageHealth() {
       tiltLogs: TiltLogRepo.count(),
       marks: MarksRepo.count(),  // [V7.9.1 新增]
       sessionClosures: ClosureRepo.count(),  // [V7.9.1 新增]
+      dossiers: DossierRepo.count(),  // [V7.9.2 新增]
+      evidencePacks: EvidencePackRepo.count(),  // [V7.9.3 新增]
+      strategyRevisions: StrategyRepo.count(),  // [V7.9.3 新增]
+      learningUnits: LearningUnitRepo.count(),  // [V7.10.2 新增]
+      opponentNotes: OpponentNoteRepo.count(),  // [V7.10.2 新增]
     },
   };
 }
@@ -705,4 +776,9 @@ window.addEventListener('beforeunload', function () {
   TiltLogRepo._flush();
   MarksRepo._flush();  // [V7.9.1 新增]
   ClosureRepo._flush();  // [V7.9.1 新增]
+  DossierRepo._flush();  // [V7.9.2 新增]
+  EvidencePackRepo._flush();  // [V7.9.3 新增]
+  StrategyRepo._flush();  // [V7.9.3 新增]
+  LearningUnitRepo._flush();  // [V7.10.2 新增]
+  OpponentNoteRepo._flush();  // [V7.10.2 新增]
 });

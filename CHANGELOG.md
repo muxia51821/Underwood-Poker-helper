@@ -4,6 +4,19 @@
 
 ## 未发布
 
+- V7.10.2 新增 Mastery & Ecology v1：策略可生成训练/复测单元（quiz 型仅限有 gtoRaw 数据的 BTNvsBB/SBvsBB，其余为基线快照复测）；复测判定 = 基线快照 vs 当前 Radar（频率变化 ≥15pp / 样本增长 ≥50% / 信号消失）。
+- V7.10.2 对手上下文 v1：Villain 面板每对手新增「观察」笔记（带时效，过期灰显）与 Live 标记开关（激活既有休眠写入）；导航新增 goToOpponent deep-link。
+- V7.10.2 存储新增 learningUnits / opponentNotes 集合（IndexedDB v5 平滑升级，导出/导入合并支持）。
+- V7.10.1 新增 Evidence & Strategy：Review 新增「策略」子页——证据包（来源/条件/方法样本/取证时间/转移边界/要点）与策略修订（family 分组、research/candidate-adjustment/maintain 三态、关联证据与 Dossier、复测条件）。
+- V7.10.1 Dossier 编辑器新增「转为策略修订」（预填草稿、不回写事实）；导航新增策略 deep-link（goToStrategy）。
+- V7.10.1 存储新增 evidencePacks / strategyRevisions 集合（IndexedDB v4 平滑升级，导出/导入合并支持）。
+- V7.10.0 新增手牌可视化回放（Hand Replay UI）：手牌列表展开区「⏵ 回放」按钮进入只读派生视图——上半部为分步条牌桌（座位位置 + Hero 底牌 + 公共牌随街累积高亮 + 逐街动作 + 已知投入近似），下半部为全街文字回顾 + 摊牌与盈亏。
+- V7.10.0 回放解析为纯函数（parseReplay，契约测试覆盖）：desc 逐街叙事解析、翻前位置归属、翻后匿名动作序列（不臆造归属）、摊牌 shows 剥离与对手摊牌行；手工记录或信息残缺走降级视图（结构化摘要 + 原因标注），任何解析异常不抛错。
+- V7.10.0 回放为只读派生层：新模块 handReplay.js 零 store import（结构性无写路径），不新增持久化对象、不写回手牌字段、无胜率/solver/动画、纯 DOM + CSS 四主题兼容。
+- V7.9.2 新增 Decision Radar v1：Discover 面板内按场景分组的 Spot 级信号（翻牌 C-bet 与跟注者应对；你的频率 vs 你自己的场景基线），样本/偏差阈值可调，证据手牌直达。
+- V7.9.2 新增 Observation 派生层（analysisReadModel.buildFlopObservations）：从行动线短码按"翻牌行动顺序表"启发式归属 Hero 决策，覆盖率统计如实呈现，基线不涉及旧 GTO（Phase 0 裁决）。
+- V7.9.2 新增 Finding Dossier 持久化（dossiers 集合，IndexedDB v3）：假设/反例/下一步取证/状态四字段，以确定性 signalId 锚定，导出/导入合并支持。
+- V7.9.2 裁决：Signal v1 覆盖翻牌 C-bet + 跟注者应对；与既有发现（盈亏异常/自我矛盾）并存。
 - V7.9.1 新增 Session Closure 最小闭环：Session 面板内每场收尾工作区（Mark 匹配、候选手牌复盘、确认收尾），未收尾场次显示「未收尾」徽章与待收尾计数。
 - V7.9.1 快速记录改为创建 Mark（时间指针 + 短备注，独立 marks 存储），收尾时按时间邻近（±5 分钟、同 Session 优先）与导入手牌匹配；「完整编辑」仍创建手牌记录（线下无 GG 文本场景）。
 - V7.9.1 候选手牌四源最小集：Mark 关联、大亏损（≤-40BB）、每场 |pBB| 前 3、星标；去重上限 8 条，来源徽章标注，盈亏只提供语境。

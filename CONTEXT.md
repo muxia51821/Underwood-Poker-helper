@@ -23,9 +23,12 @@ Underwood's Table Agent 是独立的扑克学习与复盘 PWA。
 ## 当前工程状态
 
 - 应用版本唯一来源：`src/constants.js`。
-- 当前源码版本：`7.9.1`（Phase 0 数据真相底座 + Phase 1 Session Closure 最小闭环）。
+- 当前源码版本：`7.10.2`（Phase 0-2 完成 + Phase 3 策略域 + Phase 4 Mastery & Ecology v1；V7.10.0 手牌回放已完成，`npm run check` 全绿待木下验收）。
+- Phase 3 默认项（木下未答复按推荐执行）：策略域用 Review 新增「策略」子页；证据包纯手工录入（无自动抓取）；Dossier 可转策略修订。
+- Phase 4 默认项（木下未答复按推荐执行）：复测 = 基线快照对比（频率 ≥15pp / 样本 ≥50% / 信号消失）；对手上下文 v1 = 观察笔记 + Live 开关（合并 UI 未做）。
 - Phase 0a 裁决（木下）：6-max 与 9-max 历史数据同等进入观察档案，手牌记录携带桌型字段 `tableMax`；旧导入 Session 等级错标保留不修（选项 a）。
 - Phase 1 裁决（木下）：版本并入 7.9.1 不开 7.10；收尾流程不新增 tab，嵌入 Review 的 Session 面板；快速记录桌面入口放 Review 内（Session 面板顶部）。
+- Phase 2 裁决（木下）：Signal v1 覆盖翻牌 C-bet + 跟注者应对；与 Discover 既有发现并存；基线只用自有样本，不涉及旧 GTO。
 - 工作区可能存在木下尚未提交的修改；完成核对前不能当作发布基线。
 - 只有通过 `npm run check` 后，才把修改视为技术上通过。
 

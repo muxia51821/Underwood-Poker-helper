@@ -4,7 +4,7 @@ import { CONSTANTS } from '../constants.js';
 const DB = {
   _db: null,
   _name: 'pa_store',
-  _version: 2,  // [V7.9.1 修改] 新增 marks / sessionClosures 两个 object store
+  _version: 5,  // [V7.10.2 修改] 新增 learningUnits / opponentNotes object store（Phase 4）
 
   isReady: function () {
     return Boolean(this._db);
@@ -33,6 +33,19 @@ const DB = {
           db.createObjectStore('marks', { keyPath: 'id' });
         if (!db.objectStoreNames.contains('sessionClosures'))
           db.createObjectStore('sessionClosures', { keyPath: 'id' });
+        // [V7.9.2 新增] Phase 2 Decision Radar：Finding Dossier
+        if (!db.objectStoreNames.contains('dossiers'))
+          db.createObjectStore('dossiers', { keyPath: 'id' });
+        // [V7.9.3 新增] Phase 3 Evidence & Strategy
+        if (!db.objectStoreNames.contains('evidencePacks'))
+          db.createObjectStore('evidencePacks', { keyPath: 'id' });
+        if (!db.objectStoreNames.contains('strategyRevisions'))
+          db.createObjectStore('strategyRevisions', { keyPath: 'id' });
+        // [V7.10.2 新增] Phase 4 Mastery & Ecology
+        if (!db.objectStoreNames.contains('learningUnits'))
+          db.createObjectStore('learningUnits', { keyPath: 'id' });
+        if (!db.objectStoreNames.contains('opponentNotes'))
+          db.createObjectStore('opponentNotes', { keyPath: 'id' });
       };
       req.onsuccess = function (e) {
         self._db = e.target.result;
