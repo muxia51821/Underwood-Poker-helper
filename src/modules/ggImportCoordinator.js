@@ -68,6 +68,7 @@ function _makeReviewRecord(hand, sessionId, generateId) {
     bbValue: hand.bbValue || 0,
     heroStartStack: hand.heroStartStack || 0,
     heroEndStack: hand.heroEndStack || 0,
+    tableMax: hand.tableMax || 0,
     marked: false,
   };
 }
@@ -156,6 +157,7 @@ export function createOverwritePatch(hand) {
     bbValue: hand.bbValue || 0,
     heroStartStack: hand.heroStartStack || 0,
     heroEndStack: hand.heroEndStack || 0,
+    tableMax: hand.tableMax || 0,
   };
 }
 

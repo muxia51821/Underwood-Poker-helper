@@ -24,6 +24,7 @@ Underwood's Table Agent 是独立的扑克学习与复盘 PWA。
 
 - 应用版本唯一来源：`src/constants.js`。
 - 当前源码版本：`7.9.0`（Phase 0a：历史 .txt Hand History 数据真相底座）。
+- Phase 0a 裁决（木下）：6-max 与 9-max 历史数据同等进入观察档案，手牌记录携带桌型字段 `tableMax`；旧导入 Session 等级错标保留不修（选项 a）。
 - 工作区可能存在木下尚未提交的修改；完成核对前不能当作发布基线。
 - 只有通过 `npm run check` 后，才把修改视为技术上通过。
 

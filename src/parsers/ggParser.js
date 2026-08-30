@@ -310,6 +310,9 @@ export const GGParser = {
                 : 'limp';
         // [V7.7.2 修改] 翻前场景检测
         hand.preflopScenario = self._detectScenario(heroPos, pm, seatsWithNames, pfBlock);
+        // [V7.9.0 新增] 桌型事实：GG 牌谱 Table 行的 '-max' 标注（如 6-max/9-max），缺失记 0（不臆测）
+        var tableMaxM = block.match(/(\d+)-max/);
+        hand.tableMax = tableMaxM ? parseInt(tableMaxM[1], 10) : 0;
         // --- 翻前解析 ---
         var pfLines = pfBlock.split('\n');
         var pfPotDollar = 0;

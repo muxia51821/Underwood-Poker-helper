@@ -378,6 +378,15 @@ test('GG parser falls back to the posts line when the header big blind is anomal
   assert.ok(Math.abs(hand.profitBB - 0.5) < 0.01);
 });
 
+test('GG parser records tableMax from the -max marker and stays 0 when absent', () => {
+  const [nineMax] = GGParser.parse(anteAndBoardHand);
+  assert.equal(nineMax.tableMax, 9);
+  const [headsUp] = GGParser.parse(btnVsBbHand);
+  assert.equal(headsUp.tableMax, 2);
+  const [unknown] = GGParser.parse(anteAndBoardHand.replace(' 9-max ', ' '));
+  assert.equal(unknown.tableMax, 0);
+});
+
 test('import plan deduplicates hands repeated across merged files', () => {
   let nextId = 0;
   const generateId = () => 'gen-' + (++nextId);
@@ -402,7 +411,7 @@ test('import records persist hero fact fields and overwrite patch refreshes them
     handId: 'facts-1', date: '2026-05-01 10:00', profitBB: 3,
     boardCode: 'AhJh2h', boardCategory: 'monotone', opponentId: 'Villain',
     heroPosition: 'BB', heroCards: 'Ah Kh', bbValue: 0.05,
-    heroStartStack: 10, heroEndStack: 10.15,
+    heroStartStack: 10, heroEndStack: 10.15, tableMax: 9,
   };
   const plan = buildImportPlan([parsedHand], [], [], { generateId });
   const record = plan.records[0];
@@ -411,6 +420,7 @@ test('import records persist hero fact fields and overwrite patch refreshes them
   assert.equal(record.bbValue, 0.05);
   assert.equal(record.heroStartStack, 10);
   assert.equal(record.heroEndStack, 10.15);
+  assert.equal(record.tableMax, 9);
   assert.equal(record.marked, false);
 
   const patch = createOverwritePatch(parsedHand);
@@ -419,6 +429,7 @@ test('import records persist hero fact fields and overwrite patch refreshes them
   assert.equal(patch.bbValue, 0.05);
   assert.equal(patch.heroStartStack, 10);
   assert.equal(patch.heroEndStack, 10.15);
+  assert.equal(patch.tableMax, 9);
   assert.equal('decision' in patch, false);
   assert.equal('mistake' in patch, false);
   assert.equal('reflection' in patch, false);

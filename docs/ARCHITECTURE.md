@@ -193,8 +193,9 @@ handReviews:       [ { id, sessionId, date, potType, board, boardCode, boardCate
                        preflopScenario, actionLineOTF, actionLineOTT, actionLineOTR,
                        desc, mistake, reflection, pBB,
                        gg?, ggId?, oId?, oCards?, oHash?, rake, jackpot, marked,
-                       heroPosition?, heroCards?, bbValue?, heroStartStack?, heroEndStack? } ]
-                       // [V7.9.0] 尾部五字段 + marked 由 GG 导入新记录携带；旧记录无这些字段，读取方需容错
+                       heroPosition?, heroCards?, bbValue?, heroStartStack?, heroEndStack?, tableMax? }
+                       // [V7.9.0] 尾部六字段 + marked 由 GG 导入新记录携带；旧记录无这些字段，读取方需容错
+                       // tableMax = GG '-max' 桌型标注（6/9），缺失记 0；6-max 与 9-max 历史同等进入观察档案（总控裁决）
 weeklyReviews:     [ { week: 'YYYY-Www', weakness, plan } ]
 tiltLogs:          [ { date, time, trigger, intensity, note } ]
 // Quiz & Discover (localStorage)
