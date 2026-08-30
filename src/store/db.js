@@ -4,7 +4,7 @@ import { CONSTANTS } from '../constants.js';
 const DB = {
   _db: null,
   _name: 'pa_store',
-  _version: 5,  // [V7.10.2 修改] 新增 learningUnits / opponentNotes object store（Phase 4）
+  _version: 6,  // [V7.10.4 修改] 新增 gtoBaselines object store（GTO 基线域）
 
   isReady: function () {
     return Boolean(this._db);
@@ -46,6 +46,9 @@ const DB = {
           db.createObjectStore('learningUnits', { keyPath: 'id' });
         if (!db.objectStoreNames.contains('opponentNotes'))
           db.createObjectStore('opponentNotes', { keyPath: 'id' });
+        // [V7.10.4 新增] GTO 基线域
+        if (!db.objectStoreNames.contains('gtoBaselines'))
+          db.createObjectStore('gtoBaselines', { keyPath: 'id' });
       };
       req.onsuccess = function (e) {
         self._db = e.target.result;

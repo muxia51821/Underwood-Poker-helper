@@ -3,7 +3,7 @@
 // 信号不持久化（随 handDataChanged 重算）；Dossier 以确定性 signalId 锚定，重算不失效。
 import { Utils, PubSub } from '../utils.js';
 import { createLearningSnapshot, buildFlopObservations, OBSERVATION_VERSION } from './analysisReadModel.js';
-import { HandRepo, DossierRepo } from '../store/store.js';
+import { HandRepo, DossierRepo, GtoBaselineRepo } from '../store/store.js';
 import { Navigation } from './navigation.js';
 
 var THRESHOLDS = { minSpot: 8, minBaseline: 20, minDeviationPP: 15, maxSignals: 10 };
@@ -25,6 +25,11 @@ function _avgPBB(obs) {
 export var DecisionRadar = {
   THRESHOLDS: THRESHOLDS,
   QUESTION_LABELS: QUESTION_LABELS,
+
+  // [V7.10.4 新增] GTO 基线匹配（纯函数，契约测试 seam）：按场景+问题过滤活跃基线
+  matchGtoBaselines: function (baselines, scenario, question) {
+    return (baselines || []).filter((b) => b.isActive && b.question === question && b.scenario === scenario);
+  },
 
   // 纯函数：观察 → Spot 级信号（确定性 signalId）
   buildSignals: function (observations) {
@@ -147,6 +152,14 @@ export var DecisionRadar = {
         html += '<div class="finding-card__title">你 ' + s.spotFreq + '% vs 基线 ' + s.baselineFreq + '%（偏离 ' + (s.deviationPP >= 0 ? '+' : '') + s.deviationPP + 'pp）</div>';
         html += '<div class="finding-card__meta">Spot 平均盈亏 ' + (s.avgSpotPBB == null ? '--' : (s.avgSpotPBB >= 0 ? '+' : '') + s.avgSpotPBB + ' BB') +
           ' · 基线 ' + (s.avgBaselinePBB == null ? '--' : (s.avgBaselinePBB >= 0 ? '+' : '') + s.avgBaselinePBB + ' BB') + '（盈亏只提供语境）</div>';
+        // [V7.10.4 新增] GTO 参考块：匹配活跃基线，来源/条件/边界如实标注（数值对照只在条件相符时构成直接比较）
+        const gtoMatches = self.matchGtoBaselines(GtoBaselineRepo.getAll(), s.scenario, s.question);
+        if (gtoMatches.length) {
+          html += '<div class="finding-card__meta" style="color:#8b949e">🌐 GTO 参考：' + gtoMatches.map((b) => {
+            const num = b.overall ? 'C-bet ' + b.overall.betFreq + '%（与 Spot 差 ' + (s.spotFreq - b.overall.betFreq >= 0 ? '+' : '') + Math.round(s.spotFreq - b.overall.betFreq) + 'pp）' : '仅定性方向';
+            return num + ' · ' + b.conditions.stackBB + 'bb ' + b.conditions.game + ' · ' + b.transferBoundary;
+          }).join('；') + '</div>';
+        }
         html += '<div class="finding-card__actions">' +
           '<button class="btn--mini" data-radar-evidence="' + Utils.escapeHtml(s.id) + '">查看手牌</button>' +
           '<button class="btn--mini" data-radar-dossier="' + Utils.escapeHtml(s.id) + '">' + (dossier ? '打开建档' : '建档研究') + '</button>' +

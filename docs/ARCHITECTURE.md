@@ -62,10 +62,11 @@ src/
     srpData.js       # GTO 策略速查表（从 gtoRaw 自动生成，import Utils + gtoRaw）
     actionLines.js   # underBluff + overBluff 行动线表
     strategy/
-      gtoBaseline.js # L1 极端阈值自动编译（>90%/<5%）+ getGTOReference()
-      gtoRaw/        # Solver 原始输出
+      gtoBaseline.js # L1 极端阈值自动编译（>90%/<5%）+ getGTOReference() + GTO_LEGACY_SCOPE
+      gtoRaw/        # Solver 原始输出（旧遗留，scoped legacy reference）
         BTNvsBB_SRP_flop.js  # BTNvsBB 翻牌频率（183 boards）
         SBvsBB_SRP_flop.js   # SBvsBB 翻牌频率（183 boards）
+      gtoBaselineSeed.js # [V7.10.4 新增] GTO 基线种子（来源/条件/边界内联 + 证据包生成）
 
 public/
   manifest.webmanifest        # 相对 scope/start_url 的安装描述
@@ -219,7 +220,7 @@ pa_quiz_mastery:   { "scenario|boardCode": { consecutiveCorrect, totalAttempts, 
 pa_discoverState:  { findings, scanHandCount, archive }
 ```
 
-IndexedDB: `pa_store` v5, 11 ObjectStores (`handReviews`/`sessions`/`weeklyReviews`/`tiltLogs`/`marks`/`sessionClosures`/`dossiers`/`evidencePacks`/`strategyRevisions`/`learningUnits`/`opponentNotes`) [V7.10.2 升 v5].
+IndexedDB: `pa_store` v6, 12 ObjectStores (`handReviews`/`sessions`/`weeklyReviews`/`tiltLogs`/`marks`/`sessionClosures`/`dossiers`/`evidencePacks`/`strategyRevisions`/`learningUnits`/`opponentNotes`/`gtoBaselines`) [V7.10.4 升 v6].
 `handReviews` has 3 indexes: `sessionId`, `ggId`, `date`.
 // [V7.9.1 新增] marks: [{ id, time 'YYYY-MM-DD HH:MM', note, mistake, sessionId|null, status 'open'|'matched'|'dismissed', matchedHandId, createdAt }]
 // [V7.9.1 新增] sessionClosures: [{ id, sessionId（唯一）, status 'draft'|'closed', closedAt, reviewedHandIds[], matchedMarkIds[], note }]

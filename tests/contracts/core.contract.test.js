@@ -19,7 +19,7 @@ const localStorage = createLocalStorage();
 globalThis.localStorage = localStorage;
 globalThis.window = { addEventListener() {} };
 
-const { Store, SessionRepo, HandRepo, BaseRepo, initStorage, MarksRepo, ClosureRepo, DossierRepo, EvidencePackRepo, StrategyRepo } = await import('../../src/store/store.js');
+const { Store, SessionRepo, HandRepo, BaseRepo, initStorage, MarksRepo, ClosureRepo, DossierRepo, EvidencePackRepo, StrategyRepo, GtoBaselineRepo } = await import('../../src/store/store.js');
 const { LocalStorageAdapter, PersistenceCoordinator } = await import('../../src/store/storage.js');
 const { buildImportPlan, createOverwritePatch } = await import('../../src/modules/ggImportCoordinator.js');
 const { normalizeLearningHand, createLearningSnapshot, getLearningTarget } = await import('../../src/modules/analysisReadModel.js');
@@ -1013,4 +1013,51 @@ test('hand replay extracts showdown shows suffix and opponent lines', () => {
   assert.deepEqual(opp.cards, ['Qh', 'Jh']);
   assert.equal(opp.result, 'won');
   assert.ok(opp.amountText.indexOf('$1.84') !== -1);
+});
+
+// [V7.10.4 新增] GTO 基线域
+
+test('gto baseline seeding is idempotent and wires evidence packs', async () => {
+  localStorage.clear();
+  await initStorage({ safeMode: true });
+  const count1 = GtoBaselineRepo.getAll().length;
+  assert.ok(count1 >= 4, 'seeded baselines should exist');
+  const evIds = EvidencePackRepo.getAll().map((p) => p.id);
+  assert.ok(evIds.includes('ev-gto-btnvsbb-cbet-40bb'));
+  assert.ok(evIds.includes('ev-gto-covsbtn-cbet-40bb'));
+  const btn = GtoBaselineRepo.getAll().find((b) => b.id === 'gto-baseline-btnvsbb-cbet-40bb');
+  assert.equal(btn.overall.betFreq, 75.2);
+  assert.equal(btn.source.url, 'https://bbzpoker.com/when-they-c-bet-too-much/');
+  assert.ok(btn.transferBoundary.includes('40bb'));
+  await initStorage({ safeMode: true });
+  assert.equal(GtoBaselineRepo.getAll().length, count1);  // 种子幂等
+  await initStorage({ safeMode: true });
+  assert.equal(GtoBaselineRepo.getAll().length, count1);
+});
+
+test('radar gto baseline matching filters by scenario and question', async () => {
+  const { DecisionRadar } = await import('../../src/modules/decisionRadar.js');
+  const baselines = [
+    { id: 'b1', scenario: 'BTNvsBB', question: 'cbet', isActive: true },
+    { id: 'b2', scenario: 'BTNvsBB', question: 'facebet', isActive: true },
+    { id: 'b3', scenario: 'SBvsBB', question: 'cbet', isActive: true },
+    { id: 'b4', scenario: 'BTNvsBB', question: 'cbet', isActive: false },
+  ];
+  const matches = DecisionRadar.matchGtoBaselines(baselines, 'BTNvsBB', 'cbet');
+  assert.deepEqual(matches.map((b) => b.id), ['b1']);
+  assert.deepEqual(DecisionRadar.matchGtoBaselines(baselines, 'COvsBTN', 'cbet'), []);
+  assert.deepEqual(DecisionRadar.matchGtoBaselines([], 'BTNvsBB', 'cbet'), []);
+});
+
+test('gto baselines persist through export/import merge', async () => {
+  localStorage.clear();
+  await initStorage({ safeMode: true });
+  const before = GtoBaselineRepo.getAll().length;
+  Store.importAll({ gtoBaselines: [{ id: 'gto-user-1', scenario: 'BTNvsBB', question: 'cbet', isActive: true }] });
+  assert.ok(GtoBaselineRepo.getAll().some((b) => b.id === 'gto-user-1'));
+  assert.throws(() => Store.importAll({ gtoBaselines: 'x' }), /gtoBaselines 应为数组/);
+  Store.importAll({ gtoBaselines: [{ id: 'gto-user-1', isActive: false }] });  // 合并不覆盖
+  const merged = GtoBaselineRepo.getAll().find((b) => b.id === 'gto-user-1');
+  assert.equal(merged.isActive, true);
+  assert.ok(GtoBaselineRepo.getAll().length >= before);
 });

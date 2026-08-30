@@ -2,7 +2,7 @@
 // 原则：策略不回写手牌事实（独立对象）；来源条件不同可提供结构性参考，数值对照只在直接条件相符时展示；
 // research / candidate-adjustment / maintain 都是有效结论，证据不足不强迫改策略。
 import { Utils } from '../utils.js';
-import { EvidencePackRepo, StrategyRepo, DossierRepo, LearningUnitRepo } from '../store/store.js';
+import { EvidencePackRepo, StrategyRepo, DossierRepo, LearningUnitRepo, GtoBaselineRepo } from '../store/store.js';
 import { Navigation } from './navigation.js';
 import { DecisionRadar } from './decisionRadar.js';  // [V7.10.2 新增] 复测基线快照与判定
 
@@ -21,6 +21,32 @@ export var StrategyDesk = {
     document.getElementById('addEvidenceBtn').addEventListener('click', () => this.openEvidenceEditor());
     document.getElementById('saveEvidenceBtn').addEventListener('click', () => this.saveEvidence());
     document.getElementById('cancelEvidenceBtn').addEventListener('click', () => this.closeEvidenceEditor());
+    // [V7.10.4 新增] GTO 基线管理
+    document.getElementById('addGtoBaselineBtn').addEventListener('click', () => this.openGtoBaselineEditor(null));
+    document.getElementById('saveGtoBaselineBtn').addEventListener('click', () => this.saveGtoBaseline());
+    document.getElementById('cancelGtoBaselineBtn').addEventListener('click', () => this.closeGtoBaselineEditor());
+    document.getElementById('gtoBaselineList').addEventListener('click', (e) => {
+      const editBtn = e.target.closest('[data-gto-edit]');
+      if (editBtn) { this.openGtoBaselineEditor(editBtn.dataset.gtoEdit); return; }
+      const toggleBtn = e.target.closest('[data-gto-toggle]');
+      if (toggleBtn) {
+        const baselines = GtoBaselineRepo.getAll();
+        const b = baselines.find((x) => x.id === toggleBtn.dataset.gtoToggle);
+        if (b) { b.isActive = !b.isActive; GtoBaselineRepo.saveAll(baselines); this.render(); }
+        return;
+      }
+      const delBtn = e.target.closest('[data-gto-delete]');
+      if (delBtn) {
+        const id = delBtn.dataset.gtoDelete;
+        if (confirm('删除该 GTO 基线？')) {
+          GtoBaselineRepo.saveAll(GtoBaselineRepo.getAll().filter((x) => x.id !== id));
+          this.render();
+        }
+        return;
+      }
+      const row = e.target.closest('[data-gto-id]');
+      if (row) this.openGtoBaselineEditor(row.dataset.gtoId);
+    });
     document.getElementById('strategyList').addEventListener('click', (e) => {
       // [V7.10.2 新增] 生成训练/复测单元
       const unitBtn = e.target.closest('[data-strategy-unit]');
@@ -119,6 +145,105 @@ export var StrategyDesk = {
     this.renderStrategyList();
     this.renderEvidenceChecks();
     this.renderEvidenceList();
+    this.renderGtoBaselines();  // [V7.10.4 新增]
+  },
+
+  // [V7.10.4 新增] GTO 基线列表：种子 + 手工录入，全部带来源/条件/边界
+  renderGtoBaselines: function () {
+    const listEl = document.getElementById('gtoBaselineList');
+    const baselines = GtoBaselineRepo.getAll().slice().sort(function (a, b) {
+      return (b.isActive - a.isActive) || String(a.scenario).localeCompare(String(b.scenario));
+    });
+    if (!baselines.length) {
+      listEl.innerHTML = '<div class="empty-state">暂无 GTO 基线。</div>';
+      return;
+    }
+    listEl.innerHTML = '<div class="finding-list">' + baselines.map((b) => {
+      const num = b.overall ? 'C-bet ' + b.overall.betFreq + '% / check ' + b.overall.checkFreq + '%' : '仅定性方向';
+      const scenarioLabel = b.scenario + ' · ' + (b.question === 'cbet' ? 'C-bet' : b.question);
+      return '<article class="finding-card" data-gto-id="' + Utils.escapeHtml(b.id) + '" style="cursor:pointer' + (b.isActive ? '' : ';opacity:0.55') + '">' +
+        '<div class="finding-card__header"><span><strong>' + Utils.escapeHtml(scenarioLabel) + '</strong></span>' +
+        '<span class="status-inline status-inline--' + (b.isActive ? 'success' : '') + '">' + (b.isActive ? '生效中' : '已停用') + '</span></div>' +
+        '<div class="finding-card__title">' + Utils.escapeHtml(num) + '</div>' +
+        '<div class="finding-card__meta">' + b.conditions.stackBB + 'bb · ' + Utils.escapeHtml(b.conditions.game) + ' · ' + Utils.escapeHtml(b.conditions.solver || '') + '</div>' +
+        (b.textureNotes ? '<div class="finding-card__meta">texture：' + Utils.escapeHtml(b.textureNotes) + '</div>' : '') +
+        '<div class="finding-card__meta">来源：<a href="' + Utils.escapeHtml(b.source.url) + '" target="_blank" rel="noopener noreferrer" style="color:#5a9e8f">' + Utils.escapeHtml(b.source.title) + '</a>（' + Utils.escapeHtml(b.source.articleDate || '未标注') + '）</div>' +
+        '<div class="finding-card__meta">边界：' + Utils.escapeHtml(b.transferBoundary) + '</div>' +
+        '<div class="finding-card__actions">' +
+        '<button class="btn--mini" data-gto-edit="' + Utils.escapeHtml(b.id) + '">编辑</button>' +
+        '<button class="btn--mini" data-gto-toggle="' + Utils.escapeHtml(b.id) + '">' + (b.isActive ? '停用' : '启用') + '</button>' +
+        '<button class="btn--mini btn--danger" data-gto-delete="' + Utils.escapeHtml(b.id) + '">删除</button>' +
+        '</div></article>';
+    }).join('') + '</div>';
+  },
+
+  openGtoBaselineEditor: function (id) {
+    this.editingGtoBaselineId = id || null;
+    const b = id ? GtoBaselineRepo.getAll().find((x) => x.id === id) : null;
+    document.getElementById('gtoScenario').value = b ? b.scenario : 'BTNvsBB';
+    document.getElementById('gtoStackBB').value = b && b.conditions ? b.conditions.stackBB : '';
+    document.getElementById('gtoGame').value = b && b.conditions ? b.conditions.game : '';
+    document.getElementById('gtoBetFreq').value = b && b.overall ? b.overall.betFreq : '';
+    document.getElementById('gtoCheckFreq').value = b && b.overall ? b.overall.checkFreq : '';
+    document.getElementById('gtoTextureNotes').value = b ? b.textureNotes || '' : '';
+    document.getElementById('gtoSourceTitle').value = b ? b.source.title || '' : '';
+    document.getElementById('gtoSourceUrl').value = b ? b.source.url || '' : '';
+    document.getElementById('gtoSourceDate').value = b ? b.source.articleDate || '' : '';
+    document.getElementById('gtoBoundary').value = b ? b.transferBoundary || '' : '';
+    const btn = document.getElementById('saveGtoBaselineBtn');
+    btn.textContent = b ? '更新 GTO 基线' : '保存 GTO 基线';
+    btn.dataset.state = b ? 'edit' : 'create';
+    document.getElementById('gtoBaselineEditor').style.display = 'block';
+  },
+
+  closeGtoBaselineEditor: function () {
+    this.editingGtoBaselineId = null;
+    document.getElementById('gtoBaselineEditor').style.display = 'none';
+  },
+
+  saveGtoBaseline: function () {
+    const scenario = document.getElementById('gtoScenario').value;
+    const stackBB = parseFloat(document.getElementById('gtoStackBB').value);
+    const betFreq = parseFloat(document.getElementById('gtoBetFreq').value);
+    const checkFreq = parseFloat(document.getElementById('gtoCheckFreq').value);
+    const sourceTitle = document.getElementById('gtoSourceTitle').value.trim();
+    if (isNaN(stackBB) || stackBB <= 0) { Utils.showToast('需要有效筹码（BB）'); return; }
+    if (!sourceTitle) { Utils.showToast('GTO 基线需要来源'); return; }
+    const baselines = GtoBaselineRepo.getAll();
+    let record = this.editingGtoBaselineId ? baselines.find((x) => x.id === this.editingGtoBaselineId) : null;
+    const fields = {
+      scenario: scenario,
+      street: 'flop',
+      question: 'cbet',
+      conditions: {
+        stackBB: stackBB,
+        game: document.getElementById('gtoGame').value.trim(),
+        tableSize: '',
+        solver: '手工录入',
+      },
+      overall: isNaN(betFreq) ? null : { betFreq: betFreq, checkFreq: isNaN(checkFreq) ? null : checkFreq, sizingSplit: null },
+      textureNotes: document.getElementById('gtoTextureNotes').value.trim(),
+      source: {
+        title: sourceTitle,
+        url: document.getElementById('gtoSourceUrl').value.trim(),
+        publisher: '',
+        articleDate: document.getElementById('gtoSourceDate').value,
+      },
+      transferBoundary: document.getElementById('gtoBoundary').value.trim(),
+      capturedAt: Utils.getLocalDate(),
+    };
+    const now = Utils.getLocalDatetime();
+    if (record) {
+      Object.keys(fields).forEach((k) => { record[k] = fields[k]; });
+      record.updatedAt = now;
+    } else {
+      record = Object.assign({ id: Utils.generateUUID(), isActive: true, createdAt: now, updatedAt: now }, fields);
+      baselines.push(record);
+    }
+    GtoBaselineRepo.saveAll(baselines);
+    this.closeGtoBaselineEditor();
+    this.render();
+    Utils.showToast('GTO 基线已保存');
   },
 
   renderStrategyList: function () {
@@ -160,6 +285,12 @@ export var StrategyDesk = {
           ' <button class="btn--mini" data-unit-quiz="' + Utils.escapeHtml(u.id) + '">去 Quiz</button>' +
           ' <button class="btn--mini" data-unit-archive="' + Utils.escapeHtml(u.id) + '">归档</button></div>';
       }).join('');
+      // [V7.10.4 新增] GTO 参考块（来源/边界见策略子页 GTO 基线管理区）
+      const scenarioKey = (s.familyKey || '').split('|')[0];
+      const gtoMatches = DecisionRadar.matchGtoBaselines(GtoBaselineRepo.getAll(), scenarioKey, 'cbet');
+      const gtoHtml = gtoMatches.length
+        ? '<div class="finding-card__meta" style="color:#8b949e">🌐 GTO 参考：' + gtoMatches.map((b) => (b.overall ? 'C-bet ' + b.overall.betFreq + '%' : '仅定性方向') + ' · ' + b.conditions.stackBB + 'bb').join('；') + '</div>'
+        : '';
       return '<article class="finding-card" data-strategy-id="' + Utils.escapeHtml(s.id) + '" style="cursor:pointer">' +
         '<div class="finding-card__header"><span><strong>' + Utils.escapeHtml(s.title || '(未命名)') + '</strong></span>' +
         '<span class="status-inline status-inline--' + (s.status === 'maintain' ? 'success' : s.status === 'candidate-adjustment' ? 'danger' : 'info') + '">' + Utils.escapeHtml(statusLabel) + '</span></div>' +
@@ -168,6 +299,7 @@ export var StrategyDesk = {
         '证据 ' + evidenceCount + ' 个' + (linkedDossiers.length ? ' · Dossier：' + Utils.escapeHtml(linkedDossiers.join('、')) : '') + '</div>' +
         (s.reviewCondition ? '<div class="finding-card__meta">复测条件：' + Utils.escapeHtml(s.reviewCondition) + '</div>' : '') +
         (retestHtml ? '<div class="finding-card__meta">' + retestHtml + '</div>' : '') +
+        (gtoHtml ? '<div class="finding-card__meta">' + gtoHtml + '</div>' : '') +
         (unitsHtml ? '<div class="finding-card__meta">' + unitsHtml + '</div>' : '') +
         '<div class="finding-card__actions">' +
         '<button class="btn--mini" data-strategy-edit="' + Utils.escapeHtml(s.id) + '">编辑</button>' +

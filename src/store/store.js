@@ -3,6 +3,7 @@ import { Utils, PubSub } from '../utils.js';
 import { DB } from './db.js';  // [V6.17.0] DB 独立模块
 import { LocalStorageAdapter, IndexedDBAdapter, PersistenceCoordinator } from './storage.js';
 import { clearStatsCache } from '../modules/statsEngine.js';  // [V7.0.0] 数据变更时清统计缓存
+import { GTO_BASELINE_SEEDS, gtoSeedToEvidencePack, GTO_BASELINE_SEED_VERSION } from '../data/gtoBaselineSeed.js';  // [V7.10.4 新增] GTO 基线种子
 
 const localStorageAdapter = new LocalStorageAdapter();
 const persistence = new PersistenceCoordinator({
@@ -114,6 +115,7 @@ export const Store = {
       strategyRevisions: StrategyRepo.getAll(),  // [V7.9.3 新增]
       learningUnits: LearningUnitRepo.getAll(),  // [V7.10.2 新增]
       opponentNotes: OpponentNoteRepo.getAll(),  // [V7.10.2 新增]
+      gtoBaselines: GtoBaselineRepo.getAll(),  // [V7.10.4 新增]
       opponentAliases: Store.opponentAliases.get(),
       opponentLiveFlags: Store.opponentLiveFlags.get(),
       opponentMerges: Store.opponentMerges.get(),
@@ -147,6 +149,9 @@ export const Store = {
       throw new Error('导入数据格式错误：learningUnits 应为数组');
     if (data.opponentNotes !== undefined && !Array.isArray(data.opponentNotes))
       throw new Error('导入数据格式错误：opponentNotes 应为数组');
+    // [V7.10.4 新增] gtoBaselines 校验
+    if (data.gtoBaselines !== undefined && !Array.isArray(data.gtoBaselines))
+      throw new Error('导入数据格式错误：gtoBaselines 应为数组');
     // V5.8.1 增量导入
     const mergeByKey = function (localArr, importArr, key) {
       const map = new Map();
@@ -184,6 +189,9 @@ export const Store = {
       LearningUnitRepo.saveAll(mergeByKey(LearningUnitRepo.getAll(), data.learningUnits, 'id'));
     if (data.opponentNotes)
       OpponentNoteRepo.saveAll(mergeByKey(OpponentNoteRepo.getAll(), data.opponentNotes, 'id'));
+    // [V7.10.4 新增] gtoBaselines 增量合并
+    if (data.gtoBaselines)
+      GtoBaselineRepo.saveAll(mergeByKey(GtoBaselineRepo.getAll(), data.gtoBaselines, 'id'));
     if (data.logs && typeof data.logs === 'object') {
       Object.keys(data.logs).forEach(function (d) {
         const local = Store.logs.get(d);
@@ -389,9 +397,10 @@ export const EvidencePackRepo = new BaseRepo('evidencePacks');  // [V7.9.3 新�
 export const StrategyRepo = new BaseRepo('strategyRevisions');  // [V7.9.3 新增] 策略修订
 export const LearningUnitRepo = new BaseRepo('learningUnits');  // [V7.10.2 新增] 训练/复测单元
 export const OpponentNoteRepo = new BaseRepo('opponentNotes');  // [V7.10.2 新增] 对手观察笔记
+export const GtoBaselineRepo = new BaseRepo('gtoBaselines');  // [V7.10.4 新增] GTO 基线
 
 async function migrateToIndexedDB() {
-  var tables = ['sessions', 'handReviews', 'weeklyReviews', 'tiltLogs', 'marks', 'sessionClosures', 'dossiers', 'evidencePacks', 'strategyRevisions', 'learningUnits', 'opponentNotes'];  // [V7.10.2 修改]
+  var tables = ['sessions', 'handReviews', 'weeklyReviews', 'tiltLogs', 'marks', 'sessionClosures', 'dossiers', 'evidencePacks', 'strategyRevisions', 'learningUnits', 'opponentNotes', 'gtoBaselines'];  // [V7.10.4 修改]
   var allOk = true;
 
   for (var i = 0; i < tables.length; i++) {
@@ -425,6 +434,7 @@ async function migrateToIndexedDB() {
     persistence.removeLocal('strategyRevisions');  // [V7.9.3 新增]
     persistence.removeLocal('learningUnits');  // [V7.10.2 新增]
     persistence.removeLocal('opponentNotes');  // [V7.10.2 新增]
+    persistence.removeLocal('gtoBaselines');  // [V7.10.4 新增]
     // [V7.0.3] 先 ready 再标记，避免中间崩溃造成标记为真但 repo 未 ready
     SessionRepo.markIndexedDBReady();
     HandRepo.markIndexedDBReady();
@@ -437,6 +447,7 @@ async function migrateToIndexedDB() {
     StrategyRepo.markIndexedDBReady();  // [V7.9.3 新增]
     LearningUnitRepo.markIndexedDBReady();  // [V7.10.2 新增]
     OpponentNoteRepo.markIndexedDBReady();  // [V7.10.2 新增]
+    GtoBaselineRepo.markIndexedDBReady();  // [V7.10.4 新增]
     localStorage.setItem('pa_migrated_v1', 'true');
   } else {
     console.warn('Migration incomplete, localStorage data preserved for next retry');
@@ -630,6 +641,7 @@ export async function initStorage(opts) {
     await StrategyRepo._init();  // [V7.9.3 新增]
     await LearningUnitRepo._init();  // [V7.10.2 新增]
     await OpponentNoteRepo._init();  // [V7.10.2 新增]
+    await GtoBaselineRepo._init();  // [V7.10.4 新增]
 
     // 恢复机制
     var recoveryRepos = [
@@ -644,6 +656,7 @@ export async function initStorage(opts) {
       { repo: StrategyRepo, key: 'strategyRevisions' },  // [V7.9.3 新增]
       { repo: LearningUnitRepo, key: 'learningUnits' },  // [V7.10.2 新增]
       { repo: OpponentNoteRepo, key: 'opponentNotes' },  // [V7.10.2 新增]
+      { repo: GtoBaselineRepo, key: 'gtoBaselines' },  // [V7.10.4 新增]
     ];
     recoveryRepos.forEach(function (r) {
       var fallback = Store._getRaw(r.key);
@@ -677,6 +690,7 @@ export async function initStorage(opts) {
     StrategyRepo.replaceCache(Store._getRaw('strategyRevisions') || []);  // [V7.9.3 新增]
     LearningUnitRepo.replaceCache(Store._getRaw('learningUnits') || []);  // [V7.10.2 新增]
     OpponentNoteRepo.replaceCache(Store._getRaw('opponentNotes') || []);  // [V7.10.2 新增]
+    GtoBaselineRepo.replaceCache(Store._getRaw('gtoBaselines') || []);  // [V7.10.4 新增]
 
     if (persistence.isIndexedDBReady()) {
       await migrateToIndexedDB();
@@ -700,6 +714,7 @@ export async function initStorage(opts) {
     { name: 'StrategyRevision', repo: StrategyRepo },  // [V7.9.3 新增]
     { name: 'LearningUnit', repo: LearningUnitRepo },  // [V7.10.2 新增]
     { name: 'OpponentNote', repo: OpponentNoteRepo },  // [V7.10.2 新增]
+    { name: 'GtoBaseline', repo: GtoBaselineRepo },  // [V7.10.4 新增]
   ];
   var corruptions = [];
   repos.forEach(function (r) {
@@ -737,6 +752,26 @@ export async function initStorage(opts) {
   _migrateOpponentHash();
   migrateHandReviews();
   migrateOldData();
+  // [V7.10.4 新增] GTO 基线种子：一次性幂等播种（固定 id upsert + 关联证据包），用户后续编辑不被覆盖
+  _seedGtoBaselines();
+}
+
+// [V7.10.4 新增] GTO 基线种子（来源/条件/边界内联；按 pa_gto_baseline_seed_v1 门控只跑一次）
+function _seedGtoBaselines() {
+  if (localStorage.getItem('pa_gto_baseline_seed_' + GTO_BASELINE_SEED_VERSION)) return;
+  try {
+    const baselines = GtoBaselineRepo.getAll();
+    const packs = EvidencePackRepo.getAll();
+    GTO_BASELINE_SEEDS.forEach(function (seed) {
+      if (!baselines.some((b) => b.id === seed.id)) baselines.push(JSON.parse(JSON.stringify(seed)));
+      if (!packs.some((p) => p.id === seed.evidenceId)) packs.push(gtoSeedToEvidencePack(seed));
+    });
+    GtoBaselineRepo.saveAll(baselines);
+    EvidencePackRepo.saveAll(packs);
+    localStorage.setItem('pa_gto_baseline_seed_' + GTO_BASELINE_SEED_VERSION, 'true');
+  } catch (e) {
+    console.warn('GTO baseline seeding failed (will retry next boot):', e);
+  }
 }
 
 // [V6.9.0] 存储健康状态追踪
@@ -759,6 +794,7 @@ export function getStorageHealth() {
       strategyRevisions: StrategyRepo.count(),  // [V7.9.3 新增]
       learningUnits: LearningUnitRepo.count(),  // [V7.10.2 新增]
       opponentNotes: OpponentNoteRepo.count(),  // [V7.10.2 新增]
+      gtoBaselines: GtoBaselineRepo.count(),  // [V7.10.4 新增]
     },
   };
 }
@@ -781,4 +817,5 @@ window.addEventListener('beforeunload', function () {
   StrategyRepo._flush();  // [V7.9.3 新增]
   LearningUnitRepo._flush();  // [V7.10.2 新增]
   OpponentNoteRepo._flush();  // [V7.10.2 新增]
+  GtoBaselineRepo._flush();  // [V7.10.4 新增]
 });
