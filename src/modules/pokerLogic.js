@@ -1,10 +1,11 @@
 // [V7.11.1 修改] 复盘牌理参考渲染：单手牌命中 spot 时输出牌理链卡片（只读，折叠式）。
-// [V7.11.1 修改] v2 种子结构：四步 = 导航语 + 概念引用列表（conceptIds → conceptSeed.js），
-// 牌理机制文本只来自概念库（提炼自权威来源，附出处），本文件不自写牌理。
+// [V7.11.2 修改] v3 渲染：每步 = 导航语 + 应用要点（CONCEPT_APPLICATIONS，带出处）+ 概念卡；
+//   概念卡新增 对比例 / 阈值 / 自测题（嵌套 <details> 折叠，quiz-first：先想再看答案）。
+// 牌理机制文本只来自概念域（提炼自权威来源，附出处），本文件不自写牌理。
 // 纪律：卡片是"怎么想"的框架与机制参照；来源频率绝不与当前手牌做差值；证据只列来源与边界。
 import { matchHandSpot } from './spotMatcher.js';
 import { POKER_LOGIC_SEEDS } from '../data/pokerLogicSeed.js';
-import { CONCEPT_SEEDS } from '../data/conceptSeed.js';
+import { CONCEPT_SEEDS, CONCEPT_APPLICATIONS } from '../data/conceptSeed.js';
 import { Utils } from '../utils.js';
 import { EvidencePackRepo } from '../store/store.js';
 
@@ -18,6 +19,15 @@ function esc(s) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+function sourceLine(ref) {
+  if (!ref) return '';
+  if (ref.kind === 'gwblog') {
+    return '<div style="margin-top:2px;color:#7a8494;font-size:0.95em">来源：GTO Wizard 博客《' + esc(ref.lesson) + '》</div>';
+  }
+  return '<div style="margin-top:2px;color:#7a8494;font-size:0.95em">来源：DDoG 第' + esc(ref.chapter) + '章《' + esc(ref.lesson) +
+    '》阅读器页 ' + esc(ref.readerPages) + (ref.extraction ? ' · ' + esc(ref.extraction) : '') + '</div>';
+}
+
 function evidenceLine(refId, packs) {
   const pack = (packs || []).find((p) => p.id === refId);
   if (!pack) return '<div style="color:#8b949e;font-size:0.92em">· 证据未找到（' + esc(refId) + '）</div>';
@@ -25,6 +35,14 @@ function evidenceLine(refId, packs) {
     (pack.transferBoundary ? ' —— 边界：' + esc(pack.transferBoundary) : '') + '</div>';
 }
 
+// [V7.11.2 新增] 应用要点：该格的一条可核验要点 + 出处
+function applicationLine(appId) {
+  const a = CONCEPT_APPLICATIONS.find((x) => x.id === appId);
+  if (!a) return '<div style="color:#8b949e;font-size:0.92em">· 应用条目未找到（' + esc(appId) + '）</div>';
+  return '<div style="margin:5px 0 2px;padding:5px 8px;border-left:3px solid #2e5e9e;background:#0d1930">· ' + esc(a.text) + sourceLine(a.sourceRef) + '</div>';
+}
+
+// [V7.11.2 修改] 概念卡：机制 + 误解 + 边界 + 对比例 + 阈值 + 自测题（quiz-first，答案折叠）
 function conceptLine(conceptId) {
   const c = CONCEPT_SEEDS.find((x) => x.id === conceptId);
   if (!c) return '<div style="color:#8b949e;font-size:0.92em">· 概念未找到（' + esc(conceptId) + '）</div>';
@@ -32,19 +50,33 @@ function conceptLine(conceptId) {
   html += '<b style="color:#d4a853">' + esc(c.title) + '</b>';
   html += '<div style="margin-top:3px">' + esc(c.mechanism) + '</div>';
   if (c.misconception) html += '<div style="margin-top:3px;color:#c98f8f">⚠ 常见误解：' + esc(c.misconception) + '</div>';
-  if (c.applicability) html += '<div style="margin-top:3px;color:#8b949e">适用边界：' + esc(c.applicability) + '</div>';
-  if (c.sourceRef) {
-    html += '<div style="margin-top:3px;color:#7a8494;font-size:0.95em">来源：DDoG 第' + esc(c.sourceRef.chapter) + '章《' + esc(c.sourceRef.lesson) +
-      '》阅读器页 ' + esc(c.sourceRef.readerPages) + ' · ' + esc(c.sourceRef.extraction) + '</div>';
+  (c.contrastExamples || []).forEach((ex) => {
+    html += '<div style="margin-top:3px;padding-left:8px;border-left:2px solid #3a5a8a;color:#b8c0cc">⚖ ' + esc(ex.text) + sourceLine(ex.sourceRef) + '</div>';
+  });
+  (c.thresholds || []).forEach((t) => {
+    html += '<div style="margin-top:3px;padding-left:8px;border-left:2px solid #8a6a2a;color:#c8c2a8">📐 ' + esc(t.text) + sourceLine(t.sourceRef) + '</div>';
+  });
+  if (c.selfCheck && c.selfCheck.question) {
+    html += '<details style="margin-top:4px"><summary style="cursor:pointer;color:#8fb3de">❓ 考考自己（先想再看答案）：' + esc(c.selfCheck.question) + '</summary>';
+    html += '<div style="margin-top:3px;color:#a8afba">';
+    (c.selfCheck.options || []).forEach((opt) => { html += '<div>· ' + esc(opt) + '</div>'; });
+    html += '</div>';
+    html += '<div style="margin-top:3px;color:#9fd49f"><b>答案：' + esc(c.selfCheck.answer) + '</b></div>';
+    if (c.selfCheck.answerNote) html += '<div style="margin-top:2px;color:#a8afba">' + esc(c.selfCheck.answerNote) + '</div>';
+    html += sourceLine(c.selfCheck.sourceRef);
+    html += '</details>';
   }
+  if (c.applicability) html += '<div style="margin-top:3px;color:#8b949e">适用边界：' + esc(c.applicability) + '</div>';
+  html += sourceLine(c.sourceRef);
   html += '</div>';
   return html;
 }
 
-// [V7.11.1 修改] 四步 = 导航语 + 概念引用；conceptIds 为空时只显示导航语（缺口显式保留）
+// [V7.11.2 修改] 四步 = 导航语 + 应用要点 + 概念卡
 function stepBlock(label, step) {
   if (!step) return '';
   let html = '<div style="margin-bottom:7px"><b style="color:#8fb3de">' + label + '</b><div style="margin-top:2px">' + esc(step.note || '') + '</div>';
+  (step.applicationIds || []).forEach((id) => { html += applicationLine(id); });
   (step.conceptIds || []).forEach((id) => { html += conceptLine(id); });
   html += '</div>';
   return html;

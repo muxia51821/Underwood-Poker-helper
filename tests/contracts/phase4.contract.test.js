@@ -249,7 +249,7 @@ test('v7.10.9 river evidence seeds stay off flop signals', () => {
 // [V7.11.0 新增] 复盘牌理参考：单手牌 spot 识别 + 种子完整性 + 证据引用可解析。
 const { matchHandSpot, riverThreat, SPOT_MATCHER_VERSION } = await import('../../src/modules/spotMatcher.js');
 const { POKER_LOGIC_SEEDS, POKER_LOGIC_SEED_VERSION } = await import('../../src/data/pokerLogicSeed.js');
-const { CONCEPT_SEEDS, CONCEPT_SEED_VERSION } = await import('../../src/data/conceptSeed.js');
+const { CONCEPT_SEEDS, CONCEPT_SEED_VERSION, CONCEPT_APPLICATIONS } = await import('../../src/data/conceptSeed.js');
 const { PokerLogic } = await import('../../src/modules/pokerLogic.js');
 const { GTO_BASELINE_SEEDS: LOGIC_GTO_SEEDS } = await import('../../src/data/gtoBaselineSeed.js');
 
@@ -319,8 +319,8 @@ test('v7.11.0 spot matcher routes hands to logic cards by role and street', () =
   assert.equal(riverThreat(['Ah', '7d', '2c', '8c'], 'Kh').scary, false);
 });
 
-test('v7.11.1 poker logic seeds assemble from resolvable concepts and evidence', () => {
-  assert.equal(POKER_LOGIC_SEED_VERSION, 'v2');
+test('v7.11.2 poker logic seeds assemble from resolvable applications, concepts and evidence', () => {
+  assert.equal(POKER_LOGIC_SEED_VERSION, 'v3');
   assert.equal(POKER_LOGIC_SEEDS.length, 8);
   const ids = POKER_LOGIC_SEEDS.map((s) => s.id);
   assert.equal(new Set(ids).size, ids.length);
@@ -329,19 +329,27 @@ test('v7.11.1 poker logic seeds assemble from resolvable concepts and evidence',
       .concat(LOGIC_GTO_SEEDS.map((s) => s.evidenceId)),
   );
   const conceptIds = new Set(CONCEPT_SEEDS.map((c) => c.id));
+  const apps = new Map(CONCEPT_APPLICATIONS.map((a) => [a.id, a]));
   POKER_LOGIC_SEEDS.forEach((seed) => {
     assert.ok(seed.boundary, seed.id + ' needs boundary');
     assert.ok(seed.evidenceRefs.length, seed.id + ' needs evidence refs');
     seed.evidenceRefs.forEach((ref) => {
       assert.ok(resolvable.has(ref), seed.id + ' references unknown evidence ' + ref);
     });
-    // v2：四步框架必须齐全，每格 = 导航语 + 概念引用列表；不得再有自写牌理叙述字段
+    // v3：四步框架必须齐全，每格 = 导航语 + 至少 1 条应用条目（出处化内容）；概念引用可选但须可解析
     ['scope', 'lines', 'streets', 'deviation'].forEach((k) => {
       const step = seed.steps && seed.steps[k];
       assert.ok(step && typeof step.note === 'string' && step.note.length, seed.id + '.' + k + ' needs note');
-      assert.ok(Array.isArray(step.conceptIds), seed.id + '.' + k + ' needs conceptIds array');
+      assert.ok(Array.isArray(step.conceptIds) && Array.isArray(step.applicationIds), seed.id + '.' + k + ' needs id arrays');
+      assert.ok(step.applicationIds.length >= 1, seed.id + '.' + k + ' needs at least one sourced application');
       step.conceptIds.forEach((cid) => {
         assert.ok(conceptIds.has(cid), seed.id + '.' + k + ' references unknown concept ' + cid);
+      });
+      step.applicationIds.forEach((aid) => {
+        const app = apps.get(aid);
+        assert.ok(app, seed.id + '.' + k + ' references unknown application ' + aid);
+        assert.equal(app.spotId, seed.id, aid + ' spotId mismatch');
+        assert.equal(app.step, k, aid + ' step mismatch');
       });
     });
     assert.ok(!('rangeStory' in seed) && !('streetEffect' in seed) && !('lineNotes' in seed) && !('deviation' in seed), seed.id + ' must not carry v1 narrative fields');
@@ -351,14 +359,18 @@ test('v7.11.1 poker logic seeds assemble from resolvable concepts and evidence',
   assert.equal(POKER_LOGIC_SEEDS.filter((s) => s.street === 'flop').length, 5);
 });
 
-test('v7.11.1 concept seeds are complete with source refs', () => {
-  assert.equal(CONCEPT_SEED_VERSION, 'v1');
-  assert.equal(CONCEPT_SEEDS.length, 13);
+test('v7.11.2 concept seeds carry teaching dimensions with source discipline', () => {
+  assert.equal(CONCEPT_SEED_VERSION, 'v2');
+  assert.equal(CONCEPT_SEEDS.length, 20);
   const ids = CONCEPT_SEEDS.map((c) => c.id);
   assert.equal(new Set(ids).size, ids.length, 'concept ids must be unique');
   const cardIds = new Set(POKER_LOGIC_SEEDS.map((s) => s.id));
   const clusters = new Set(['basic-math', 'calibration', 'equity-distribution', 'range-construction', 'defensive']);
   const extractions = new Set(['正文核验', '文章表格直读', '正文核验+文章表格直读', '图像复核（留待）']);
+  const hasSource = (ref) => ref && ref.lesson && (
+    (ref.kind === 'ddog' && ref.chapter && ref.readerPages) ||
+    (ref.kind === 'gwblog' && ref.url)
+  );
   CONCEPT_SEEDS.forEach((c) => {
     assert.ok(c.title && c.mechanism && c.misconception && c.applicability, c.id + ' needs content fields');
     assert.ok(clusters.has(c.cluster), c.id + ' unknown cluster ' + c.cluster);
@@ -368,6 +380,21 @@ test('v7.11.1 concept seeds are complete with source refs', () => {
     assert.ok(c.sourceRef && c.sourceRef.kind === 'ddog', c.id + ' needs ddog sourceRef');
     assert.ok(c.sourceRef.lesson && c.sourceRef.chapter && c.sourceRef.readerPages, c.id + ' sourceRef fields');
     assert.ok(extractions.has(c.sourceRef.extraction), c.id + ' extraction label: ' + c.sourceRef.extraction);
+    // 教学维度：对比例 / 阈值 / 自测题（可缺省，存在则必须带出处）
+    (c.contrastExamples || []).forEach((ex, i) => {
+      assert.ok(ex.text, c.id + ' contrast ' + i + ' needs text');
+      assert.ok(hasSource(ex.sourceRef), c.id + ' contrast ' + i + ' needs sourceRef');
+    });
+    (c.thresholds || []).forEach((t, i) => {
+      assert.ok(t.text, c.id + ' threshold ' + i + ' needs text');
+      if (t.sourceRef) assert.ok(hasSource(t.sourceRef), c.id + ' threshold ' + i + ' sourceRef malformed');
+    });
+    if (c.selfCheck) {
+      assert.ok(c.selfCheck.question, c.id + ' selfCheck needs question');
+      assert.ok(Array.isArray(c.selfCheck.options) && c.selfCheck.options.length >= 2, c.id + ' selfCheck needs options');
+      assert.ok((c.selfCheck.options || []).includes(c.selfCheck.answer), c.id + ' selfCheck answer must be one of options');
+      assert.ok(hasSource(c.selfCheck.sourceRef), c.id + ' selfCheck needs sourceRef');
+    }
     c.relatedSpotIds.forEach((sid) => assert.ok(cardIds.has(sid), c.id + ' references unknown spot ' + sid));
     c.relatedConceptIds.forEach((rid) => assert.ok(ids.includes(rid), c.id + ' references unknown related concept ' + rid));
   });
@@ -377,6 +404,37 @@ test('v7.11.1 concept seeds are complete with source refs', () => {
     ids.includes('concept-equity-buckets') && ids.includes('concept-equity-realization') && ids.includes('concept-range-morphology'),
     'equity distribution vocabulary required',
   );
+  // 教学维度覆盖广度：自测题与对比例是主要形态，至少 2/3 的概念具备其一
+  const withTeaching = CONCEPT_SEEDS.filter((c) => c.selfCheck || (c.contrastExamples || []).length).length;
+  assert.ok(withTeaching >= Math.ceil(CONCEPT_SEEDS.length * 2 / 3), 'teaching dimensions must cover most concepts');
+});
+
+test('v7.11.2 spot applications are spot-scoped with provenance', () => {
+  assert.ok(Array.isArray(CONCEPT_APPLICATIONS) && CONCEPT_APPLICATIONS.length >= 32, 'one application per card cell at minimum');
+  const appIds = CONCEPT_APPLICATIONS.map((a) => a.id);
+  assert.equal(new Set(appIds).size, appIds.length, 'application ids must be unique');
+  const cardIds = new Set(POKER_LOGIC_SEEDS.map((s) => s.id));
+  const conceptIds = new Set(CONCEPT_SEEDS.map((c) => c.id));
+  const steps = new Set(['scope', 'lines', 'streets', 'deviation']);
+  CONCEPT_APPLICATIONS.forEach((a) => {
+    assert.ok(a.id.startsWith('app-'), a.id + ' id prefix');
+    assert.ok(cardIds.has(a.spotId), a.id + ' unknown spotId ' + a.spotId);
+    assert.ok(steps.has(a.step), a.id + ' unknown step ' + a.step);
+    assert.ok(a.text && a.text.length >= 10, a.id + ' needs substantive text');
+    assert.ok(a.sourceRef && a.sourceRef.lesson, a.id + ' needs provenance');
+    assert.ok(
+      a.sourceRef.kind === 'ddog' ? (a.sourceRef.chapter && a.sourceRef.readerPages) : a.sourceRef.kind === 'gwblog' ? a.sourceRef.url : false,
+      a.id + ' sourceRef malformed',
+    );
+    (a.conceptIds || []).forEach((cid) => assert.ok(conceptIds.has(cid), a.id + ' references unknown concept ' + cid));
+  });
+  // 每个 spot×step 至少被一条应用覆盖（深度先行：32 格无空格）
+  const covered = new Set(CONCEPT_APPLICATIONS.map((a) => a.spotId + '|' + a.step));
+  POKER_LOGIC_SEEDS.forEach((s) => {
+    ['scope', 'lines', 'streets', 'deviation'].forEach((k) => {
+      assert.ok(covered.has(s.id + '|' + k), s.id + '|' + k + ' has no application coverage');
+    });
+  });
 });
 
 test('v7.11.0 poker logic renders a framed card only for matched hands', async () => {
@@ -392,10 +450,13 @@ test('v7.11.0 poker logic renders a framed card only for matched hands', async (
   assert.ok(html.includes('BTN 河牌下注'));
   assert.ok(html.includes('空白河牌'));
   assert.ok(html.includes('边界'));
-  // v2：概念卡渲染（标题 + 机制 + 误解 + 出处行）
+  // v3：应用要点 + 概念卡（标题/机制/误解/对比例/自测折叠/出处行）
   assert.ok(html.includes('Equity Buckets'), 'streets step renders concept card');
   assert.ok(html.includes('常见误解'), 'concept misconception renders');
+  assert.ok(html.includes('⚖'), 'contrast example renders');
+  assert.ok(html.includes('考考自己'), 'self-check question renders');
   assert.ok(html.includes('来源：DDoG 第'), 'concept source line renders');
+  assert.ok(html.includes('来源：GTO Wizard 博客') || html.includes('来源：DDoG'), 'application source line renders');
   assert.ok(!html.includes('<script'), 'card must not introduce script tags');
   const flopHtml = PokerLogic.renderForHand(syntheticHand({ id: 'logic-2', actionLineOTF: 'X-B60-C' }));
   assert.ok(flopHtml.includes('牌理参考') && flopHtml.includes('BTN C-bet'), 'flop match renders its card');

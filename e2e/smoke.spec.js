@@ -882,10 +882,10 @@ test('手牌复盘显示牌理参考卡片', async ({ page }) => {
   const expandRow = page.locator('tr[id^="hand-expand-row"]').first();
   const logicBox = expandRow.locator('.poker-logic-box');
   await expect(logicBox).toHaveCount(1);
-  await expect(logicBox.locator('summary')).toContainText('牌理参考');
-  await expect(logicBox.locator('summary')).toContainText('空白');
-  await expect(logicBox.locator('summary')).toContainText('agg→agg');
-  await logicBox.locator('summary').click();
+  await expect(logicBox.locator('> summary')).toContainText('牌理参考');
+  await expect(logicBox.locator('> summary')).toContainText('空白');
+  await expect(logicBox.locator('> summary')).toContainText('agg→agg');
+  await logicBox.locator('> summary').click();
   await expect(logicBox).toContainText('范围合法性');
   await expect(logicBox).toContainText('机制参照');
   await expect(logicBox).toContainText('边界');
