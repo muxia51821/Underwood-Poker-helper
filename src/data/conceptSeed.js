@@ -7,7 +7,7 @@
 // extraction 标注沿用读数规范：正文核验 / 文章表格直读 / 图像复核（留待）。
 // 全书 334 课作为同一本参考源：典型 = 本库已提炼条目；全本 = docs/ddog-concept-map.md 附录 A 页码台账。
 // 本文件为静态只读知识，直接 import，不入 localStorage。schema 见 docs/concept-seed-schema.md。
-export var CONCEPT_SEED_VERSION = 'v4';
+export var CONCEPT_SEED_VERSION = 'v5';
 
 // sourceRef 简写：DDoG 课程（默认 extraction 正文核验）
 function L(lesson, chapter, readerPages, extraction) {
@@ -28,6 +28,7 @@ export var CONCEPT_SEEDS = [
     applicability: '通用（所有赛制/深度）。河牌无后续行动时可直接与 raw equity 比较。',
     contrastExamples: [
       { text: '同一道 5bb 进 10bb 的题：门槛是 25% 的"赢池份额"，不是"25% raw equity 就能跟"——后者忽略后续行动的实现折价。', sourceRef: L('Pot odds', 1, '21-23') },
+      { text: '面对全下时 raw equity 决定一切（没有后续街的实现调整）：352% flop 全下面，AQ/T9s 有足够 equity 可 call；被支配的 KJ/QK 没有可动用的份额。', sourceRef: L('Defending vs huge overbets', 9, '993-996') },
     ],
     thresholds: [
       { text: 'pot odds% = 需跟注额 ÷ 跟注后总底池（CH11 变体在分子分母计入 rake）。', sourceRef: L('Basic GTO Math', 11, '1160-1163') },
@@ -127,6 +128,7 @@ export var CONCEPT_SEEDS = [
       { text: 'OOP 河牌的 check 价值被位置压低（IP 会反打）：被跟仅 45% equity 的 KQs 也该 jam——"下注永远相对于 check 定价"。', sourceRef: L('Value betting with <50% equity', 8, '875-878') },
       { text: 'block-bet 的设计目的就是实现：OOP 用 10% 小注给顶对/次对这类脆弱手变现，强手（同花）走超池线。', sourceRef: L('Building block bets OOP', 4, '387-391') },
       { text: 'EQR 数值实例（图像复核）：BB OOP 的 QT 在 K-T-5 面 check 线 EV 2.6bb、EQ 67.51%、EQR 70.71%——OOP 位置使实现打折（EQR<100%）。', sourceRef: L('What exactly is equity realization?', 2, '115-117', '图像复核') },
+      { text: '转牌 EQR 时序：T94 面 check-through 后，BB 的 EQR 在 paired T 上最大化——SB flop 多 bet 顶对，check 段无 Tx；超张/成抽转牌抵消该优势，paired T 把它放大成 nut 优势。', sourceRef: L('Realizing the best turn cards', 6, '637-640') },
     ],
     thresholds: [
       { text: '对手两街示弱 + 无成牌河牌：你的顶对可达 90%+ equity（打成 nuts）；同一顶对面对对手超池线只是 marginal bluff catcher。', sourceRef: L('Probing the river on dry runouts', 8, '866-870') },
@@ -278,6 +280,7 @@ export var CONCEPT_SEEDS = [
     contrastExamples: [
       { text: '同一手在不同对手模型下翻转：SB 三街 XR 后，对手 range = 同花价值 + 次对以下诈唬——你的顺/两对/set 处于价值与诈唬之间、EV≈0 大多无差别；对方 under-bluff 则只留中强同花，其余全弃。', sourceRef: L('Triple Barrel Fold', 8, '861-865') },
       { text: '"纯 bluff catcher"由范围宽度定义：宽 check-down 面的顶对（顺花早开火、raise = trips+）是纯抓诈段；识别"价值段起点/诈唬段终点"两个阈值是抓诈唬的根本功。', sourceRef: L('Block-calling the river', 11, '1281-1284') },
+      { text: '200bb 深码三街抓诈：面对极化范围，好 blocker 的价值飙升——A4 是最佳 call-down（A♠ unblock 全部诈唬 + 4 block 两对/sets）；J9/J8/QT 也因 block 诈唬组合入选。', sourceRef: L('Bluffcatching vs deep stack triple-barrels', 9, '977-980') },
     ],
     thresholds: [
       { text: '对方 XR 后的价值段起点例：HU 500bb check-down 面，raise = trips+；SRP XR 面，价值 = 同花、诈唬 = 次对以下——中间整段都是无差别抓诈区。', sourceRef: L('Triple Barrel Fold', 8, '861-865') },
@@ -1107,6 +1110,148 @@ export var CONCEPT_SEEDS = [
     sourceRef: L('Owning draws with big turn bets', 8, '879-882'),
     seedRevision: 1,
   },
+  {
+    id: 'concept-equity-distribution-graphs',
+    title: 'Equity Distribution Graph（分布图读法）',
+    cluster: 'equity-distribution',
+    mechanism: '分布图两轴：x = 手在自己范围内按 raw equity 排的百分位，y = 该手对对方范围的手-vs-范围 equity（书例：QQ 在 BTN 范围第 50 百分位、对 CO 70% equity）。分辨率高于 buckets，可快速看出 range/nut advantage。分布形状反推策略与线（Guess the line）：河牌 block-bet 线的分布以 60-80% 的"中段价值"为主体、少量 nuts 陷阱加一些垃圾；以 check 结尾的线含更多弱手/give-up（本例分布强手太多，check 会引不到对方下注、损失价值）；85% 大注线显著更极化（nuts+垃圾）——中段多的范围打大注是 overplay。深度也写进形状：钱越少，3-bet 范围需要装越多强价值（50bb 时 3-bet 里 80%+ equity 手最多，需准备防 shove）；越深位置优势放大、可用更多抽牌构造 3-bet。',
+    misconception: '把分布图当"牌力排名图"。横轴是自己范围内的 equity 百分位，不是绝对牌力——同一手在不同范围里百分位完全不同。',
+    applicability: 'GW 工具视角；概念通用，产品无渲染载体，作解释背景与 Quiz 素材。',
+    contrastExamples: [
+      { text: 'Guess the line：四条线里只有 block-bet 线匹配"中段 60-80% 为主体"的分布形状——形状与线互为指纹。', sourceRef: L('Guess the line! #1', 6, '549-553') },
+      { text: 'Guess the stack depth：997 面 33%/50%/50% 线里，CO 的 3-bet 在 50bb 时强价值最多（防 shove 威胁）；越深越可用抽牌构造。', sourceRef: L('Guess the stack depth', 6, '558-560') },
+    ],
+    thresholds: [],
+    selfCheck: {
+      question: 'Equity Distribution Graph 上，BTN 的 QQ 标注为"50 / 70.2%"。这两个数字是什么？',
+      options: ['QQ 对 CO 有 70% equity，且在 BTN 范围内按 equity 排第 50 百分位', 'QQ 在自己范围排第 70 百分位，且有 50% equity', 'QQ 赢下这手牌的概率是 50%，实现 70%', 'QQ 的 EV 是 70% 底池，位于范围前 50%'],
+      answer: 'QQ 对 CO 有 70% equity，且在 BTN 范围内按 equity 排第 50 百分位',
+      answerNote: 'x 轴 = 自己范围内按 raw equity 的百分位；y 轴 = 对对方范围的手-vs-范围 equity。别把横轴当绝对牌力排名。',
+      sourceRef: L('Equity Distribution Graphs', 6, '594-597'),
+    },
+    relatedSpotIds: [],
+    relatedConceptIds: ['concept-equity-buckets', 'concept-range-morphology', 'concept-nut-advantage'],
+    relatedSources: [],
+    sourceRef: L('Equity Distribution Graphs', 6, '594-597'),
+    seedRevision: 1,
+  },
+  {
+    id: 'concept-board-distribution-shapes',
+    title: '牌面 → 分布形状（单花均化/三连极化/对子阶梯）',
+    cluster: 'equity-distribution',
+    mechanism: '牌面纹理通过重塑双方分布形状来改变策略：①monotone 面使 equity 分布趋均——A43 单花面：A 对 BB 看似不利但连 wheel 顺潜力、从 CO 范围移走更多同花、中和 CO 高张优势，BB 因此低频 donk、CO 被 check 后 72%+ check back（正文核验）；JT4s/T86r 则放大 CO 高张优势；paired 面（554r）造成不对称。②三连面 888 天然极化：没人有很多 8x 但它放大口袋对与 overcards——CO 的优势恰在超对/更高 overcards → 超对/葫芦价值 + 高张葫芦抽半诈唬的极化策略；BTN 冷跟范围浓缩向中段口袋对（缺 nuts 无法极化）。③777 类：HJ 的超对优势呈"阶梯分布"，BB 顶部跳升 = 7x quads；湿面使分布更平滑、削弱 nut 优势；抽牌 equity 拉近双方差距；paired 面产生平台状 nut 优势（trips）。',
+    misconception: '把纹理当"谁更容易命中"的单维判断。纹理是通过重塑双方分布形状来改变策略的——同一手在不同纹理里的分布位置完全不同。',
+    applicability: '通用；spot 卡"街牌效应"格的核心解释语言。',
+    contrastExamples: [
+      { text: 'monotone A43 均化双方：BB 低频 donk、CO check back 72%+——"A 高面 CO 强"的直觉在单花面失效。', sourceRef: L('Symmetrical Distributions', 6, '541-544') },
+      { text: '888 天然极化：CO 超对/葫芦价值 + 高张葫芦抽半诈唬；BTN 中段口袋对浓缩、无法极化。', sourceRef: L('Polarized Distributions', 6, '545-548') },
+      { text: '777 阶梯分布：HJ 超对阶梯 + BB 顶部 quads 跳升——paired/湿润面对分布形状的不同改造一眼可辨。', sourceRef: L('The staircase distribution', 6, '609-613') },
+    ],
+    thresholds: [],
+    selfCheck: {
+      question: 'CO 开牌、BTN 跟注。哪种 flop 最可能产生"天然极化"的 equity 分布？',
+      options: ['JT4s', '888', 'K72r', 'T86r'],
+      answer: '888',
+      answerNote: '三连面放大口袋对与 overcards：CO 的优势恰在超对/更高 overcards（极化价值+半诈唬），BTN 冷跟范围浓缩向中段口袋对、缺 nuts 无法极化。',
+      sourceRef: L('Polarized Distributions', 6, '545-548'),
+    },
+    relatedSpotIds: ['btnvsbb-raiser-cbet', 'covsbtn-raiser-cbet', 'sbvsbb-raiser-cbet'],
+    relatedConceptIds: ['concept-equity-buckets', 'concept-equity-distribution-graphs', 'concept-nut-advantage'],
+    relatedSources: [],
+    sourceRef: L('Symmetrical Distributions', 6, '541-544'),
+    seedRevision: 1,
+  },
+  {
+    id: 'concept-shove-extremes',
+    title: '无诈唬全下与无 nuts 全下（分布极端案例）',
+    cluster: 'equity-distribution',
+    mechanism: '两个分布构造的极端案例：①chop 面无诈唬全下——KA22 类面转出 K 使所有顶对 chop，进攻方 318% 全下 = 纯价值零诈唬。成立三条件：最强手互相 chop、有 blast 对方抽牌的激励（如 FD）、可 freeroll/outdraw 对方的 chop（AQ 在任意 K/Q 河 outdraw A3-AJ）——满足时可让对方的宽范围无差别而完全不需要诈唬。②draw-heavy 面无 nuts 全下——986 单花+双花面 SB 146% shove，shove 范围里脆弱价值（超对/顶对）而非 sets/两对。四个原因全部成立：draw-heavy 激励 shove 脆弱价值；draws 与 nutted value 跑得接近（几乎从不死抽）；低 SPR 迫使对方更宽 call（stack-off 范围与深度成比例）；draw-heavy 纹理迫使对方宽 call 使半诈唬无差别——BTN 面对 shove call 60% 的范围。',
+    misconception: '全下范围必然 = nuts + 诈唬的极化二分。chop 面可以纯价值零诈唬，draw-heavy 面可以没有 nuts 全靠脆弱价值——分布形状决定构造，不是套路。',
+    applicability: '特例场景（chop 面 / draw-heavy 低 SPR）；用于理解"分布决定构造"的边界。',
+    contrastExamples: [
+      { text: '无诈唬全下三条件：顶对互 chop + blast 抽牌激励 + freeroll 对方 chop——三者在 chop 面同时成立时，纯价值策略最优。', sourceRef: L('The no-bluff shove', 6, '614-617') },
+      { text: '无 nuts 全下四原因全对：986 面 SB 146% shove 装脆弱价值不装 sets，BTN 仍须 call 60%——低 SPR + draw-heavy 共同作用。', sourceRef: L('The no-nut shove', 6, '618-621') },
+    ],
+    thresholds: [],
+    selfCheck: {
+      question: '986 单花+双花面（Spin 25bb），SB 146% 全下但范围里没有 nuts。为什么这仍是最优的？',
+      options: ['draw-heavy 面激励用脆弱价值 shove', 'draws 与 nutted value 接近，几乎不死抽', '低 SPR 迫使 BTN 更宽 call；draw-heavy 迫使对方宽 call 使半诈唬无差别', '以上全部'],
+      answer: '以上全部',
+      answerNote: '四个原因全部成立（书课原话：All of the answers are correct）——脆弱价值 shove + 对方 60% call 率，无 nuts 也能使对方无差别。',
+      sourceRef: L('The no-nut shove', 6, '618-621'),
+    },
+    relatedSpotIds: [],
+    relatedConceptIds: ['concept-equity-buckets', 'concept-value-bluff-ratio', 'concept-mdf-draws'],
+    relatedSources: [],
+    sourceRef: L('The no-nut shove', 6, '618-621'),
+    seedRevision: 1,
+  },
+  {
+    id: 'concept-combo-eqr',
+    title: 'Combo 级 EQR 差（同手不同花色）',
+    cluster: 'equity-distribution',
+    mechanism: '同一手牌不同 combo 的 EQR 可以差 14 个百分点：KJo 在 T95 面，最好的 KJs（同时持有前后门同花 draw 的 blocker）36% pot share，最差 22%——而两者 raw equity 差仅约 4%。同时 block 两个方向的同花 draw 意味着：转牌成顶对不完成对方 FD、自己保有后门心、对方更可能对后续下注弃牌。这个 combo 初期 lead 少，但后期打激进 check-raise 线。',
+    misconception: '把同点数手的不同 combo 当等价。combo 间 blocker 分布造成的实现差异远大于 equity 差异——选组合先看花色。',
+    applicability: '通用；同手不同 combo 的选择与 EV 表解读。',
+    contrastExamples: [
+      { text: 'KJo 四个 combo：equity 差 4%，pot share 差 14pp（36% vs 22%）——blocker 对实现的杠杆远大于对 equity 的杠杆。', sourceRef: L('Gutshot performance', 6, '641-644') },
+    ],
+    thresholds: [],
+    selfCheck: null,
+    relatedSpotIds: [],
+    relatedConceptIds: ['concept-equity-realization', 'concept-blockers', 'concept-backdoor-equity'],
+    relatedSources: [],
+    sourceRef: L('Gutshot performance', 6, '641-644'),
+    seedRevision: 1,
+  },
+  {
+    id: 'concept-eqr-rake',
+    title: 'EQR 不是零和（rake 拖累双方）',
+    cluster: 'calibration',
+    mechanism: '双方范围可以同时欠实现：643 面 CO 80.7%、BB 90.5% EQR——动态、争夺激烈的纹理让双方都投入大量资金，总 rake 随之上升，双方 EV 同时下降。量化（50NL，5% rake、4bb cap）：无 rake 时双方 EV 之和 = 底池 5.1bb；rake 拿走额外 0.73bb ≈ 底池的 14%。',
+    misconception: '把 EQR 当零和（一方欠实现 = 另一方超实现）。rake 是双方共同的拖累；越激烈权衡的面 rake 越重，双方可以同时"欠"。',
+    applicability: '通用校准；解读任何 EQR 数字时的 rake 语境。',
+    contrastExamples: [
+      { text: '643 面 CO 80.7%/BB 90.5% 同时欠实现：无 rake 时 EV 和 = 5.1bb 池，rake 抽走 0.73bb（约 14%）。', sourceRef: L('Can both ranges underperform', 6, '633-636') },
+    ],
+    thresholds: [],
+    selfCheck: {
+      question: '643 面，CO 的 EQR 80.7%、BB 的 EQR 90.5%——双方都欠实现。怎么会？',
+      options: ['动态纹理迫使双方偏离 equity 太频繁', 'EQR 不是零和', '欠实现的组合数超过超实现的', 'rake 降低双方 EV，损害双方 EQR'],
+      answer: 'rake 降低双方 EV，损害双方 EQR',
+      answerNote: '激烈争夺的面双方都投入多 → 总 rake 上升 → 双方 EV 同时缩水（本例 rake ≈ 底池 14%）。其余选项都是真实机制但"双方同时欠"的直接原因是 rake。',
+      sourceRef: L('Can both ranges underperform', 6, '633-636'),
+    },
+    relatedSpotIds: [],
+    relatedConceptIds: ['concept-equity-realization', 'concept-rake-impact'],
+    relatedSources: [],
+    sourceRef: L('Can both ranges underperform', 6, '633-636'),
+    seedRevision: 1,
+  },
+  {
+    id: 'concept-4straight-chop-defense',
+    title: '4 连张面的 chop 防守',
+    cluster: 'defensive',
+    mechanism: '5432 类 4 连张面被 125% 转牌 probe（3BP）：进攻方利用 6x 主导权逼你放弃 chop 权益——下注范围 = 6x + Ax + 诈唬，使你的"裸 Ax"在跟/弃之间无差别（特定 blocker 除外）。你可以弃 QQ 和 AJ 这类裸 Ax；能 outdraw Ax 的手（带合适 blocker）有惊人 implied odds、总是继续。',
+    misconception: '4 连张面"人人有顺、大家都小心"。进攻方恰恰用 6x 主导权把 chop 权益变成对你的压力点；你的 Ax 越裸越接近无差别。',
+    applicability: 'chop 面防守；3BP 转牌 probe 应对。',
+    contrastExamples: [
+      { text: 'UTG 的 probe 构造 = 6x + Ax + 诈唬：QQ/AJ（裸 Ax）可弃，能 outdraw Ax 的手因 implied odds 总是继续。', sourceRef: L('Facing turn probes on 4-straight boards', 9, '981-984') },
+    ],
+    thresholds: [],
+    selfCheck: {
+      question: 'HJ vs UTG 3BP，5432 面 check-through，UTG 转牌 probe 125%。HJ 哪些手可以弃？',
+      options: ['QQ 和 AJ（裸 Ax）', '所有 Ax 都必须跟', '只能弃 44 以下的对子', '全范围弃牌'],
+      answer: 'QQ 和 AJ（裸 Ax）',
+      answerNote: 'UTG 用 6x+Ax+诈唬使裸 Ax 无差别；能 outdraw Ax 的手 implied odds 惊人、总是继续——弃牌发生在"裸"的 Ax 上。',
+      sourceRef: L('Facing turn probes on 4-straight boards', 9, '981-984'),
+    },
+    relatedSpotIds: [],
+    relatedConceptIds: ['concept-pot-odds', 'concept-implied-odds', 'concept-blockers'],
+    relatedSources: [],
+    sourceRef: L('Facing turn probes on 4-straight boards', 9, '981-984'),
+    seedRevision: 1,
+  },
 ];
 
 // [V7.11.2 新增] spot 应用条目：把概念落到本产品 8 个 spot 的四步格子里。
@@ -1252,4 +1397,7 @@ export var CONCEPT_APPLICATIONS = [
   { id: 'app-btn7-deviation-2', spotId: 'btnvsbb-caller-riverfirst', step: 'deviation',
     text: '对手总 check-back 翻牌（trap 型）：他到转牌的范围比正常 check-back 强得多——probe 更少、打得更防御，只按"新范围 vs GTO 基线"调整，不臆测其转牌策略。',
     conceptIds: ['concept-probe'], sourceRef: L('Exploiting trappy players', 2, '125-128') },
+  { id: 'app-btn7-deviation-3', spotId: 'btnvsbb-caller-riverfirst', step: 'deviation',
+    text: '你的河牌 probe 面对的是对方的好 pot odds：4-flush 面 BTN 范围仅 21% 同花仍守 67%——被跟范围比直觉宽，probe 的尺寸与诈唬配比按此校准。',
+    conceptIds: ['concept-pot-odds', 'concept-block-bet'], sourceRef: L('Defending the BXB line on 4-flush boards', 9, '1005-1007') },
 ];

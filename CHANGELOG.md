@@ -4,6 +4,8 @@
 
 ## 未发布
 
+- V7.11.5 概念库扩量（46 → 52）：Equity Distribution Graph 读法转正（x=范围内百分位/y=手对范围 equity；Guess the line——形状与线互为指纹：block-bet 线分布以 60-80% 中段为主体；深度写进形状——越浅 3-bet 越需强价值防 shove）；牌面→分布形状（monotone 均化：A43 面 CO check back 72%+；888 天然极化：超对优势 vs 浓缩冷跟；777 阶梯=超对优势+quads 跳升）；无诈唬全下（chop 面三条件纯价值）与无 nuts 全下（986 面 draw-heavy 四原因、BTN call 60%）两个分布极端；combo 级 EQR 差（KJs vs 最差 KJ：equity 差 4%、pot share 差 14pp）；EQR 不是零和（643 面双方 80.7%/90.5% 同时欠实现，rake 占池 14%）；4 连张面 chop 防守（6x 主导权压裸 Ax）。对比补充：转牌 EQR 时序（paired T 最大化 BB 实现）、200bb 三街抓诈 blocker 价值（A4）、面对全下 raw equity 决定一切（352% 面 AQ/T9s 可 call）。新增应用 1 条（4-flush 河牌 probe 面对的是对方 67% 宽防守）。契约测试同步（v5/52 条/40 道自测）。
+
 - V7.11.4 图像复核收尾 + href 白名单：3 处"图像复核（留待）"全部关闭——PDF 页面渲染 PNG 逐张核验（pymupdf）：①QT 的 EQR 数值表确认（Q♣T♣ check 线 EV 2.6bb/EQ 67.51%/EQR 70.71%，OOP 实现打折），已作为对比例写入 concept-equity-realization；②backdoor 例子修正（此前误写"QTs 在 8-7-5 面"，正确为 T8s/T♥8♥ 在 Q♥7♦5♣ 面，任意 6/9/J/♥ 共 19 张转牌）；③CH11 形态配对表按颜色圈配对确认（call→Condensed、XR→Merged、probe(A♥)→Polarized、call-down→Linear）。另：pokerLogic.js evidenceLine 补 href 协议白名单（复用 decisionRadar._safeExternalUrl 模式，仅 http/https 渲染为链接）——关闭证据包 sourceRef 注入面。台账见 `docs/concept-seed-schema.md` 第 10 节。
 
 - V7.11.2 概念层吸收 DDoG 教学理念并填满 spot 卡：`conceptSeed.js` 升 v2——概念从 13 条扩至 20 条（新增 range-bet、donk、probe、block-bet、薄价值/Vluff、check-raise 构造、陷阱 7 条），每条新增 contrastExamples（A/B 对比微例）、thresholds（可操作阈值）、selfCheck（书源选择题，答案折叠）三个教学维度（对应 DDoG「quiz-first、对比驱动、阈值化」教学法）；新增 `CONCEPT_APPLICATIONS`（38 条 spot×四步应用条目，全部提炼自 40 课全文精读并附 DDoG 课程/GW 博客出处）；`pokerLogicSeed.js` 升 v3——每格 = 导航语 + 应用条目 + 概念引用，32 格全部有出处化内容（契约测试断言每格至少 1 条应用）；`pokerLogic.js` 渲染应用要点、对比例、阈值与自测折叠卡。契约测试覆盖应用条目 spot/step 归属、出处格式、概念引用可解析及教学维度覆盖度。全书 334 课作为同一参考源（典型 = 已提炼条目，全本 = `docs/ddog-concept-map.md` 附录 A 页码台账）。

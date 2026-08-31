@@ -248,3 +248,9 @@ PDF 页面渲染 PNG（pymupdf, 150dpi）逐张人工核验：
 3. **CH11 形态配对表**（printed 1229-1230）：按颜色圈配对（非行序）确认 flop call→Condensed、XR→Merged、probe(A♥ turn)→Polarized、call-down 三街→Linear，与解释段一致。已写入 concept-range-morphology mechanism（标注图像复核）。
 
 另：pokerLogic.js evidenceLine 补 href 协议白名单（复用 decisionRadar._safeExternalUrl 模式，仅 http/https 渲染为链接，其余降级纯文本）——关闭 review 提出的注入面旧账（pokerLogic 侧；decisionRadar 侧已有防护）。
+
+## 11. V7.11.5 补充台账（概念库 52 条）
+
+新增提炼课程：CH6 Symmetrical Distributions(541-544)、Polarized Distributions(545-548)、Guess the line! #1(549-553)、Guess the stack depth(558-560)、The staircase distribution(609-613)、The no-bluff shove(614-617)、The no-nut shove(618-621)、Gutshot performance(641-644)、Can both ranges underperform(633-636)、Realizing the best turn cards(637-640)；CH9 Facing turn probes on 4-straight boards(981-984)、Defending the BXB line on 4-flush boards(1005-1007)、Bluffcatching vs deep stack triple-barrels(977-980)、Defending vs huge overbets(993-996)。
+
+累计约 131 课已精读（占全书 ~39%），概念库 52 条（自测 40 道）、spot 应用 45 条。Equity Distribution Graph 从占位转正，四大 equity 分析技术在概念库中全部就位（Buckets/Morphology/Distribution Graphs/EQR）。
