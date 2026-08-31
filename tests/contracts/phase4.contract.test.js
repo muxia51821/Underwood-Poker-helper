@@ -74,6 +74,7 @@ test('external evidence seeds preserve source conditions and user-editable recor
   const mda = packs.find((pack) => pack.id === 'ev-mda-freebetrange-cash-preflop');
   const deepStack = packs.find((pack) => pack.id === 'ev-gto-wizard-deep-4bet-cash');
   const community = packs.find((pack) => pack.id === 'ev-community-twoplustwo-mda-micros');
+  const sbContext = packs.find((pack) => pack.id === 'ev-gto-sbvsbb-flushy-dry-context');
   assert.equal(mda.evidenceLevel, 'lead');
   assert.ok(mda.conditions.includes('3-6 max'));
   assert.ok(mda.methodSample.includes('300M+'));
@@ -82,9 +83,24 @@ test('external evidence seeds preserve source conditions and user-editable recor
   assert.equal(deepStack.evidenceLevel, 'structural');
   assert.ok(deepStack.transferBoundary.includes('SRP'));
   assert.equal(community.evidenceLevel, 'lead');
+  assert.equal(sbContext.evidenceLevel, 'structural');
+  assert.equal(sbContext.scope.relation, 'context');
+  assert.deepEqual(sbContext.scope.boardCategories, ['flushy_dry']);
   const before = packs.length;
   await initStorage({ safeMode: true });
   assert.equal(EvidencePackRepo.getAll().length, before, 'repeated boot must not duplicate external sources');
+});
+
+test('radar only accepts fully scoped MDA as direct evidence and labels adjacent sources as context', () => {
+  const signal = { scenario: 'SBvsBB', question: 'facebet', boardCategory: 'flushy_dry' };
+  const matches = DecisionRadar.matchEvidenceForSignal([
+    { id: 'generic-mda', sourceType: 'mda', evidenceLevel: 'conditional' },
+    { id: 'wrong-question', sourceType: 'mda', evidenceLevel: 'conditional', scope: { scenario: 'SBvsBB', street: 'flop', question: 'cbet', boardCategories: ['flushy_dry'] } },
+    { id: 'matching-mda', sourceType: 'mda', evidenceLevel: 'conditional', scope: { scenario: 'SBvsBB', street: 'flop', question: 'facebet', boardCategories: ['flushy_dry'] } },
+    { id: 'adjacent', sourceType: 'solver', evidenceLevel: 'structural', scope: { scenario: 'SBvsBB', street: 'flop', boardCategories: ['flushy_dry'], relation: 'context' } },
+  ], signal);
+  assert.deepEqual(matches.directMda.map((pack) => pack.id), ['matching-mda']);
+  assert.deepEqual(matches.contextual.map((pack) => pack.id), ['adjacent']);
 });
 
 // [V7.10.5 新增] Radar 信号必须给出可证伪的复盘层级和行动线核查路径，而不是宣告策略结论。

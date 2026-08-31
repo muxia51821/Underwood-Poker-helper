@@ -9,6 +9,9 @@ import { DecisionRadar } from './decisionRadar.js';  // [V7.10.2 新增] 复测�
 var STATUS_LABELS = { research: '研究中', 'candidate-adjustment': '候选调整', maintain: '维持现状' };
 var SOURCE_TYPE_LABELS = { video: '视频', article: '文章', book: '书', course: '课程', solver: 'Solver', mda: 'MDA', community: '社区', personal: '个人观察' };
 var EVIDENCE_LEVEL_LABELS = { conditional: '条件匹配', structural: '结构性参考', lead: '研究线索' };
+var SCOPE_SCENARIO_LABELS = { BTNvsBB: 'BTN vs BB', SBvsBB: 'SB vs BB', COvsBTN: 'CO vs BTN' };
+var SCOPE_QUESTION_LABELS = { cbet: 'C-Bet', facebet: '面对下注弃牌' };
+var SCOPE_BOARD_LABELS = { made_straight: '三连张面', flushy_dry: '两花干面', flushy_straighty: '两花连张面', straighty: '连张面', paired_low: '低对子面', paired_high: '高对子面', monotone: '同花面', dryAHigh: 'A 高干面', dry_low: '低张干面', trips_board: '三条公对' };
 
 function _safeExternalUrl(value) {
   if (!value) return '';
@@ -18,6 +21,36 @@ function _safeExternalUrl(value) {
   } catch (e) {
     return '';
   }
+}
+
+function _scopeLabel(scope, fallbackScenario, fallbackQuestion, fallbackStreet) {
+  if (!scope || !Array.isArray(scope.boardCategories) || scope.boardCategories.length !== 1) return '';
+  var scenario = scope.scenario || fallbackScenario;
+  var question = scope.question || fallbackQuestion;
+  var street = scope.street || fallbackStreet;
+  if (!scenario || !street) return '';
+  var parts = [SCOPE_SCENARIO_LABELS[scenario] || scenario, street];
+  if (scope.relation === 'context') parts.push('情境参考');
+  else if (question) parts.push(SCOPE_QUESTION_LABELS[question] || question);
+  else return '';
+  parts.push(SCOPE_BOARD_LABELS[scope.boardCategories[0]] || scope.boardCategories[0]);
+  return parts.join(' · ');
+}
+
+function _readScope(prefix) {
+  var scenario = document.getElementById(prefix + 'Scenario').value;
+  var question = document.getElementById(prefix + 'Question').value;
+  var boardCategory = document.getElementById(prefix + 'BoardCategory').value;
+  if (!scenario && !question && !boardCategory) return null;
+  if (!scenario || !question || !boardCategory) return { incomplete: true };
+  return { scenario: scenario, street: 'flop', question: question, boardCategories: [boardCategory], relation: 'direct' };
+}
+
+function _writeScope(prefix, scope) {
+  var s = scope || {};
+  document.getElementById(prefix + 'Scenario').value = s.scenario || '';
+  document.getElementById(prefix + 'Question').value = s.question || '';
+  document.getElementById(prefix + 'BoardCategory').value = Array.isArray(s.boardCategories) && s.boardCategories.length === 1 ? s.boardCategories[0] : '';
 }
 
 export var StrategyDesk = {
@@ -172,6 +205,7 @@ export var StrategyDesk = {
     listEl.innerHTML = '<div class="finding-list">' + baselines.map((b) => {
       const reference = DecisionRadar.getGtoStructuralReference(b);
       const scenarioLabel = (b.scenario || '--') + ' · ' + (b.question === 'cbet' ? 'C-bet' : b.question || '--');
+      const scopeLabel = _scopeLabel(b.scope, b.scenario, b.question, b.street);
       const safeSourceUrl = _safeExternalUrl(b.source && b.source.url);
       const sourceTitle = Utils.escapeHtml(reference.sourceText);
       const sourceHtml = safeSourceUrl
@@ -181,6 +215,7 @@ export var StrategyDesk = {
         '<div class="finding-card__header"><span><strong>' + Utils.escapeHtml(scenarioLabel) + '</strong></span>' +
         '<span class="status-inline status-inline--' + (b.isActive ? 'success' : '') + '">' + (b.isActive ? '生效中' : '已停用') + '</span></div>' +
         '<div class="finding-card__title">🌐 结构性参考 · ' + Utils.escapeHtml(reference.valueText) + '</div>' +
+        (scopeLabel ? '<div class="finding-card__meta">Radar 匹配：' + Utils.escapeHtml(scopeLabel) + '</div>' : '') +
         '<div class="finding-card__meta">条件：' + Utils.escapeHtml(reference.conditionText) + '</div>' +
         (b.textureNotes ? '<div class="finding-card__meta">texture：' + Utils.escapeHtml(b.textureNotes) + '</div>' : '') +
         '<div class="finding-card__meta">来源：' + sourceHtml + '（' + Utils.escapeHtml(b.source && b.source.articleDate || '未标注') + '）</div>' +
@@ -204,6 +239,7 @@ export var StrategyDesk = {
     document.getElementById('gtoBetFreq').value = b && b.overall ? b.overall.betFreq : '';
     document.getElementById('gtoCheckFreq').value = b && b.overall ? b.overall.checkFreq : '';
     document.getElementById('gtoTextureNotes').value = b ? b.textureNotes || '' : '';
+    document.getElementById('gtoBoardCategory').value = b && b.scope && Array.isArray(b.scope.boardCategories) && b.scope.boardCategories.length === 1 ? b.scope.boardCategories[0] : '';
     document.getElementById('gtoSourceTitle').value = source.title || '';
     document.getElementById('gtoSourceUrl').value = source.url || '';
     document.getElementById('gtoSourceDate').value = source.articleDate || '';
@@ -225,6 +261,8 @@ export var StrategyDesk = {
     const betFreq = parseFloat(document.getElementById('gtoBetFreq').value);
     const checkFreq = parseFloat(document.getElementById('gtoCheckFreq').value);
     const sourceTitle = document.getElementById('gtoSourceTitle').value.trim();
+    const boardCategory = document.getElementById('gtoBoardCategory').value;
+    const radarScope = boardCategory ? { boardCategories: [boardCategory] } : null;
     if (isNaN(stackBB) || stackBB <= 0) { Utils.showToast('需要有效筹码（BB）'); return; }
     if (!sourceTitle) { Utils.showToast('GTO 基线需要来源'); return; }
     const baselines = GtoBaselineRepo.getAll();
@@ -233,6 +271,7 @@ export var StrategyDesk = {
       scenario: scenario,
       street: 'flop',
       question: 'cbet',
+      scope: radarScope,
       referenceMode: 'structural',  // [V7.10.5 新增] 直接条件匹配尚未建立前，手工条目同样不作数值对照
       conditions: {
         stackBB: stackBB,
@@ -374,6 +413,7 @@ export var StrategyDesk = {
           (p.evidenceLevel ? ' · ' + Utils.escapeHtml(EVIDENCE_LEVEL_LABELS[p.evidenceLevel] || p.evidenceLevel) : '') +
           (p.reviewDueAt ? ' · 复查 ' + Utils.escapeHtml(p.reviewDueAt) : '') + '</div>' +
         (p.conditions ? '<div class="finding-card__meta">条件：' + Utils.escapeHtml(p.conditions) + '</div>' : '') +
+        (_scopeLabel(p.scope) ? '<div class="finding-card__meta">Radar 匹配：' + Utils.escapeHtml(_scopeLabel(p.scope)) + '</div>' : '') +
         (p.transferBoundary ? '<div class="finding-card__meta">边界：' + Utils.escapeHtml(p.transferBoundary) + '</div>' : '') +
         (p.keyPoints ? '<div class="finding-card__meta">要点：' + Utils.escapeHtml(p.keyPoints) + '</div>' : '') +
         '<div class="finding-card__actions">' +
@@ -511,6 +551,7 @@ export var StrategyDesk = {
     document.getElementById('evEvidenceLevel').value = 'lead';
     document.getElementById('evCapturedAt').value = Utils.getLocalDate();
     document.getElementById('evReviewDueAt').value = '';
+    _writeScope('ev', null);
     const btn = document.getElementById('saveEvidenceBtn');
     btn.textContent = '保存证据包';
     btn.dataset.state = 'create';
@@ -531,6 +572,7 @@ export var StrategyDesk = {
     document.getElementById('evReviewDueAt').value = ev.reviewDueAt || '';
     document.getElementById('evTransferBoundary').value = ev.transferBoundary || '';
     document.getElementById('evKeyPoints').value = ev.keyPoints || '';
+    _writeScope('ev', ev.scope);
     const btn = document.getElementById('saveEvidenceBtn');
     btn.textContent = '更新证据包';
     btn.dataset.state = 'edit';
@@ -546,6 +588,11 @@ export var StrategyDesk = {
     const title = document.getElementById('evTitle').value.trim();
     if (!title) { Utils.showToast('证据包需要标题'); return; }
     const now = Utils.getLocalDatetime();
+    const radarScope = _readScope('ev');
+    if (radarScope && radarScope.incomplete) { Utils.showToast('Radar 匹配需同时选择场景、决策和牌面类别'); return; }
+    if (document.getElementById('evEvidenceLevel').value === 'conditional' && !radarScope) {
+      Utils.showToast('条件匹配证据需标注 Radar 场景、决策和牌面类别'); return;
+    }
     const packs = EvidencePackRepo.getAll();
     let record = this.editingEvidenceId ? packs.find((p) => p.id === this.editingEvidenceId) : null;
     const fields = {
@@ -559,6 +606,7 @@ export var StrategyDesk = {
       reviewDueAt: document.getElementById('evReviewDueAt').value,
       transferBoundary: document.getElementById('evTransferBoundary').value.trim(),
       keyPoints: document.getElementById('evKeyPoints').value.trim(),
+      scope: radarScope,
     };
     if (record) {
       Object.keys(fields).forEach(function (k) { record[k] = fields[k]; });

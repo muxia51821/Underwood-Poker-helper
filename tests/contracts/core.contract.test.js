@@ -1097,22 +1097,25 @@ test('gto baseline seeding is idempotent and wires evidence packs', async () => 
   localStorage.clear();
   await initStorage({ safeMode: true });
   const count1 = GtoBaselineRepo.getAll().length;
-  assert.ok(count1 >= 4, 'seeded baselines should exist');
+  assert.ok(count1 >= 6, 'seeded baselines should exist');
   const evIds = EvidencePackRepo.getAll().map((p) => p.id);
   assert.ok(evIds.includes('ev-gto-btnvsbb-cbet-40bb'));
   assert.ok(evIds.includes('ev-gto-covsbtn-cbet-40bb'));
+  assert.ok(evIds.includes('ev-gto-btnvsbb-cbet-made-straight'));
   const btn = GtoBaselineRepo.getAll().find((b) => b.id === 'gto-baseline-btnvsbb-cbet-40bb');
   assert.equal(btn.overall.betFreq, 75.2);
   assert.equal(btn.source.url, 'https://bbzpoker.com/when-they-c-bet-too-much/');
   assert.equal(btn.referenceMode, 'structural');
   assert.equal(btn.conditions.tableSize, '');
   assert.ok(btn.transferBoundary.includes('40bb'));
-  // 未编辑的 v1 固定种子在 v2 首次启动时应校正来源条件；用户编辑过的记录不会走此路径。
+  const straight = GtoBaselineRepo.getAll().find((b) => b.id === 'gto-baseline-btnvsbb-cbet-made-straight');
+  assert.deepEqual(straight.scope.boardCategories, ['made_straight']);
+  // 未编辑的 v1 固定种子在 v3 首次启动时应校正来源条件；用户编辑过的记录不会走此路径。
   btn.seedRevision = 1;
   delete btn.referenceMode;
   btn.conditions = { stackBB: 40, game: '6max 现金', tableSize: '6max', solver: 'GTO Wizard aggregated reports' };
   GtoBaselineRepo.saveAll(GtoBaselineRepo.getAll());
-  localStorage.removeItem('pa_gto_baseline_seed_v2');
+  localStorage.removeItem('pa_gto_baseline_seed_v3');
   await initStorage({ safeMode: true });
   const migratedBtn = GtoBaselineRepo.getAll().find((b) => b.id === btn.id);
   assert.equal(migratedBtn.referenceMode, 'structural');
@@ -1135,6 +1138,19 @@ test('radar gto baseline matching filters by scenario and question', async () =>
   assert.deepEqual(matches.map((b) => b.id), ['b1']);
   assert.deepEqual(DecisionRadar.matchGtoBaselines(baselines, 'COvsBTN', 'cbet'), []);
   assert.deepEqual(DecisionRadar.matchGtoBaselines([], 'BTNvsBB', 'cbet'), []);
+});
+
+test('radar prefers board-specific GTO baselines over generic references', async () => {
+  const { DecisionRadar } = await import('../../src/modules/decisionRadar.js');
+  const baselines = [
+    { id: 'generic', scenario: 'BTNvsBB', question: 'cbet', isActive: true },
+    { id: 'straight', scenario: 'BTNvsBB', question: 'cbet', isActive: true, scope: { boardCategories: ['made_straight'] } },
+    { id: 'paired', scenario: 'BTNvsBB', question: 'cbet', isActive: true, scope: { boardCategories: ['paired_low'] } },
+  ];
+  const straight = DecisionRadar.matchGtoBaselines(baselines, { scenario: 'BTNvsBB', question: 'cbet', boardCategory: 'made_straight' });
+  const dry = DecisionRadar.matchGtoBaselines(baselines, { scenario: 'BTNvsBB', question: 'cbet', boardCategory: 'dry_low' });
+  assert.deepEqual(straight.map((b) => b.id), ['straight']);
+  assert.deepEqual(dry.map((b) => b.id), ['generic']);
 });
 
 test('gto references remain structural and expose their source conditions', async () => {

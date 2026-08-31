@@ -1,8 +1,26 @@
 // [V7.10.5 新增] 可编辑的外部证据种子：只播种可公开核验的来源，不把来源叙述伪装成默认策略。
 // 证据等级：conditional = 条件匹配后才可数值对照；structural = 仅结构/方向；lead = 待补条件或方法的研究线索。
-export var EXTERNAL_EVIDENCE_SEED_VERSION = 'v2';
+export var EXTERNAL_EVIDENCE_SEED_VERSION = 'v3';
 
 export var EXTERNAL_EVIDENCE_SEEDS = [
+  {
+    id: 'ev-gto-sbvsbb-flushy-dry-context',
+    title: 'GTO 情境：SB vs BB 两花干面下注结构（25bb）',
+    sourceType: 'solver',
+    sourceRef: 'https://blog.gtowizard.com/small-blind-big-problems-when-to-size-up-from-oop-bvb/',
+    // [V7.10.7 新增] 这是同场景相邻节点，不冒充 BB 面对下注的直接规则。
+    scope: { scenario: 'SBvsBB', street: 'flop', boardCategories: ['flushy_dry'], relation: 'context' },
+    conditions: 'Spin；25bb；SB open 2.5x、BB call；来源以 973 两花干面示例讨论 SB C-bet 结构与 BB 的弃牌范围。',
+    methodSample: 'GTO Wizard 单点 solver 讲解；公开文章没有给出可提取的 BB 面对下注 aggregate 频率。',
+    capturedAt: '2026-08-31',
+    reviewDueAt: '',
+    evidenceLevel: 'structural',
+    transferBoundary: '这是 25bb Spin，且主要解释 SB 的下注结构；它不是 6max 100bb/9max 200bb Cash 中 BB 面对下注的 fold/call 规则，不能据此修改 Hero 的弃牌频率。',
+    keyPoints: '两花干面会引入组合听牌并改变 SB 的下注构成；复盘时先按对手下注尺度和 Hero 继续范围拆分。',
+    seedVersion: 3,
+    createdAt: '2026-08-31 00:00',
+    updatedAt: '2026-08-31 00:00',
+  },
   {
     id: 'ev-mda-freebetrange-cash-preflop',
     title: 'MDA 来源：FreeBetRange 300M+ cash preflop ranges',

@@ -374,12 +374,12 @@ test('Decision Radar：Spot 信号、建档与重载持久化', async ({ page })
   const errors = captureRuntimeErrors(page);
   await page.goto('/');
 
-  // 50 手合成 BTNvsBB：10 手天花面全 C-bet、40 手干燥面过牌到底 → monotone spot 高频信号
+  // 50 手合成 BTNvsBB：10 手三连张面全 C-bet、40 手干燥面过牌到底 → 专项 GTO 参考应匹配该 Signal。
   const hands = [];
   for (let i = 0; i < 50; i++) {
-    const isMono = i < 10;
-    const flop = isMono
-      ? '*** FLOP *** [Ah Th 9h]\nVillain: checks\nHero: bets $0.18\nVillain: folds\nUncalled bet ($0.18) returned to Hero\nHero collected $0.30 from pot'
+    const isMadeStraight = i < 10;
+    const flop = isMadeStraight
+      ? '*** FLOP *** [9h 8d 7c]\nVillain: checks\nHero: bets $0.18\nVillain: folds\nUncalled bet ($0.18) returned to Hero\nHero collected $0.30 from pot'
       : '*** FLOP *** [As Kd 2c]\nVillain: checks\nHero: checks\nVillain: checks';
     hands.push([
       `Poker Hand #R2D${String(i).padStart(3, '0')}: Hold'em No Limit ($0.02/$0.05) - 2026/07/01 20:00:00`,
@@ -413,8 +413,29 @@ test('Decision Radar：Spot 信号、建档与重载持久化', async ({ page })
 
   const radarCard = page.locator('#discoverRadarCard');
   await expect(radarCard).toBeVisible();
-  const signalCard = radarCard.locator('.finding-card--radar').filter({ hasText: 'monotone' }).first();
+  const signalCard = radarCard.locator('.finding-card--radar').filter({ hasText: 'made_straight' }).first();
   await expect(signalCard).toContainText('C-Bet');
+  await expect(signalCard).toContainText('GTO 结构性参考');
+
+  // 条件匹配 MDA 需要明确写入完整 Spot；泛化证据不能自动进入 Radar。
+  await page.click('[data-sub="strategy"]');
+  await page.click('#addEvidenceBtn');
+  await page.fill('#evTitle', 'e2e direct MDA');
+  await page.selectOption('#evSourceType', 'mda');
+  await page.selectOption('#evEvidenceLevel', 'conditional');
+  await page.fill('#evSourceRef', 'https://example.com/e2e-mda');
+  await page.fill('#evConditions', '6max Cash 100bb；BTN vs BB；翻牌三连张面');
+  await page.fill('#evMethodSample', 'e2e only');
+  await page.fill('#evTransferBoundary', 'e2e only');
+  await page.locator('#evidenceEditor details summary').click();
+  await page.selectOption('#evScenario', 'BTNvsBB');
+  await page.selectOption('#evQuestion', 'cbet');
+  await page.selectOption('#evBoardCategory', 'made_straight');
+  await page.click('#saveEvidenceBtn');
+  await expect(page.locator('#toast')).toHaveText('证据包已保存');
+  await page.click('[data-sub="discover"]');
+  await expect(signalCard).toContainText('MDA 条件匹配');
+  await expect(signalCard).toContainText('e2e direct MDA');
 
   // 建档研究：填假设并保存
   await signalCard.locator('[data-radar-dossier]').click();

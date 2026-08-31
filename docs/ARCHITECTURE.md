@@ -54,8 +54,8 @@ src/
     discover.js      # 自动模式发现（盈亏异常/自我矛盾/偏离GTO + 热力图数据）
     quizTrainer.js   # GTO 频率判断训练器（双阈值判分 + 错题集 + 掌握追踪 + 轮转出题）
     sessionClosure.js # [V7.9.1 新增] 每场收尾领域模块（Mark 时间匹配 + 候选手牌 + 收尾记录）
-    decisionRadar.js # [V7.9.2 新增] Decision Radar（Spot 信号聚合 + Finding Dossier 渲染）
-    strategyDesk.js  # [V7.10.1 新增] Evidence & Strategy（证据包 + 策略修订）
+    decisionRadar.js # [V7.10.7 修改] Spot 信号 + Dossier；同类牌面 GTO 优先匹配、严格 MDA 条件匹配
+    strategyDesk.js  # [V7.10.7 修改] Evidence & Strategy（证据包 + 策略修订 + Radar scope 录入）
     handReplay.js    # [V7.10.0 新增] 手牌可视化回放（只读派生层：desc 解析 + 逐街视图，零 store import）
 
   data/
@@ -66,7 +66,7 @@ src/
       gtoRaw/        # Solver 原始输出（旧遗留，scoped legacy reference）
         BTNvsBB_SRP_flop.js  # BTNvsBB 翻牌频率（183 boards）
         SBvsBB_SRP_flop.js   # SBvsBB 翻牌频率（183 boards）
-      gtoBaselineSeed.js # [V7.10.5 修改] GTO 结构性参考种子（已核验来源条件 + 证据包生成）
+      gtoBaselineSeed.js # [V7.10.7 修改] GTO 结构性参考种子（已核验来源条件 + 专项牌面 scope）
 
 public/
   manifest.webmanifest        # 相对 scope/start_url 的安装描述

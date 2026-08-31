@@ -990,6 +990,12 @@ OTR河牌 牌面：    行动：</textarea
                 <label class="field">C-bet 频率%（可留空=仅定性）<input id="gtoBetFreq" class="input" type="number" step="0.1" min="0" max="100" /></label>
                 <label class="field">Check 频率%（可留空）<input id="gtoCheckFreq" class="input" type="number" step="0.1" min="0" max="100" /></label>
                 <label class="field">逐 texture 方向备注<textarea id="gtoTextureNotes" class="textarea" rows="2"></textarea></label>
+                <label class="field">Radar 牌面类别（可选；选择后只匹配该类 Signal）
+                  <select id="gtoBoardCategory" class="select">
+                    <option value="">全部牌面（通用参考）</option>
+                    <option value="made_straight">三连张面</option><option value="flushy_dry">两花干面</option><option value="flushy_straighty">两花连张面</option><option value="straighty">连张面</option><option value="paired_low">低对子面</option><option value="paired_high">高对子面</option><option value="monotone">同花面</option><option value="dryAHigh">A 高干面</option><option value="dry_low">低张干面</option><option value="trips_board">三条公对</option>
+                  </select>
+                </label>
                 <label class="field">来源标题<input id="gtoSourceTitle" class="input" /></label>
                 <label class="field">来源链接<input id="gtoSourceUrl" class="input" /></label>
                 <label class="field">文章日期<input id="gtoSourceDate" class="input" type="date" /></label>
@@ -1049,6 +1055,12 @@ OTR河牌 牌面：    行动：</textarea
                 <label class="field">复查日期（MDA 等易过时资料）<input id="evReviewDueAt" class="input" type="date" /></label>
                 <label class="field">转移边界<textarea id="evTransferBoundary" class="textarea" rows="2" placeholder="不能推广到哪里（如：6max 数据勿用于 9max 主线）"></textarea></label>
                 <label class="field">要点<textarea id="evKeyPoints" class="textarea" rows="2" placeholder="核心结论摘录"></textarea></label>
+                <details style="margin:8px 0"><summary class="tech-summary">Radar 匹配（可选）</summary>
+                  <div class="text-muted" style="font-size:0.75em;margin:6px 0">三个条件齐全时，才会被同类 Signal 自动引用；条件匹配证据必须填写这一组。</div>
+                  <label class="field">场景<select id="evScenario" class="select"><option value="">不自动匹配</option><option value="BTNvsBB">BTN vs BB</option><option value="SBvsBB">SB vs BB</option><option value="COvsBTN">CO vs BTN</option></select></label>
+                  <label class="field">Hero 决策<select id="evQuestion" class="select"><option value="">不自动匹配</option><option value="cbet">C-Bet</option><option value="facebet">面对下注弃牌</option></select></label>
+                  <label class="field">牌面类别<select id="evBoardCategory" class="select"><option value="">不自动匹配</option><option value="made_straight">三连张面</option><option value="flushy_dry">两花干面</option><option value="flushy_straighty">两花连张面</option><option value="straighty">连张面</option><option value="paired_low">低对子面</option><option value="paired_high">高对子面</option><option value="monotone">同花面</option><option value="dryAHigh">A 高干面</option><option value="dry_low">低张干面</option><option value="trips_board">三条公对</option></select></label>
+                </details>
                 <div class="row" style="gap:8px">
                   <button id="saveEvidenceBtn" class="btn--mini btn--accent" data-state="create">保存证据包</button>
                   <button id="cancelEvidenceBtn" class="btn--mini">取消</button>

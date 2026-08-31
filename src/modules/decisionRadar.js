@@ -3,7 +3,7 @@
 // 信号不持久化（随 handDataChanged 重算）；Dossier 以确定性 signalId 锚定，重算不失效。
 import { Utils, PubSub } from '../utils.js';
 import { createLearningSnapshot, buildFlopObservations, getObservedProfile, OBSERVATION_VERSION } from './analysisReadModel.js';
-import { HandRepo, DossierRepo, GtoBaselineRepo } from '../store/store.js';
+import { HandRepo, DossierRepo, EvidencePackRepo, GtoBaselineRepo } from '../store/store.js';
 import { Navigation } from './navigation.js';
 
 var THRESHOLDS = { minSpot: 8, minBaseline: 20, minDeviationPP: 15, maxSignals: 10 };
@@ -90,6 +90,26 @@ function _formatPercent(value) {
   return number.toFixed(1).replace(/\.0$/, '');
 }
 
+function _scopeHasBoard(scope, boardCategory) {
+  return !!(scope && Array.isArray(scope.boardCategories) && scope.boardCategories.indexOf(boardCategory) !== -1);
+}
+
+function _safeExternalUrl(value) {
+  if (!value) return '';
+  try {
+    var url = new URL(String(value));
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : '';
+  } catch (e) {
+    return '';
+  }
+}
+
+function _evidenceLink(pack) {
+  var label = Utils.escapeHtml(pack.title || '未命名来源');
+  var url = _safeExternalUrl(pack.sourceRef);
+  return url ? '<a href="' + Utils.escapeHtml(url) + '" target="_blank" rel="noopener noreferrer" style="color:#8b949e">' + label + '</a>' : label;
+}
+
 function _isLegacyDossierProfileMatch(dossier, signal, hands) {
   if (!dossier || dossier.signalId !== signal.legacySignalId) return false;
   var ids = Array.isArray(dossier.sampleHandIds) ? dossier.sampleHandIds : [];
@@ -110,9 +130,36 @@ export var DecisionRadar = {
   THRESHOLDS: THRESHOLDS,
   QUESTION_LABELS: QUESTION_LABELS,
 
-  // [V7.10.4 新增] GTO 基线匹配（纯函数，契约测试 seam）：按场景+问题过滤活跃基线
-  matchGtoBaselines: function (baselines, scenario, question) {
-    return (baselines || []).filter((b) => b.isActive && b.question === question && b.scenario === scenario);
+  // [V7.10.7 修改] GTO 匹配的外部 seam：Signal 传入牌面类别时，优先使用同类牌面的参考；
+  // 没有专项参考才回退通用聚合。旧调用保留 scenario/question 两参数语义。
+  matchGtoBaselines: function (baselines, signalOrScenario, question) {
+    var signal = signalOrScenario && typeof signalOrScenario === 'object' ? signalOrScenario : null;
+    var scenario = signal ? signal.scenario : signalOrScenario;
+    var targetQuestion = signal ? signal.question : question;
+    var candidates = (baselines || []).filter(function (b) {
+      return b.isActive && b.question === targetQuestion && b.scenario === scenario;
+    });
+    if (!signal || !signal.boardCategory) return candidates;
+    var specific = candidates.filter(function (b) { return _scopeHasBoard(b.scope, signal.boardCategory); });
+    if (specific.length) return specific;
+    return candidates.filter(function (b) { return !_scopeHasBoard(b.scope, signal.boardCategory) && !(b.scope && Array.isArray(b.scope.boardCategories) && b.scope.boardCategories.length); });
+  },
+
+  // [V7.10.7 新增] 外部证据匹配的唯一入口。directMda 必须同场景/街道/决策/牌面；
+  // contextual 允许同场景同牌面但相邻决策，并由 UI 明示不能推出 Hero 动作。
+  matchEvidenceForSignal: function (packs, signal) {
+    var result = { directMda: [], contextual: [] };
+    if (!signal) return result;
+    (packs || []).forEach(function (pack) {
+      var scope = pack && pack.scope;
+      if (!scope || scope.scenario !== signal.scenario || scope.street !== 'flop' || !_scopeHasBoard(scope, signal.boardCategory)) return;
+      if (scope.relation === 'context') {
+        if (pack.evidenceLevel !== 'lead') result.contextual.push(pack);
+        return;
+      }
+      if (pack.sourceType === 'mda' && pack.evidenceLevel !== 'lead' && scope.question === signal.question) result.directMda.push(pack);
+    });
+    return result;
   },
 
   // [V7.10.5 新增] 当前基线域没有可验证的完整直接匹配条件；所有条目都只作结构性参考。
@@ -307,12 +354,25 @@ export var DecisionRadar = {
           ' · 基线 ' + (s.avgBaselinePBB == null ? '--' : (s.avgBaselinePBB >= 0 ? '+' : '') + s.avgBaselinePBB + ' BB') + '（盈亏只提供语境）</div>';
         html += '<div class="finding-card__meta">核查路径：' + Utils.escapeHtml(s.investigationPrompt) + '</div>';
         // [V7.10.5 修改] GTO 只显示结构性参考，绝不把来源频率与当前 Spot 做伪精确差值比较。
-        const gtoMatches = self.matchGtoBaselines(GtoBaselineRepo.getAll(), s.scenario, s.question);
+        const gtoMatches = self.matchGtoBaselines(GtoBaselineRepo.getAll(), s);
         if (gtoMatches.length) {
           html += '<div class="finding-card__meta" style="color:#8b949e">🌐 GTO 结构性参考：' + gtoMatches.map((b) => {
             const reference = self.getGtoStructuralReference(b);
             return Utils.escapeHtml(reference.valueText) + ' · 来源：' + Utils.escapeHtml(reference.sourceText) +
               ' · 条件：' + Utils.escapeHtml(reference.conditionText) + ' · 边界：' + Utils.escapeHtml(reference.boundaryText);
+          }).join('；') + '</div>';
+        }
+        const evidenceMatches = self.matchEvidenceForSignal(EvidencePackRepo.getAll(), s);
+        if (evidenceMatches.directMda.length) {
+          html += '<div class="finding-card__meta" style="color:#8b949e">🧪 MDA 条件匹配：' + evidenceMatches.directMda.map(function (pack) {
+            return _evidenceLink(pack) + ' · 条件：' + Utils.escapeHtml(pack.conditions || '未填写') + ' · 边界：' + Utils.escapeHtml(pack.transferBoundary || '未填写');
+          }).join('；') + '</div>';
+        } else if (s.triage.rank >= 3) {
+          html += '<div class="finding-card__meta" style="color:#8b949e">🧪 MDA：暂无同场景、同决策、同牌面类别的条件匹配证据；不要用泛化人口结论改策略。</div>';
+        }
+        if (evidenceMatches.contextual.length) {
+          html += '<div class="finding-card__meta" style="color:#8b949e">↳ 情境参考（非 Hero 直接动作规则）：' + evidenceMatches.contextual.map(function (pack) {
+            return _evidenceLink(pack) + ' · ' + Utils.escapeHtml(pack.transferBoundary || '边界未填写');
           }).join('；') + '</div>';
         }
         html += '<div class="finding-card__actions">' +
