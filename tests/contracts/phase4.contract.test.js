@@ -249,6 +249,7 @@ test('v7.10.9 river evidence seeds stay off flop signals', () => {
 // [V7.11.0 新增] 复盘牌理参考：单手牌 spot 识别 + 种子完整性 + 证据引用可解析。
 const { matchHandSpot, riverThreat, SPOT_MATCHER_VERSION } = await import('../../src/modules/spotMatcher.js');
 const { POKER_LOGIC_SEEDS, POKER_LOGIC_SEED_VERSION } = await import('../../src/data/pokerLogicSeed.js');
+const { CONCEPT_SEEDS, CONCEPT_SEED_VERSION } = await import('../../src/data/conceptSeed.js');
 const { PokerLogic } = await import('../../src/modules/pokerLogic.js');
 const { GTO_BASELINE_SEEDS: LOGIC_GTO_SEEDS } = await import('../../src/data/gtoBaselineSeed.js');
 
@@ -318,8 +319,8 @@ test('v7.11.0 spot matcher routes hands to logic cards by role and street', () =
   assert.equal(riverThreat(['Ah', '7d', '2c', '8c'], 'Kh').scary, false);
 });
 
-test('v7.11.0 poker logic seeds are complete and evidence refs resolve', () => {
-  assert.equal(POKER_LOGIC_SEED_VERSION, 'v1');
+test('v7.11.1 poker logic seeds assemble from resolvable concepts and evidence', () => {
+  assert.equal(POKER_LOGIC_SEED_VERSION, 'v2');
   assert.equal(POKER_LOGIC_SEEDS.length, 8);
   const ids = POKER_LOGIC_SEEDS.map((s) => s.id);
   assert.equal(new Set(ids).size, ids.length);
@@ -327,18 +328,55 @@ test('v7.11.0 poker logic seeds are complete and evidence refs resolve', () => {
     EXTERNAL_EVIDENCE_SEEDS.map((s) => s.id)
       .concat(LOGIC_GTO_SEEDS.map((s) => s.evidenceId)),
   );
+  const conceptIds = new Set(CONCEPT_SEEDS.map((c) => c.id));
   POKER_LOGIC_SEEDS.forEach((seed) => {
-    assert.ok(seed.rangeStory, seed.id + ' needs rangeStory');
-    assert.ok(seed.deviation && seed.deviation.low && seed.deviation.high, seed.id + ' needs deviation reads');
     assert.ok(seed.boundary, seed.id + ' needs boundary');
     assert.ok(seed.evidenceRefs.length, seed.id + ' needs evidence refs');
     seed.evidenceRefs.forEach((ref) => {
       assert.ok(resolvable.has(ref), seed.id + ' references unknown evidence ' + ref);
     });
+    // v2：四步框架必须齐全，每格 = 导航语 + 概念引用列表；不得再有自写牌理叙述字段
+    ['scope', 'lines', 'streets', 'deviation'].forEach((k) => {
+      const step = seed.steps && seed.steps[k];
+      assert.ok(step && typeof step.note === 'string' && step.note.length, seed.id + '.' + k + ' needs note');
+      assert.ok(Array.isArray(step.conceptIds), seed.id + '.' + k + ' needs conceptIds array');
+      step.conceptIds.forEach((cid) => {
+        assert.ok(conceptIds.has(cid), seed.id + '.' + k + ' references unknown concept ' + cid);
+      });
+    });
+    assert.ok(!('rangeStory' in seed) && !('streetEffect' in seed) && !('lineNotes' in seed) && !('deviation' in seed), seed.id + ' must not carry v1 narrative fields');
   });
   // 三条河牌卡 + 五条翻牌卡
   assert.equal(POKER_LOGIC_SEEDS.filter((s) => s.street === 'river').length, 3);
   assert.equal(POKER_LOGIC_SEEDS.filter((s) => s.street === 'flop').length, 5);
+});
+
+test('v7.11.1 concept seeds are complete with source refs', () => {
+  assert.equal(CONCEPT_SEED_VERSION, 'v1');
+  assert.equal(CONCEPT_SEEDS.length, 13);
+  const ids = CONCEPT_SEEDS.map((c) => c.id);
+  assert.equal(new Set(ids).size, ids.length, 'concept ids must be unique');
+  const cardIds = new Set(POKER_LOGIC_SEEDS.map((s) => s.id));
+  const clusters = new Set(['basic-math', 'calibration', 'equity-distribution', 'range-construction', 'defensive']);
+  const extractions = new Set(['正文核验', '文章表格直读', '正文核验+文章表格直读', '图像复核（留待）']);
+  CONCEPT_SEEDS.forEach((c) => {
+    assert.ok(c.title && c.mechanism && c.misconception && c.applicability, c.id + ' needs content fields');
+    assert.ok(clusters.has(c.cluster), c.id + ' unknown cluster ' + c.cluster);
+    assert.ok(Array.isArray(c.relatedSpotIds) && Array.isArray(c.relatedConceptIds) && Array.isArray(c.relatedSources), c.id + ' needs relation arrays');
+    assert.ok(!('updatedAt' in c), c.id + ' must not carry updatedAt (blocks seed upgrades)');
+    assert.equal(c.seedRevision, 1, c.id + ' seedRevision');
+    assert.ok(c.sourceRef && c.sourceRef.kind === 'ddog', c.id + ' needs ddog sourceRef');
+    assert.ok(c.sourceRef.lesson && c.sourceRef.chapter && c.sourceRef.readerPages, c.id + ' sourceRef fields');
+    assert.ok(extractions.has(c.sourceRef.extraction), c.id + ' extraction label: ' + c.sourceRef.extraction);
+    c.relatedSpotIds.forEach((sid) => assert.ok(cardIds.has(sid), c.id + ' references unknown spot ' + sid));
+    c.relatedConceptIds.forEach((rid) => assert.ok(ids.includes(rid), c.id + ' references unknown related concept ' + rid));
+  });
+  // 概念层关键词汇必须在场：校准概念 + equity 分布四技术中的三项（分布图读法占位除外）
+  assert.ok(ids.includes('concept-mdf-boundary'), 'calibration concept required');
+  assert.ok(
+    ids.includes('concept-equity-buckets') && ids.includes('concept-equity-realization') && ids.includes('concept-range-morphology'),
+    'equity distribution vocabulary required',
+  );
 });
 
 test('v7.11.0 poker logic renders a framed card only for matched hands', async () => {
@@ -354,6 +392,10 @@ test('v7.11.0 poker logic renders a framed card only for matched hands', async (
   assert.ok(html.includes('BTN 河牌下注'));
   assert.ok(html.includes('空白河牌'));
   assert.ok(html.includes('边界'));
+  // v2：概念卡渲染（标题 + 机制 + 误解 + 出处行）
+  assert.ok(html.includes('Equity Buckets'), 'streets step renders concept card');
+  assert.ok(html.includes('常见误解'), 'concept misconception renders');
+  assert.ok(html.includes('来源：DDoG 第'), 'concept source line renders');
   assert.ok(!html.includes('<script'), 'card must not introduce script tags');
   const flopHtml = PokerLogic.renderForHand(syntheticHand({ id: 'logic-2', actionLineOTF: 'X-B60-C' }));
   assert.ok(flopHtml.includes('牌理参考') && flopHtml.includes('BTN C-bet'), 'flop match renders its card');

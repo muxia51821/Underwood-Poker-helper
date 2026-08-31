@@ -189,3 +189,4 @@ Quiz 域                          概念 + DDoG 题型原型(只记录,另行设
 3. ✅ `pokerLogicSeed.js` 升 v2:四步框架保留,每格 = 导航语 + `conceptIds` 引用列表(空引用 = 显式缺口);匹配字段(`street/scenario/role/question`)、`evidenceRefs`、`boundary` 原样保留;v1 叙述字段(`rangeStory/lineNotes/streetEffect/deviation`)移除且契约测试断言不得回归。
 4. ✅ `pokerLogic.js`:四步渲染概念卡(机制/误解/适用边界/来源行)。
 5. ✅ 版本:木下裁决走 **7.11.1**(小改动不跳 minor 位);constants/package.json/lockfile/CHANGELOG/CONTEXT 已同步。`npm run check` 全绿(2026-08-31)。
+6. ✅ as-built 微调(review 后确认):概念条目的 `relatedSpotIds` 以 8 张卡 `steps.conceptIds` 的实际反向索引为准(第 3 节预览中个别条目按卡收窄,如 pot-odds 挂两张防守卡而非"8 张全部");反向索引自洽性由契约测试核对。渲染层 `esc()` 修复为真转义(浏览器路径走 `Utils.escapeHtml`,node 契约测试无 DOM 时用语义等价的纯 JS 转义)。
