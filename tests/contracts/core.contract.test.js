@@ -1110,12 +1110,14 @@ test('gto baseline seeding is idempotent and wires evidence packs', async () => 
   assert.ok(btn.transferBoundary.includes('40bb'));
   const straight = GtoBaselineRepo.getAll().find((b) => b.id === 'gto-baseline-btnvsbb-cbet-made-straight');
   assert.deepEqual(straight.scope.boardCategories, ['made_straight']);
-  // 未编辑的 v1 固定种子在 v3 首次启动时应校正来源条件；用户编辑过的记录不会走此路径。
+  // 未编辑的 v1 固定种子在升版首次启动时应校正来源条件；用户编辑过的记录不会走此路径。
   btn.seedRevision = 1;
   delete btn.referenceMode;
   btn.conditions = { stackBB: 40, game: '6max 现金', tableSize: '6max', solver: 'GTO Wizard aggregated reports' };
   GtoBaselineRepo.saveAll(GtoBaselineRepo.getAll());
-  localStorage.removeItem('pa_gto_baseline_seed_v3');
+  // [V7.10.8 修改] 播种 gate 版本号改为动态引用，避免种子升版后此清理失效。
+  const { GTO_BASELINE_SEED_VERSION } = await import('../../src/data/gtoBaselineSeed.js');
+  localStorage.removeItem('pa_gto_baseline_seed_' + GTO_BASELINE_SEED_VERSION);
   await initStorage({ safeMode: true });
   const migratedBtn = GtoBaselineRepo.getAll().find((b) => b.id === btn.id);
   assert.equal(migratedBtn.referenceMode, 'structural');

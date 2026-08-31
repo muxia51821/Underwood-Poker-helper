@@ -1,6 +1,7 @@
 // [V7.10.5 新增] 可编辑的外部证据种子：只播种可公开核验的来源，不把来源叙述伪装成默认策略。
 // 证据等级：conditional = 条件匹配后才可数值对照；structural = 仅结构/方向；lead = 待补条件或方法的研究线索。
-export var EXTERNAL_EVIDENCE_SEED_VERSION = 'v3';
+// [V7.10.8 新增] 合并批追加：人群统计线索（Poker Copilot）与两篇 MTT heuristics 结构来源（按 Radar spot 归位）。
+export var EXTERNAL_EVIDENCE_SEED_VERSION = 'v4';
 
 export var EXTERNAL_EVIDENCE_SEEDS = [
   {
@@ -164,5 +165,56 @@ export var EXTERNAL_EVIDENCE_SEEDS = [
     seedVersion: 2,
     createdAt: '2026-08-31 00:00',
     updatedAt: '2026-08-31 00:00',
+  },
+  // [V7.10.8 新增] 合并批：人群统计线索 + 两篇 MTT heuristics（数字/日期已重新核验）
+  {
+    id: 'ev-pokercopilot-fold-to-cbet-population',
+    title: '人群线索：Poker Copilot fold-to-flop-C-bet 区间（2017）',
+    sourceType: 'mda',
+    sourceRef: 'https://pokercopilot.com/poker-statistics/continuation-bet',
+    conditions: '人群统计描述（文章年代 2017-01）：低注级别好玩家 fold-to-flop-C-bet 42–57%；同时期描述玩家 flop C-bet 约 40–60%。',
+    methodSample: '供应商统计指南（Poker Copilot HUD 文档）；非 solver，人群样本条件与时间范围未标注。',
+    capturedAt: '2026-08-30',
+    reviewDueAt: '2027-02-28',
+    evidenceLevel: 'lead',
+    transferBoundary: '2017 年代人群，与当前池已漂移；泛化人口结论不得直接改策略，也不能替代逐房间 MDA。',
+    keyPoints: '候选用法：只有当对手 HUD 样本足够（几百手起步、上万手可信）时，把对手 fold-to-cbet 与 42–57% 区间的偏离当作假设线索；偏离方向与 Radar facebet 信号交叉验证。',
+    seedVersion: 1,
+    createdAt: '2026-08-30 00:00',
+    updatedAt: '2026-08-30 00:00',
+  },
+  {
+    id: 'ev-gto-wizard-ip-mtt-heuristics-40bb',
+    title: 'GTO 结构来源：IP C-bet 牌面启发式（MTT 40bb）',
+    sourceType: 'article',
+    sourceRef: 'https://blog.gtowizard.com/flop-heuristics-ip-c-betting-in-mtts/',
+    scope: { scenario: 'BTNvsBB', street: 'flop', relation: 'context' },
+    conditions: 'MTT 40bb（2023-03-07，Andrew Brokos）；BTN vs BB 为主，含 HJ/UTG 对 BB 与 BTN 对 SB caller 对照。',
+    methodSample: 'GTO Wizard 博客 heuristics 文章；逐 texture 定性方向 + 少量正文数字，聚合图表未逐手抄录。',
+    capturedAt: '2026-08-30',
+    reviewDueAt: '',
+    evidenceLevel: 'structural',
+    transferBoundary: '40bb MTT，与现金主线条件不符；paired/trips/rainbow/disconnected 面偏好下注、monotone 与中张面最差、已成顺子的连张面大注受限，均为方向性结论，不构成频率对照。',
+    keyPoints: '核心论点：preflop range dynamics（而非牌面本身）是 C-bet 策略首要驱动；越早位置加注者范围越强→下注更多更大；BTN 对 SB caller 时 C-bet 不再自动（SB 范围强于 BB）。',
+    seedVersion: 1,
+    createdAt: '2026-08-30 00:00',
+    updatedAt: '2026-08-30 00:00',
+  },
+  {
+    id: 'ev-gto-wizard-oop-mtt-heuristics-40bb',
+    title: 'GTO 结构来源：OOP C-bet 静态/动态面启发式（MTT 40bb）',
+    sourceType: 'article',
+    sourceRef: 'https://blog.gtowizard.com/flop-heuristics-oop-c-betting-in-mtts/',
+    scope: { scenario: 'COvsBTN', street: 'flop', relation: 'context' },
+    conditions: 'MTT 40bb（2023-04-04，Andrew Brokos；含 25bb/100bb 对照）；UTG open 2.3bb vs 位置冷跟，blinds fold。',
+    methodSample: 'GTO Wizard 博客 heuristics 文章；静态（AJ6）与动态（986dd）面对照 + 深度对照，正文数字已核验。',
+    capturedAt: '2026-08-30',
+    reviewDueAt: '',
+    evidenceLevel: 'structural',
+    transferBoundary: '40bb MTT 且位置为 UTG vs 冷跟，与 CO vs BTN 仅结构类比；静态面 bet>70% 主小注、动态面 ~35% 且 65% check、25bb 更少 check 更多大注、100bb 更多 check 更小注，均为方向性参考。',
+    keyPoints: '正文数字：静态面 AJ6 equity realization 99%+，动态面 986dd 93.67%；对早位 caller 下注更少但大注比例更高（范围更两极）；OOP 进攻方即使在最好情况（vs BTN，53%+ equity）也只下注约一半范围。',
+    seedVersion: 1,
+    createdAt: '2026-08-30 00:00',
+    updatedAt: '2026-08-30 00:00',
   },
 ];

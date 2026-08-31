@@ -374,13 +374,15 @@ test('Decision Radar：Spot 信号、建档与重载持久化', async ({ page })
   const errors = captureRuntimeErrors(page);
   await page.goto('/');
 
-  // 50 手合成 BTNvsBB：10 手三连张面全 C-bet、40 手干燥面过牌到底 → 专项 GTO 参考应匹配该 Signal。
+  // 50 手合成 BTNvsBB：10 手三连张面全 C-bet、10 手 monotone 面全 C-bet、30 手干燥面过牌到底
+  // → 专项 GTO 参考应匹配对应 Signal（V7.10.8 起含 Mechanics monotone 条目）。
   const hands = [];
   for (let i = 0; i < 50; i++) {
-    const isMadeStraight = i < 10;
-    const flop = isMadeStraight
+    const flop = i < 10
       ? '*** FLOP *** [9h 8d 7c]\nVillain: checks\nHero: bets $0.18\nVillain: folds\nUncalled bet ($0.18) returned to Hero\nHero collected $0.30 from pot'
-      : '*** FLOP *** [As Kd 2c]\nVillain: checks\nHero: checks\nVillain: checks';
+      : (i < 20
+        ? '*** FLOP *** [Qh Jh 7h]\nVillain: checks\nHero: bets $0.18\nVillain: folds\nUncalled bet ($0.18) returned to Hero\nHero collected $0.30 from pot'
+        : '*** FLOP *** [As Kd 2c]\nVillain: checks\nHero: checks\nVillain: checks');
     hands.push([
       `Poker Hand #R2D${String(i).padStart(3, '0')}: Hold'em No Limit ($0.02/$0.05) - 2026/07/01 20:00:00`,
       `Table 'R2D' 2-max Seat #1 is the button`,
@@ -416,6 +418,12 @@ test('Decision Radar：Spot 信号、建档与重载持久化', async ({ page })
   const signalCard = radarCard.locator('.finding-card--radar').filter({ hasText: 'made_straight' }).first();
   await expect(signalCard).toContainText('C-Bet');
   await expect(signalCard).toContainText('GTO 结构性参考');
+
+  // [V7.10.8 新增] monotone 信号卡应命中 Mechanics 单牌面条目（来源标题可见）。
+  const monoCard = radarCard.locator('.finding-card--radar').filter({ hasText: 'monotone' }).first();
+  await expect(monoCard).toContainText('C-Bet');
+  await expect(monoCard).toContainText('GTO 结构性参考');
+  await expect(monoCard).toContainText('Mechanics of C-Bet Sizing');
 
   // 条件匹配 MDA 需要明确写入完整 Spot；泛化证据不能自动进入 Radar。
   await page.click('[data-sub="strategy"]');

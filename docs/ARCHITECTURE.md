@@ -61,12 +61,13 @@ src/
   data/
     srpData.js       # GTO 策略速查表（从 gtoRaw 自动生成，import Utils + gtoRaw）
     actionLines.js   # underBluff + overBluff 行动线表
+    gtoBaselineSeed.js # [V7.10.8 修改] GTO 结构性参考种子 v4：按 Radar spot（scenario+question+boardCategory+sizingContext）落位 17 条；数字标注「正文核验/文章表格直读」；gate pa_gto_baseline_seed_v4，未编辑行按 seedRevision 升级
+    externalEvidenceSeed.js # [V7.10.8 修改] 外部证据种子 v4：12 条（solver/mda/article/community/video，evidenceLevel 三级 + Radar scope）；V7.10.8 追加 Poker Copilot 人群线索与两篇 MTT heuristics
     strategy/
       gtoBaseline.js # L1 极端阈值自动编译（>90%/<5%）+ getGTOReference() + GTO_LEGACY_SCOPE
       gtoRaw/        # Solver 原始输出（旧遗留，scoped legacy reference）
         BTNvsBB_SRP_flop.js  # BTNvsBB 翻牌频率（183 boards）
         SBvsBB_SRP_flop.js   # SBvsBB 翻牌频率（183 boards）
-      gtoBaselineSeed.js # [V7.10.7 修改] GTO 结构性参考种子（已核验来源条件 + 专项牌面 scope）
 
 public/
   manifest.webmanifest        # 相对 scope/start_url 的安装描述

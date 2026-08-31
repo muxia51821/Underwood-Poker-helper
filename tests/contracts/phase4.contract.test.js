@@ -21,9 +21,11 @@ const localStorage = createLocalStorage();
 globalThis.localStorage = localStorage;
 globalThis.window = { addEventListener() {} };
 
-const { Store, initStorage, LearningUnitRepo, OpponentNoteRepo, EvidencePackRepo } = await import('../../src/store/store.js');
+const { Store, initStorage, LearningUnitRepo, OpponentNoteRepo, EvidencePackRepo, GtoBaselineRepo } = await import('../../src/store/store.js');
 const { DecisionRadar } = await import('../../src/modules/decisionRadar.js');
 const { OBSERVATION_VERSION } = await import('../../src/modules/analysisReadModel.js');
+const { GTO_BASELINE_SEEDS, GTO_BASELINE_SEED_VERSION } = await import('../../src/data/gtoBaselineSeed.js');
+const { EXTERNAL_EVIDENCE_SEEDS, EXTERNAL_EVIDENCE_SEED_VERSION } = await import('../../src/data/externalEvidenceSeed.js');
 
 test('retest evaluation compares baseline snapshot against current signal', () => {
   assert.equal(DecisionRadar.evaluateRetest(null, null).due, false);
@@ -124,4 +126,100 @@ test('radar signals expose triage and investigation prompts', () => {
   assert.equal(signal.actionCounts.check, 3);
   assert.ok(signal.investigationPrompt.includes('下注尺度'));
   assert.ok(!signal.investigationPrompt.includes('立刻改策略'));
+});
+
+// [V7.10.8 新增] 场景级种子完整性：按 Radar spot 落位的条目必须有来源/边界，facebet 条目不带 overall。
+test('v7.10.8 scenario seeds stay spot-scoped and honestly typed', () => {
+  assert.equal(GTO_BASELINE_SEED_VERSION, 'v4');
+  assert.equal(GTO_BASELINE_SEEDS.length, 17);
+  const ids = GTO_BASELINE_SEEDS.map((s) => s.id);
+  assert.equal(new Set(ids).size, ids.length, 'seed ids must be unique');
+  GTO_BASELINE_SEEDS.forEach((seed) => {
+    assert.ok(seed.source && seed.source.url, seed.id + ' must carry a source url');
+    assert.ok(seed.transferBoundary, seed.id + ' must carry a transfer boundary');
+    assert.ok(['cbet', 'facebet'].includes(seed.question), seed.id + ' question must match radar vocabulary');
+  });
+  const facebet = GTO_BASELINE_SEEDS.filter((s) => s.question === 'facebet');
+  assert.equal(facebet.length, 5);
+  facebet.forEach((seed) => {
+    assert.equal(seed.overall, null, seed.id + ' must not fake a cbet frequency');
+    assert.ok(seed.sizingContext, seed.id + ' must state the sizing it responds to');
+    assert.ok(seed.textureNotes.includes('正文核验') || seed.textureNotes.includes('aggregate'), seed.id + ' must state verification basis');
+  });
+  const sbSeed = GTO_BASELINE_SEEDS.find((s) => s.id === 'gto-baseline-sbvsbb-cbet-directional');
+  assert.equal(sbSeed.seedRevision, 3);
+  assert.equal(sbSeed.overall.betFreq, 54.3);
+  assert.equal(sbSeed.overall.sizingSplit.small, 42.9);
+  assert.ok(sbSeed.textureNotes.includes('文章表格直读'));
+  const rangeConverter = GTO_BASELINE_SEEDS.find((s) => s.id === 'gto-baseline-btnvsbb-cbet-100bb-6max');
+  assert.equal(rangeConverter.overall.betFreq, 63);
+  const oopFramework = GTO_BASELINE_SEEDS.find((s) => s.id === 'gto-baseline-covsbtn-cbet-oop-framework-100bb');
+  assert.equal(oopFramework.overall.betFreq, 28);
+});
+
+// [V7.10.8 新增] 播种升级三态：旧记录升级保留启用状态；用户编辑过（有 updatedAt）的记录不被覆盖。
+test('scenario seed upgrades rewrite unedited rows and protect edited rows', async () => {
+  localStorage.clear();
+  await initStorage({ safeMode: true });
+  const seeded = JSON.parse(JSON.stringify(GtoBaselineRepo.getAll()));
+  assert.equal(seeded.length, 17);
+
+  // 模拟旧库：sbvsbb 回退到 v2 内容（无 updatedAt），并清掉播种 gate 后重播
+  const repo = GtoBaselineRepo;
+  const rows = repo.getAll();
+  const sbRow = rows.find((b) => b.id === 'gto-baseline-sbvsbb-cbet-directional');
+  sbRow.overall = null;
+  sbRow.seedRevision = 2;
+  sbRow.isActive = false;
+  const editedRow = rows.find((b) => b.id === 'gto-baseline-btnvsbb-cbet-100bb-6max');
+  editedRow.updatedAt = '2026-08-30 12:00';
+  editedRow.textureNotes = '用户手工批注';
+  repo.saveAll(rows);
+  localStorage.removeItem('pa_gto_baseline_seed_' + GTO_BASELINE_SEED_VERSION);
+  await initStorage({ safeMode: true });
+
+  const after = repo.getAll();
+  const sbAfter = after.find((b) => b.id === 'gto-baseline-sbvsbb-cbet-directional');
+  assert.equal(sbAfter.seedRevision, 3);
+  assert.equal(sbAfter.overall.betFreq, 54.3);
+  assert.equal(sbAfter.isActive, false, 'upgrade must preserve user toggled isActive');
+  const editedAfter = after.find((b) => b.id === 'gto-baseline-btnvsbb-cbet-100bb-6max');
+  assert.equal(editedAfter.textureNotes, '用户手工批注', 'user-edited rows must not be overwritten');
+  assert.equal(after.length, 17, 're-seeding must not duplicate rows');
+});
+
+// [V7.10.8 新增] 两级匹配：texture 专项优先、facebet 只命中 facebet、无专项时回落场景级。
+test('gto matching prefers texture-specific rows and routes facebet separately', () => {
+  const signalMonotoneCbet = { scenario: 'BTNvsBB', question: 'cbet', boardCategory: 'monotone' };
+  const monotone = DecisionRadar.matchGtoBaselines(GTO_BASELINE_SEEDS, signalMonotoneCbet);
+  assert.deepEqual(monotone.map((b) => b.id), ['gto-baseline-btnvsbb-cbet-monotone-100bb']);
+
+  const signalMonotoneFacebet = { scenario: 'BTNvsBB', question: 'facebet', boardCategory: 'monotone' };
+  const facebet = DecisionRadar.matchGtoBaselines(GTO_BASELINE_SEEDS, signalMonotoneFacebet);
+  assert.deepEqual(facebet.map((b) => b.id), ['gto-baseline-btnvsbb-facebet-monotone-100bb']);
+  assert.ok(facebet[0].textureNotes.includes('fold 37 / call 53 / raise 9'));
+
+  const signalDryCbet = { scenario: 'BTNvsBB', question: 'cbet', boardCategory: 'dry_low' };
+  const fallback = DecisionRadar.matchGtoBaselines(GTO_BASELINE_SEEDS, signalDryCbet);
+  assert.ok(fallback.length >= 2, 'scenario-level rows must remain as fallback');
+  assert.ok(fallback.every((b) => !b.scope || !b.scope.boardCategories || !b.scope.boardCategories.length));
+  assert.ok(fallback.some((b) => b.id === 'gto-baseline-btnvsbb-cbet-100bb-6max'));
+});
+
+// [V7.10.8 新增] 外部证据补充：人群线索保持 lead，MTT heuristics 保持 structural 且带 spot scope。
+test('v7.10.8 external evidence additions keep level discipline', () => {
+  assert.equal(EXTERNAL_EVIDENCE_SEED_VERSION, 'v4');
+  const population = EXTERNAL_EVIDENCE_SEEDS.find((s) => s.id === 'ev-pokercopilot-fold-to-cbet-population');
+  assert.equal(population.evidenceLevel, 'lead');
+  assert.ok(population.conditions.includes('42–57%'));
+  assert.equal(population.reviewDueAt, '2027-02-28');
+  const ipMtt = EXTERNAL_EVIDENCE_SEEDS.find((s) => s.id === 'ev-gto-wizard-ip-mtt-heuristics-40bb');
+  assert.equal(ipMtt.evidenceLevel, 'structural');
+  assert.equal(ipMtt.scope.relation, 'context');
+  assert.equal(ipMtt.scope.scenario, 'BTNvsBB');
+  const oopMtt = EXTERNAL_EVIDENCE_SEEDS.find((s) => s.id === 'ev-gto-wizard-oop-mtt-heuristics-40bb');
+  assert.equal(oopMtt.scope.scenario, 'COvsBTN');
+  assert.ok(oopMtt.keyPoints.includes('93.67%'));
+  const ids = EXTERNAL_EVIDENCE_SEEDS.map((s) => s.id);
+  assert.equal(new Set(ids).size, ids.length);
 });
