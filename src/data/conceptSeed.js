@@ -126,6 +126,7 @@ export var CONCEPT_SEEDS = [
       { text: '同一手牌三种实现路径：中段手跟注防守 = 欠实现（被连开火）；fast-play 加注 = 超实现（BTN 面对 25% c-bet raise 23% 的机制——帮脆弱成牌把 equity 提前变现）。', sourceRef: L('Raising flop c-bets in position', 8, '821-824') },
       { text: 'OOP 河牌的 check 价值被位置压低（IP 会反打）：被跟仅 45% equity 的 KQs 也该 jam——"下注永远相对于 check 定价"。', sourceRef: L('Value betting with <50% equity', 8, '875-878') },
       { text: 'block-bet 的设计目的就是实现：OOP 用 10% 小注给顶对/次对这类脆弱手变现，强手（同花）走超池线。', sourceRef: L('Building block bets OOP', 4, '387-391') },
+      { text: 'EQR 数值实例（图像复核）：BB OOP 的 QT 在 K-T-5 面 check 线 EV 2.6bb、EQ 67.51%、EQR 70.71%——OOP 位置使实现打折（EQR<100%）。', sourceRef: L('What exactly is equity realization?', 2, '115-117', '图像复核') },
     ],
     thresholds: [
       { text: '对手两街示弱 + 无成牌河牌：你的顶对可达 90%+ equity（打成 nuts）；同一顶对面对对手超池线只是 marginal bluff catcher。', sourceRef: L('Probing the river on dry runouts', 8, '866-870') },
@@ -173,7 +174,7 @@ export var CONCEPT_SEEDS = [
     id: 'concept-range-morphology',
     title: 'Range Morphology（范围形态四分）',
     cluster: 'equity-distribution',
-    mechanism: '把范围当结构而非 1326 组合：Polarized = 强+弱两端；Linear = 自顶向下强到中；Condensed = 以中等为主；Merged = 极化与线性之间。书内配对（同书 CH6《Fundamentals of morphology》阅读器 561-564、CH11《Understanding Range Shapes Postflop》阅读器 1229-1233，正文核验）：CO RFI = linear；BB 3bet vs SB open = polarized；BTN flat vs HJ = condensed；BB 3bet vs BTN = merged；flop call 范围 = condensed；超池 probe（trips+ 价值 + gutshot 诈唬、无中等）= polarized。',
+    mechanism: '把范围当结构而非 1326 组合：Polarized = 强+弱两端；Linear = 自顶向下强到中；Condensed = 以中等为主；Merged = 极化与线性之间。书内配对（同书 CH6《Fundamentals of morphology》阅读器 561-564、CH11《Understanding Range Shapes Postflop》阅读器 1229-1233，正文核验）：CO RFI = linear；BB 3bet vs SB open = polarized；BTN flat vs HJ = condensed；BB 3bet vs BTN = merged；flop call 范围 = condensed；超池 probe（trips+ 价值 + gutshot 诈唬、无中等）= polarized。CH11 配对表已图像复核：flop call→Condensed、XR→Merged（nuts+诈唬+中段平衡）、probe(A♥ turn)→Polarized、call-down 三街→Linear。',
     misconception: '把四形态当同义词混用。每条线（下注/跟注/XR/probe）会把范围"塑"成特定形态，形态又反推尺寸选择。',
     applicability: '通用；spot 卡"线语义"格的解释语言。',
     contrastExamples: [
@@ -219,7 +220,7 @@ export var CONCEPT_SEEDS = [
     id: 'concept-backdoor-equity',
     title: 'Backdoor Equity（后门可见度）',
     cluster: 'range-construction',
-    mechanism: 'backdoor = 转牌才能成抽牌的能力，给手更好的"可见度"：能开更多转牌枪、实现更多 equity、后街导航更灵活。书例：QTs 在 8-7-5 面可在 19 张不同转牌上成抽牌（逐张清单留图像复核）。花色维度（同书 CH5《Backdoor suits》阅读器 461-465）：rainbow 面先看"哪个花色不在面上"——冷跟方会跟带 BDFD 的高张而弃无 BDFD 的同手，故持有面外花色会 block 弃牌、unblock 跟注；价值手想被跟时希望持有面外花色。',
+    mechanism: 'backdoor = 转牌才能成抽牌的能力，给手更好的"可见度"：能开更多转牌枪、实现更多 equity、后街导航更灵活。书例（图像复核）：T8s（T♥8♥）在 Q♥7♦5♣ 面，可在任意 6、9、J 或 ♥——共 19 张不同转牌——上成抽牌。花色维度（同书 CH5《Backdoor suits》阅读器 461-465）：rainbow 面先看"哪个花色不在面上"——冷跟方会跟带 BDFD 的高张而弃无 BDFD 的同手，故持有面外花色会 block 弃牌、unblock 跟注；价值手想被跟时希望持有面外花色。',
     misconception: '把 backdoor 当可有可无的小权益；反向误区：价值手拿着"block 弃牌"的花色还去开大注要动作。',
     applicability: '通用；flop/turn 纹理判断的标准检查项。',
     contrastExamples: [

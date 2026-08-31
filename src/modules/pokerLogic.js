@@ -28,10 +28,23 @@ function sourceLine(ref) {
     '》阅读器页 ' + esc(ref.readerPages) + (ref.extraction ? ' · ' + esc(ref.extraction) : '') + '</div>';
 }
 
+// [V7.11.4 修改] href 协议白名单（review 旧账）：只允许 http/https，防止 javascript: 注入
+function _safeExternalUrl(value) {
+  if (!value) return '';
+  try {
+    var u = new URL(String(value));
+    return (u.protocol === 'https:' || u.protocol === 'http:') ? u.href : '';
+  } catch (e) { return ''; }
+}
+
 function evidenceLine(refId, packs) {
   const pack = (packs || []).find((p) => p.id === refId);
   if (!pack) return '<div style="color:#8b949e;font-size:0.92em">· 证据未找到（' + esc(refId) + '）</div>';
-  return '<div style="font-size:0.92em;color:#a8afba;margin:3px 0">· <a href="' + esc(pack.sourceRef || '#') + '" target="_blank" rel="noopener" style="color:#7ab3ff">' + esc(pack.title || pack.id) + '</a>' +
+  const url = _safeExternalUrl(pack.sourceRef);
+  const link = url
+    ? '<a href="' + esc(url) + '" target="_blank" rel="noopener" style="color:#7ab3ff">' + esc(pack.title || pack.id) + '</a>'
+    : esc(pack.title || pack.id);
+  return '<div style="font-size:0.92em;color:#a8afba;margin:3px 0">· ' + link +
     (pack.transferBoundary ? ' —— 边界：' + esc(pack.transferBoundary) : '') + '</div>';
 }
 

@@ -238,3 +238,13 @@ V7.11.3 概念库扩至 34 条后，新增提炼课程：CH1 Implied odds(33-35)
 新增提炼课程：CH1 Mixed strategies(43-45)；CH2 What's the point of mixing(143-146)、C-bet sizing in 3-bet pots(97-99)、Exploiting value heavy players(118-120)、Exploiting trappy players(125-128)、Effects of stack depth(168-170)；CH3 Which hands like going multiway(193-195)；CH4 Double overbet diligence(357-359)、Delayed c-betting limped pots(354-356)；CH5 MDF facing bluffs with showdown value(428-431)、Overbetting pocket pairs(490-493)、Strategic Domination(507-511)、Push-folding EV(457-460)；CH6 Equity realization and stack depth(645-647)；CH8 Squeezing out of position(825-829)、Owning draws with big turn bets(879-882)；CH9 Delay c-betting OOP in 3BPs(920-923)；CH10 4-bet shoving in different rake structures(1084-1086)、C-betting semi-connected boards in 3BPs(1063-1066)；CH11 C-betting in 3BPs(1173-1177)、The more the merrier(1187-1190)、Opening in a cash game(1195-1199)、How stack depth impacts strategy(1251-1254)。
 
 累计约 117 课已精读（占全书 ~35%），概念库 46 条（自测题 35 道）、spot 应用 44 条。Quiz 训练器升级为交互判分，掌握度存 `pa_concept_quiz_mastery`。
+
+## 10. V7.11.4 图像复核（3 处遗留全部关闭）
+
+PDF 页面渲染 PNG（pymupdf, 150dpi）逐张人工核验：
+
+1. **QT EQR 数值表**（CH2《What exactly is equity realization?》printed 115-116）：Q♣T♣ check 线（Bet 0%）EV 2.6bb、EQ 67.51%、EQR 70.71%——BB OOP 只实现约七成 equity。已作为图像复核对比例写入 concept-equity-realization。
+2. **Backdoor 19 张转牌**（CH1《Pay attention to backdoors》printed 38）：board Q♥7♦5♣、手牌 T♥8♥，任意 6、9、J 或 ♥ 共 19 张转牌成抽牌。**修正**：此前种子误写"QTs 在 8-7-5 面"（手牌与牌面均错），已改为 T8s/Q♥7♦5♣。
+3. **CH11 形态配对表**（printed 1229-1230）：按颜色圈配对（非行序）确认 flop call→Condensed、XR→Merged、probe(A♥ turn)→Polarized、call-down 三街→Linear，与解释段一致。已写入 concept-range-morphology mechanism（标注图像复核）。
+
+另：pokerLogic.js evidenceLine 补 href 协议白名单（复用 decisionRadar._safeExternalUrl 模式，仅 http/https 渲染为链接，其余降级纯文本）——关闭 review 提出的注入面旧账（pokerLogic 侧；decisionRadar 侧已有防护）。
