@@ -6,6 +6,7 @@ import { analyze, getStatColor, STAT_TOOLTIPS, STAT_DEFINITIONS } from './statsE
 import { Discover } from './discover.js';  // [V7.4.6]
 import { GTO_LEGACY_SCOPE } from '../data/strategy/gtoBaseline.js';  // [V7.9.0 新增] 旧 GTO 对照统一标注
 import { QuizTrainer } from './quizTrainer.js';  // [V7.4.7]
+import { ConceptQuiz } from './conceptQuiz.js';  // [V7.11.3 新增] 概念自测（DDoG selfCheck 题库）
 import { getLearningTarget } from './analysisReadModel.js';
 import { openGGImportForSession } from './ggImport.js';  // [V6.14.0]
 import { SessionClosure } from './sessionClosure.js';  // [V7.9.1 新增] 每场收尾领域模块
@@ -2431,7 +2432,7 @@ export const Review = {
     var self = this;
     // [V7.7.2] Quiz 始终初始化（不依赖手牌导入）
     if (!self._quizReady) {
-      try { QuizTrainer.init(); _bindQuizUI(); self._quizReady = true; } catch (e) { console.warn('Quiz init failed:', e); }
+      try { QuizTrainer.init(); _bindQuizUI(); ConceptQuiz.init(); self._quizReady = true; } catch (e) { console.warn('Quiz init failed:', e); }
     }
     if (!findings.length) {
       container.innerHTML = '<div class="empty-state">暂无值得关注的模式<br>导入 50+ 手牌后自动分析</div>';

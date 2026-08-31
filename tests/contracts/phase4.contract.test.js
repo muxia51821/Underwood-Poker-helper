@@ -250,6 +250,7 @@ test('v7.10.9 river evidence seeds stay off flop signals', () => {
 const { matchHandSpot, riverThreat, SPOT_MATCHER_VERSION } = await import('../../src/modules/spotMatcher.js');
 const { POKER_LOGIC_SEEDS, POKER_LOGIC_SEED_VERSION } = await import('../../src/data/pokerLogicSeed.js');
 const { CONCEPT_SEEDS, CONCEPT_SEED_VERSION, CONCEPT_APPLICATIONS } = await import('../../src/data/conceptSeed.js');
+const { ConceptQuiz, CONCEPT_QUIZ_VERSION } = await import('../../src/modules/conceptQuiz.js');
 const { PokerLogic } = await import('../../src/modules/pokerLogic.js');
 const { GTO_BASELINE_SEEDS: LOGIC_GTO_SEEDS } = await import('../../src/data/gtoBaselineSeed.js');
 
@@ -359,9 +360,9 @@ test('v7.11.2 poker logic seeds assemble from resolvable applications, concepts 
   assert.equal(POKER_LOGIC_SEEDS.filter((s) => s.street === 'flop').length, 5);
 });
 
-test('v7.11.2 concept seeds carry teaching dimensions with source discipline', () => {
-  assert.equal(CONCEPT_SEED_VERSION, 'v2');
-  assert.equal(CONCEPT_SEEDS.length, 20);
+test('v7.11.3 concept seeds carry teaching dimensions with source discipline', () => {
+  assert.equal(CONCEPT_SEED_VERSION, 'v3');
+  assert.equal(CONCEPT_SEEDS.length, 34);
   const ids = CONCEPT_SEEDS.map((c) => c.id);
   assert.equal(new Set(ids).size, ids.length, 'concept ids must be unique');
   const cardIds = new Set(POKER_LOGIC_SEEDS.map((s) => s.id));
@@ -435,6 +436,24 @@ test('v7.11.2 spot applications are spot-scoped with provenance', () => {
       assert.ok(covered.has(s.id + '|' + k), s.id + '|' + k + ' has no application coverage');
     });
   });
+});
+
+test('v7.11.3 concept quiz items derive from selfCheck with valid answers', () => {
+  assert.equal(CONCEPT_QUIZ_VERSION, 1);
+  const items = ConceptQuiz.getItems();
+  const selfCheckCount = CONCEPT_SEEDS.filter((c) => c.selfCheck && c.selfCheck.question).length;
+  assert.equal(items.length, selfCheckCount, 'one quiz item per selfCheck-bearing concept');
+  assert.ok(items.length >= 10, 'quiz bank must be non-trivial');
+  items.forEach((it) => {
+    assert.ok(it.question, it.id + ' needs question');
+    assert.ok(Array.isArray(it.options) && it.options.length >= 2, it.id + ' needs options');
+    assert.ok(it.options.includes(it.answer), it.id + ' answer must be one of options');
+    assert.ok(it.sourceRef && it.sourceRef.lesson, it.id + ' needs provenance');
+    assert.ok(it.title && it.cluster, it.id + ' needs concept metadata');
+  });
+  // 确定性排序（cluster + id）
+  const second = ConceptQuiz.getItems().map((i) => i.id);
+  assert.deepEqual(items.map((i) => i.id), second, 'getItems must be deterministic');
 });
 
 test('v7.11.0 poker logic renders a framed card only for matched hands', async () => {

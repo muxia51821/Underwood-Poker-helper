@@ -190,3 +190,41 @@ Quiz 域                          概念 + DDoG 题型原型(只记录,另行设
 4. ✅ `pokerLogic.js`:四步渲染概念卡(机制/误解/适用边界/来源行)。
 5. ✅ 版本:木下裁决走 **7.11.1**(小改动不跳 minor 位);constants/package.json/lockfile/CHANGELOG/CONTEXT 已同步。`npm run check` 全绿(2026-08-31)。
 6. ✅ as-built 微调(review 后确认):概念条目的 `relatedSpotIds` 以 8 张卡 `steps.conceptIds` 的实际反向索引为准(第 3 节预览中个别条目按卡收窄,如 pot-odds 挂两张防守卡而非"8 张全部");反向索引自洽性由契约测试核对。渲染层 `esc()` 修复为真转义(浏览器路径走 `Utils.escapeHtml`,node 契约测试无 DOM 时用语义等价的纯 JS 转义)。
+
+## 6. 提炼覆盖台账（典型 / 全本）
+
+- **全本**：全书 334 课的结构与页码索引见 `docs/ddog-concept-map.md` 附录 A（同一本参考源的完整台账）。
+- **典型**：以下课程已全文精读并提炼进概念库/应用层（截至 V7.11.2，按章分组）：
+
+- CH1（18）：Pot odds、Implied odds、Equity buckets、Nut Potential、Range Morphology、Nut advantage、Pay attention to backdoors、Bluff-catching rivers、Using filters to examine blockers、When do blockers actually matter?、Visualizing MDF and Pot odds、Understanding indifference、Equity Realization、Pure mistakes vs frequency mistakes、Targeting hand classes、Finding the thresholds、A hand in a vacuum is meaningless、What does GTO aim to achieve
+- CH2（8）：Balancing bluffs、Overfolding and MDF、What exactly is equity realization?、Where do pot odds and MDF meet?、Suitedness and aggression、C-Betting against IP cold-callers、Splitting value on the river、Linear vs Polarized 3-betting
+- CH3（2）：Rangebetting vs cold-callers OOP、Raising the river in position
+- CH4（1）：Building block bets OOP
+- CH5（15）：What is indifference actually?、Balancing your blastoffs、Bet-Bet-Jam Construction、MDF vs Pot Odds、Backdoor suits、Overbet sizing motifs、The Vluff、How thin should you raise the river?、Should you donk into a rangebettor?、Solver noise、How to interpret solver accuracy?、Clairvoyant Defense、Understanding ICM、Risk Premium、MDF facing draws
+- CH6（7）：What is equity?、What is EQR?、Translating buckets to range shapes、Fundamentals of morphology、Equity Distribution Graphs、Check-raising dry boards、Probing turn bricks
+- CH7（1）：Donking monotone turns
+- CH8（13）：Should you rangebet these flops?、Countering range-bettors、Facing cold-callers OOP、Depolarized turn barrels、River probe blocks、Raising flop c-bets in position、Overdefend pre - Overfold post、Donking the flop、Block-Block-Jam OOP 3BP、Splitting the turn OOP BvB、Triple Barrel Fold、Probing the river on dry runouts、Value betting with <50% equity、Overbetting vs condensed ranges
+- CH9（7）：Leveraging nut advantages on turns、Countering Double-Barrels BvB、Trapping the river OOP、Facing block bets on the river、Triple-barrel bluffing、Giving up on the river、Facing river check-raises on flush boards
+- CH10（2）：Check-raising on paired boards、Donking vs early position openers
+- CH11（11）：Fundamental Poker Metrics、Basic GTO Math、Indifference and Mixed Strategies、Understanding Range Shapes Postflop、Why does donking matter?、Depolarized Turn Probes、Trapping top set、Showdown or Shove?、Block-calling the river、Why check back good draws?、3-betting passive players
+
+合计约 85 课已提炼（占全书 334 课的 ~25%），覆盖 8 张 spot 卡的全部格子与概念骨干；其余课程按需在后续批次点选。
+
+## 7. 提炼覆盖台账（典型 / 全本）
+
+- **全本**：全书 334 课的结构与页码索引见 `docs/ddog-concept-map.md` 附录 A（同一本参考源的完整台账）。
+- **典型**：以下课程已全文精读并提炼进概念库/应用层（截至 V7.11.2，按章分组，括号内为阅读器页码）：
+
+- CH1（18 课）：Pot odds(21-23)、Implied odds(33-35)、Equity buckets(36-37)、Nut Potential(55-56)、Range Morphology(53-54)、Nut advantage(48-49)、Pay attention to backdoors(38-39)、Bluff-catching rivers(46-47)、Using filters to examine blockers(50-52)、When do blockers actually matter?(57-58)、Visualizing MDF and Pot odds(62-64)、Understanding indifference(67-69)、Equity Realization(70-71)、Pure mistakes vs frequency mistakes(72-73)、Targeting hand classes(59-61)、Finding the thresholds(65-66)、A hand in a vacuum is meaningless(17-18)、What does GTO aim to achieve?(26-27)
+- CH2（8 课）：Balancing bluffs(174-176)、Overfolding and MDF(164-167)、What exactly is equity realization?(114-117)、Where do pot odds and MDF meet?(86-89)、Suitedness and aggression(90-92)、C-Betting against IP cold-callers(100-103)、Splitting value on the river(150-152)、Linear vs Polarized 3-betting(110-113)
+- CH3（2 课）：Rangebetting vs cold-callers OOP(228-231)、Raising the river in position(203-205)
+- CH4（1 课）：Building block bets OOP(387-391)
+- CH5（15 课）：What is indifference actually?(407-409)、Balancing your blastoffs(394-398)、Bet-Bet-Jam Construction(403-406)、MDF vs Pot Odds(512-516)、Backdoor suits(461-465)、Overbet sizing motifs(440-443)、The Vluff(472-476)、How thin should you raise the river?(494-497)、Should you donk into a rangebettor?(477-480)、Solver noise(410-412)、How to interpret solver accuracy?(436-439)、Clairvoyant Defense(420-424)、Understanding ICM(444-447)、Risk Premium(481-484)、MDF facing draws(432-435)
+- CH6（7 课）：What is equity?(532-535)、What is EQR?(626-628)、Translating buckets to range shapes(536-540)、Fundamentals of morphology(561-564)、Equity Distribution Graphs(594-597)、Check-raising dry boards(585-588)、Probing turn bricks(573-576)
+- CH7（1 课）：Donking monotone turns(686-689)
+- CH8（13 课）：Should you rangebet these flops?(777-781)、Countering range-bettors(782-786)、Facing cold-callers OOP(795-798)、Depolarized turn barrels(813-816)、River probe blocks(817-820)、Raising flop c-bets in position(821-824)、Overdefend pre - Overfold post(830-834)、Donking the flop(844-847)、Block-Block-Jam OOP 3BP(848-852)、Splitting the turn OOP BvB(853-856)、Triple Barrel Fold(861-865)、Probing the river on dry runouts(866-870)、Value betting with <50% equity(875-878)、Overbetting vs condensed ranges(891-894)
+- CH9（7 课）：Leveraging nut advantages on turns(940-944)、Countering Double-Barrels BvB(931-934)、Trapping the river OOP(1008-1011)、Facing block bets on the river(1023-1026)、Triple-barrel bluffing(961-964)、Giving up on the river(985-988)、Facing river check-raises on flush boards(1016-1019)
+- CH10（2 课）：Check-raising on paired boards(1048-1051)、Donking vs early position openers(1052-1054)
+- CH11（11 课）：Fundamental Poker Metrics(1156-1159)、Basic GTO Math(1160-1163)、Indifference and Mixed Strategies(1164-1167)、Understanding Range Shapes Postflop(1229-1233)、Why does donking matter?(1200-1203)、Depolarized Turn Probes(1204-1208)、Trapping top set(1212-1216)、Showdown or Shove?(1272-1275)、Block-calling the river(1281-1284)、Why check back good draws?(1242-1246)、3-betting passive players(1178-1181)
+
+合计约 85 课已提炼（占全书 334 课的 ~25%），覆盖 8 张 spot 卡全部格子与概念骨干；其余课程按需在后续批次点选。
