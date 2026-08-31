@@ -1,7 +1,7 @@
 {
   "name": "poker-table-agent",
   "private": true,
-  "version": "7.10.8",
+  "version": "7.10.9",
   "type": "module",
   "scripts": {
     "dev": "vite",

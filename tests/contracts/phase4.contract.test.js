@@ -207,8 +207,8 @@ test('gto matching prefers texture-specific rows and routes facebet separately',
 });
 
 // [V7.10.8 新增] 外部证据补充：人群线索保持 lead，MTT heuristics 保持 structural 且带 spot scope。
+// [V7.10.9 修改] 版本号断言移交批次测试（升版不回改旧批断言）。
 test('v7.10.8 external evidence additions keep level discipline', () => {
-  assert.equal(EXTERNAL_EVIDENCE_SEED_VERSION, 'v4');
   const population = EXTERNAL_EVIDENCE_SEEDS.find((s) => s.id === 'ev-pokercopilot-fold-to-cbet-population');
   assert.equal(population.evidenceLevel, 'lead');
   assert.ok(population.conditions.includes('42–57%'));
@@ -222,4 +222,26 @@ test('v7.10.8 external evidence additions keep level discipline', () => {
   assert.ok(oopMtt.keyPoints.includes('93.67%'));
   const ids = EXTERNAL_EVIDENCE_SEEDS.map((s) => s.id);
   assert.equal(new Set(ids).size, ids.length);
+});
+
+// [V7.10.9 新增] 河牌证据域：street:'river' 条目不进翻牌信号匹配；Radar v1 只扫翻牌，河牌证据仅供 Dossier/策略复盘。
+test('v7.10.9 river evidence seeds stay off flop signals', () => {
+  assert.equal(EXTERNAL_EVIDENCE_SEED_VERSION, 'v5');
+  const riverSeeds = EXTERNAL_EVIDENCE_SEEDS.filter((s) => s.scope && s.scope.street === 'river');
+  assert.equal(riverSeeds.length, 4);
+  riverSeeds.forEach((seed) => {
+    assert.ok(seed.transferBoundary, seed.id + ' must carry a transfer boundary');
+    assert.ok(seed.keyPoints, seed.id + ' must carry key points');
+    assert.equal(seed.scope.relation, 'context');
+  });
+  assert.deepEqual(
+    Array.from(new Set(riverSeeds.map((s) => s.scope.scenario))).sort(),
+    ['BTNvsBB', 'COvsBTN', 'SBvsBB'],
+  );
+
+  // 翻牌信号绝不能命中河牌条目（matchEvidenceForSignal 的 street 过滤是唯一闸门）
+  const flopSignal = { scenario: 'BTNvsBB', question: 'cbet', boardCategory: 'monotone' };
+  const matches = DecisionRadar.matchEvidenceForSignal(EXTERNAL_EVIDENCE_SEEDS, flopSignal);
+  assert.ok(matches.directMda.every((p) => p.scope.street === 'flop'));
+  assert.ok(matches.contextual.every((p) => p.scope.street === 'flop'));
 });
