@@ -439,7 +439,7 @@ test('v7.11.2 spot applications are spot-scoped with provenance', () => {
 });
 
 test('v7.11.5 concept quiz items derive from selfCheck with valid answers', () => {
-  assert.equal(CONCEPT_QUIZ_VERSION, 2);
+  assert.equal(CONCEPT_QUIZ_VERSION, 3);
   const items = ConceptQuiz.getItems();
   const selfCheckCount = CONCEPT_SEEDS.filter((c) => c.selfCheck && c.selfCheck.question).length;
   assert.equal(items.length, selfCheckCount, 'one quiz item per selfCheck-bearing concept');
@@ -454,6 +454,31 @@ test('v7.11.5 concept quiz items derive from selfCheck with valid answers', () =
   // 确定性排序（cluster + id）
   const second = ConceptQuiz.getItems().map((i) => i.id);
   assert.deepEqual(items.map((i) => i.id), second, 'getItems must be deterministic');
+});
+
+test('v7.11.6 concept quiz error book records, dedupes and clears', () => {
+  assert.equal(CONCEPT_QUIZ_VERSION, 3);
+  ConceptQuiz.clearErrors();
+  const items = ConceptQuiz.getItems();
+  const it = items[0];
+  // 答错入册
+  ConceptQuiz.recordError(it.id, '错误选项A');
+  assert.equal(ConceptQuiz.getErrors().length, 1);
+  assert.equal(ConceptQuiz.getErrors()[0].item.id, it.id);
+  assert.equal(ConceptQuiz.getErrors()[0].chosen, '错误选项A');
+  // 同题重复答错去重（保留最新）
+  ConceptQuiz.recordError(it.id, '错误选项B');
+  assert.equal(ConceptQuiz.getErrors().length, 1);
+  assert.equal(ConceptQuiz.getErrors()[0].chosen, '错误选项B');
+  // 只保留题库内已知 id
+  ConceptQuiz.recordError('concept-not-exist', 'x');
+  assert.equal(ConceptQuiz.getErrors().length, 1);
+  // 答对销账 / 清空
+  ConceptQuiz.removeError(it.id);
+  assert.equal(ConceptQuiz.getErrors().length, 0);
+  ConceptQuiz.recordError(it.id, 'y');
+  ConceptQuiz.clearErrors();
+  assert.equal(ConceptQuiz.getErrors().length, 0);
 });
 
 test('v7.11.0 poker logic renders a framed card only for matched hands', async () => {
