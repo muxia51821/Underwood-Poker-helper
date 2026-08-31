@@ -745,22 +745,9 @@ test('import records persist hero fact fields and overwrite patch refreshes them
   assert.equal('marked' in patch, false);
 });
 
-test('import derives session level from blinds and splits stake changes', () => {
+test('import uses continuous play windows and keeps stake changes inside one session', () => {
   let nextId = 0;
   const generateId = () => 'gen-' + (++nextId);
-  const nl10Hands = [
-    { handId: 'l1', date: '2026-05-01 10:00', profitBB: 1, bbValue: 0.1 },
-    { handId: 'l2', date: '2026-05-01 10:20', profitBB: 2, bbValue: 0.1 },
-  ];
-  // 同日同档位的既有 Session 被复用
-  const planMatched = buildImportPlan(nl10Hands, [], [{ id: 's-old', date: '2026-05-01', level: 'NL10' }], { generateId });
-  assert.equal(planMatched.sessionMappings[0].session.id, 's-old');
-  assert.equal(planMatched.summary.newSessions, 0);
-  // 同日但档位不同的既有 Session 不再被错并，按盲注新建 NL10
-  const planSplit = buildImportPlan(nl10Hands, [], [{ id: 's-nl5', date: '2026-05-01', level: 'NL5' }], { generateId });
-  assert.equal(planSplit.summary.newSessions, 1);
-  assert.equal(planSplit.sessionMappings[0].session.level, 'NL10');
-  // 同小时内档位变化强制切组
   const planMixed = buildImportPlan(
     [
       { handId: 'm1', date: '2026-05-01 10:00', profitBB: 1, bbValue: 0.1 },
@@ -770,40 +757,74 @@ test('import derives session level from blinds and splits stake changes', () => 
     [],
     { generateId }
   );
-  assert.equal(planMixed.summary.newSessions, 2);
-  assert.deepEqual(planMixed.sessionMappings.map((mapping) => mapping.session.level), ['NL10', 'NL25']);
-});
+  assert.equal(planMixed.summary.newSessions, 1);
+  assert.equal(planMixed.sessions[0].level, 'NL10 + NL25');
+  assert.deepEqual(planMixed.sessions[0].stakeLevels, ['NL10', 'NL25']);
+  assert.equal(planMixed.sessions[0].startedAt, '2026-05-01 10:00');
+  assert.equal(planMixed.sessions[0].endedAt, '2026-05-01 10:10');
 
-test('import aggregates session hands and profit across split groups', () => {
-  let nextId = 0;
-  const generateId = () => 'gen-' + (++nextId);
-  // 同日同档位被 >1h 间隔切成两个分组：Session 统计应取总和而非首个分片
-  const hands = [
-    { handId: 'g1', date: '2026-05-01 10:00', profitBB: 1, bbValue: 0.1 },
-    { handId: 'g2', date: '2026-05-01 15:00', profitBB: 2.5, bbValue: 0.1 },
-    { handId: 'g3', date: '2026-05-01 15:10', profitBB: -0.5, bbValue: 0.1 },
-  ];
-  const plan = buildImportPlan(hands, [], [], { generateId });
-  assert.equal(plan.summary.newSessions, 1);
-  assert.equal(plan.sessionMappings[0].session.hands, 3);
-  assert.equal(plan.sessionMappings[0].session.profit, 3);
-  // 同日混档位各自成场，互不串数
-  const mixed = buildImportPlan(
+  // 同日、同档位但超过 1 小时，必须是两场，不能再按日期自动吞并。
+  const planSeparate = buildImportPlan(
     [
-      { handId: 'm1', date: '2026-05-02 10:00', profitBB: 1, bbValue: 0.1 },
-      { handId: 'm2', date: '2026-05-02 10:05', profitBB: 2, bbValue: 0.25 },
+      { handId: 's1', date: '2026-05-01 10:00', profitBB: 1, bbValue: 0.1 },
+      { handId: 's2', date: '2026-05-01 11:01', profitBB: 2, bbValue: 0.1 },
     ],
     [],
     [],
     { generateId }
   );
-  assert.equal(mixed.summary.newSessions, 2);
-  const byLevel = {};
-  mixed.sessionMappings.forEach((mapping) => { byLevel[mapping.session.level] = mapping.session; });
-  assert.equal(byLevel.NL10.hands, 1);
-  assert.equal(byLevel.NL10.profit, 1);
-  assert.equal(byLevel.NL25.hands, 1);
-  assert.equal(byLevel.NL25.profit, 2);
+  assert.equal(planSeparate.summary.newSessions, 2);
+  assert.notEqual(planSeparate.sessionMappings[0].session.id, planSeparate.sessionMappings[1].session.id);
+
+  // 无精确起止时间的历史/手工 Session 不可安全推断为同一场，保留其原状。
+  const legacy = buildImportPlan(
+    [{ handId: 'legacy-1', date: '2026-05-01 10:00', profitBB: 1, bbValue: 0.1 }],
+    [],
+    [{ id: 'legacy-session', date: '2026-05-01', level: 'NL10' }],
+    { generateId }
+  );
+  assert.equal(legacy.summary.newSessions, 1);
+  assert.notEqual(legacy.sessionMappings[0].session.id, 'legacy-session');
+});
+
+test('import keeps separate windows separate and extends one time-bounded session safely', () => {
+  let nextId = 0;
+  const generateId = () => 'gen-' + (++nextId);
+  const plan = buildImportPlan(
+    [
+      { handId: 'g1', date: '2026-05-01 10:00', profitBB: 1, bbValue: 0.1 },
+      { handId: 'g2', date: '2026-05-01 15:00', profitBB: 2.5, bbValue: 0.1 },
+      { handId: 'g3', date: '2026-05-01 15:10', profitBB: -0.5, bbValue: 0.1 },
+    ],
+    [],
+    [],
+    { generateId }
+  );
+  assert.equal(plan.summary.newSessions, 2);
+  assert.deepEqual(plan.sessions.map((session) => session.hands), [1, 2]);
+  assert.deepEqual(plan.sessions.map((session) => session.profit), [1, 2]);
+
+  const existing = [{
+    id: 's-bounded', date: '2026-05-02', level: 'NL10', stakeLevels: ['NL10'],
+    startedAt: '2026-05-02 09:50', endedAt: '2026-05-02 10:00', hands: 5, profit: 2,
+  }];
+  const extended = buildImportPlan(
+    [
+      { handId: 'e1', date: '2026-05-02 10:20', profitBB: 1, bbValue: 0.25 },
+      { handId: 'e2', date: '2026-05-02 10:30', profitBB: 2, bbValue: 0.25 },
+    ],
+    [],
+    existing,
+    { generateId }
+  );
+  assert.equal(extended.summary.newSessions, 0);
+  assert.equal(extended.sessionMappings[0].session.id, 's-bounded');
+  assert.equal(extended.sessions[0].level, 'NL10 + NL25');
+  assert.deepEqual(extended.sessions[0].stakeLevels, ['NL10', 'NL25']);
+  assert.equal(extended.sessions[0].endedAt, '2026-05-02 10:30');
+  assert.equal(extended.sessions[0].duration, 0.7);
+  assert.equal(extended.sessions[0].hands, 7);
+  assert.equal(extended.sessions[0].profit, 5);
 });
 
 test('discover scan cache invalidates on hand data changes with unchanged count', async () => {
@@ -1145,7 +1166,7 @@ test('gto baselines persist through export/import merge', async () => {
   assert.ok(GtoBaselineRepo.getAll().length >= before);
 });
 
-// [V7.10.5 新增] 批量导入 Session 聚合持久化语义
+// [V7.10.6 新增] 连续 Session 窗口的聚合持久化语义
 
 test('import plan updates matched and target session aggregates', () => {
   let n = 0;
@@ -1154,8 +1175,11 @@ test('import plan updates matched and target session aggregates', () => {
     { handId: 'sp1', date: '2026-05-01 10:00', profitBB: 1, bbValue: 0.1 },
     { handId: 'sp2', date: '2026-05-01 10:20', profitBB: 2, bbValue: 0.1 },
   ];
-  // 自动分组命中既有 Session（同日同档位）→ 聚合累加，供导入层持久化
-  const auto = buildImportPlan(hands, [], [{ id: 's-ex', date: '2026-05-01', level: 'NL10', hands: 5, profit: 2 }], { generateId });
+  // 自动分组只命中有精确时间窗口的既有 Session，再聚合累加并持久化。
+  const auto = buildImportPlan(hands, [], [{
+    id: 's-ex', date: '2026-05-01', level: 'NL10', stakeLevels: ['NL10'],
+    startedAt: '2026-05-01 09:50', endedAt: '2026-05-01 10:00', hands: 5, profit: 2,
+  }], { generateId });
   assert.equal(auto.summary.newSessions, 0);
   assert.equal(auto.sessionMappings[0].session.hands, 7);
   assert.equal(auto.sessionMappings[0].session.profit, 5);

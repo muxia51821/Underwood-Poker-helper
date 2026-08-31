@@ -291,6 +291,10 @@ test('GG 多文件导入走解析预览并落库为手牌记录', async ({ page 
   // 导入后跳转 Hand 子面板，两条记录均已落库
   await expect(page.locator('[data-sub="hand"]')).toHaveClass(/subnav__btn--active/);
   await expect(page.locator('#handBody tr[data-hand-id]')).toHaveCount(2);
+  // 连续时间窗口内切换级别仍是一场，级别列显示场内构成。
+  await page.click('[data-sub="session"]');
+  await expect(page.locator('#sessionBody tr')).toHaveCount(1);
+  await expect(page.locator('#sessionBody')).toContainText('NL5 + NL10');
   expect(getRealErrors(errors)).toEqual([]);
 });
 
@@ -661,11 +665,11 @@ test('对手观察笔记与 Live 开关持久化', async ({ page }) => {
   expect(getRealErrors(errors)).toEqual([]);
 });
 
-test('导入匹配既有 Session 后聚合持久化（自动与目标两条路径）', async ({ page }) => {
+test('连续窗口自动续接与指定 Session 导入的聚合持久化', async ({ page }) => {
   const errors = captureRuntimeErrors(page);
   await page.goto('/');
-  const mk = (id, day, hh) => [
-    `Poker Hand #SP${id}: Hold'em No Limit ($0.05/$0.1) - 2026/06/${day} ${hh}:00:00`,
+  const mk = (id, day, time) => [
+    `Poker Hand #SP${id}: Hold'em No Limit ($0.05/$0.1) - 2026/06/${day} ${time}:00`,
     `Table 'SP${id}' 2-max Seat #1 is the button`,
     'Seat 1: Hero ($10.00 in chips)',
     'Seat 2: Villain ($10.00 in chips)',
@@ -678,25 +682,21 @@ test('导入匹配既有 Session 后聚合持久化（自动与目标两条路�
     '*** SUMMARY ***',
   ].join('\n');
 
-  // 两个手动 Session（各 hands=1, profit=0）
+  // 路径 A：第一次自动导入创建有精确时间窗口的 Session。
   await page.click('[data-tab="review"]');
   await page.click('[data-sub="session"]');
-  await page.fill('#sessDate', '2026-06-01');
-  await page.fill('#sessLevel', 'NL10');
-  await page.fill('#sessDur', '1');
-  await page.fill('#sessHands', '1');
-  await page.fill('#sessProfit', '0');
-  await page.click('#addSessionBtn');
-  await page.fill('#sessDate', '2026-06-02');
-  await page.fill('#sessLevel', 'NL10');
-  await page.fill('#sessDur', '1');
-  await page.fill('#sessHands', '1');
-  await page.fill('#sessProfit', '0');
-  await page.click('#addSessionBtn');
-
-  // 路径 A：自动匹配既有 Session（无目标导入 06-01 的 1 手）
   await page.click('#importGGBtn');
-  await page.fill('#ggImportText', mk('A1', '01', '10'));
+  await page.fill('#ggImportText', mk('A0', '01', '09:30'));
+  await page.click('#ggParseBtn');
+  await page.waitForFunction(() => document.querySelectorAll('.gg-import-check').length >= 1, undefined, { polling: 200 });
+  await page.click('.gg-sel-all-btn');
+  await page.click('#ggImportSelectedBtn');
+  await page.waitForSelector('#handBody tr[data-hand-id]', { timeout: 60000 });
+
+  // 同一连续窗口的下一手自动续接，重载前统计为 2 手。
+  await page.click('[data-sub="session"]');
+  await page.click('#importGGBtn');
+  await page.fill('#ggImportText', mk('A1', '01', '10:00'));
   await page.click('#ggParseBtn');
   await page.waitForFunction(() => document.querySelectorAll('.gg-import-check').length >= 1, undefined, { polling: 200 });
   await page.click('.gg-sel-all-btn');
@@ -704,13 +704,21 @@ test('导入匹配既有 Session 后聚合持久化（自动与目标两条路�
   await page.waitForSelector('#handBody tr[data-hand-id]', { timeout: 60000 });
 
   await page.click('[data-sub="session"]');
-  const s1row = page.locator('#sessionBody tr').filter({ hasText: '2026-06-01' }).first();
-  await expect(s1row.locator('td').nth(3)).toHaveText('2');
+  const autoRow = page.locator('#sessionBody tr').filter({ hasText: '2026-06-01' }).first();
+  await expect(autoRow.locator('td').nth(3)).toHaveText('2');
 
-  // 路径 B：目标 Session 导入（s2 行 📥 → 06-02 的 1 手）
+  // 路径 B：手工 Session 不猜测时间范围，只能明确指定导入目标。
+  await page.fill('#sessDate', '2026-06-02');
+  await page.fill('#sessLevel', 'NL10');
+  await page.fill('#sessDur', '1');
+  await page.fill('#sessHands', '1');
+  await page.fill('#sessProfit', '0');
+  await page.click('#addSessionBtn');
+
+  // 指定 s2 行 📥 → 06-02 的 1 手。
   const s2row = page.locator('#sessionBody tr').filter({ hasText: '2026-06-02' }).first();
   await s2row.locator('[data-import-sid]').click();
-  await page.fill('#ggImportText', mk('B1', '02', '10'));
+  await page.fill('#ggImportText', mk('B1', '02', '10:00'));
   await page.click('#ggParseBtn');
   await page.waitForFunction(() => document.querySelectorAll('.gg-import-check').length >= 1, undefined, { polling: 200 });
   await page.click('.gg-sel-all-btn');
@@ -721,7 +729,7 @@ test('导入匹配既有 Session 后聚合持久化（自动与目标两条路�
   const s2rowAfter = page.locator('#sessionBody tr').filter({ hasText: '2026-06-02' }).first();
   await expect(s2rowAfter.locator('td').nth(3)).toHaveText('2');
 
-  // 重载后两条路径的 Session 聚合均持久化
+  // 重载后两条正确路径的 Session 聚合均持久化。
   await page.reload();
   await page.waitForSelector('.version-tag');
   await page.waitForFunction(

@@ -166,7 +166,7 @@ User pastes GG text / selects multiple .txt (V7.9.0: picker multiple + 拖拽多
       → [V7.9.0] bbValue 逐块检测：优先牌局头部 ($sb/$bb)，异常/缺失回退块内 posts 行，再回退上一块
   → ggImportCoordinator.buildImportPlan()
       → duplicate (ggId, 含同批跨文件) / overwrite / Session 分组 / record mapping
-      → [V7.9.0] Session 等级按盲注派生 (NL5/NL10/NL25...)，档位变化强制切组
+      → [V7.10.6] Session 按连续 1 小时窗口分组；盲注派生的级别构成保留为 stakeLevels（如 NL5 + NL10）
   → User selects/deselects hands → HandRepo.saveAll(plan.records)
   → Navigation.refreshReview() + Navigation.goToReviewSubtab('hand')
 ```

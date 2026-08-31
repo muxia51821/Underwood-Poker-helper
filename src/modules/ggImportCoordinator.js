@@ -7,28 +7,39 @@ function _cloneSession(session) {
   return copy;
 }
 
+function _parseLocalTime(value) {
+  if (!value) return null;
+  var normalized = String(value).replace(' ', 'T');
+  if (normalized.length === 16) normalized += ':00';
+  var time = new Date(normalized);
+  return isNaN(time.getTime()) ? null : time;
+}
+
+function _sessionGapMs(gapHours) {
+  return (gapHours || CONSTANTS.SESSION_GAP_HOURS || 3) * 3600000;
+}
+
 function _groupBySessionGap(parsedHands, gapHours) {
   if (!parsedHands.length) return [];
   var sorted = parsedHands.slice().sort(function (a, b) {
     return (a.date || '').localeCompare(b.date || '');
   });
   var groups = [];
-  var current = { hands: [], startTime: null, endTime: null };
-  var gapMs = (gapHours || CONSTANTS.SESSION_GAP_HOURS || 3) * 3600000;
+  var current = { hands: [], startTime: null, endTime: null, startedAt: '', endedAt: '' };
+  var gapMs = _sessionGapMs(gapHours);
   sorted.forEach(function (hand) {
-    var time = hand.date ? new Date(hand.date.replace(' ', 'T') + ':00') : null;
-    var timeMs = time ? time.getTime() : 0;
-    // [V7.9.0 修改] 档位（bbValue）变化时强制切组，防止混合档位手牌被并入同一场
-    var sameStake =
-      hand.bbValue == null || current.bbValue == null || hand.bbValue === current.bbValue;
+    var time = _parseLocalTime(hand.date);
+    var timeMs = time ? time.getTime() : NaN;
     if (!current.startTime) {
-      current = { hands: [hand], startTime: time, endTime: time, bbValue: hand.bbValue };
-    } else if (timeMs - current.endTime.getTime() <= gapMs && sameStake) {
+      current = { hands: [hand], startTime: time, endTime: time, startedAt: hand.date || '', endedAt: hand.date || '' };
+    // [V7.10.6 修改] Session 是连续坐下打牌的时间窗口；换级别只记录为场内构成，不能强制拆场。
+    } else if (time && current.endTime && timeMs - current.endTime.getTime() <= gapMs) {
       current.endTime = time;
+      current.endedAt = hand.date || current.endedAt;
       current.hands.push(hand);
     } else {
       groups.push(current);
-      current = { hands: [hand], startTime: time, endTime: time, bbValue: hand.bbValue };
+      current = { hands: [hand], startTime: time, endTime: time, startedAt: hand.date || '', endedAt: hand.date || '' };
     }
   });
   if (current.hands.length) groups.push(current);
@@ -73,36 +84,91 @@ function _makeReviewRecord(hand, sessionId, generateId) {
   };
 }
 
-// [V7.9.0 新增] Session 等级按盲注派生：0.05→NL5、0.1→NL10、0.25→NL25；无盲注信息时回退 NL5（旧行为）
-function _deriveSessionLevel(group) {
-  var bb = null;
-  for (var i = 0; i < group.hands.length; i++) {
-    if (group.hands[i].bbValue != null && group.hands[i].bbValue > 0) {
-      bb = group.hands[i].bbValue;
-      break;
-    }
-  }
-  return bb ? 'NL' + Math.round(bb * 100) : 'NL5';
+function _stakeLevelOf(hand) {
+  return hand.bbValue != null && hand.bbValue > 0 ? 'NL' + Math.round(hand.bbValue * 100) : 'NL5';
 }
 
-function _makeSession(group, existingSessions, generateId) {
-  var startStr = group.startTime ? group.startTime.toISOString().split('T')[0] : '';
+function _sortStakeLevels(levels) {
+  return levels.slice().sort(function (a, b) {
+    var aMatch = /^NL(\d+)$/.exec(a);
+    var bMatch = /^NL(\d+)$/.exec(b);
+    if (aMatch && bMatch) return Number(aMatch[1]) - Number(bMatch[1]);
+    if (aMatch) return -1;
+    if (bMatch) return 1;
+    return a.localeCompare(b);
+  });
+}
+
+function _stakeLevelsOf(group, priorLevels) {
+  var seen = {};
+  (priorLevels || []).forEach(function (level) { if (level) seen[level] = true; });
+  group.hands.forEach(function (hand) { seen[_stakeLevelOf(hand)] = true; });
+  return _sortStakeLevels(Object.keys(seen));
+}
+
+function _sessionStakeLevels(session) {
+  if (Array.isArray(session.stakeLevels) && session.stakeLevels.length) return session.stakeLevels;
+  return session.level ? String(session.level).split(' + ') : [];
+}
+
+function _formatSessionLevel(stakeLevels) {
+  return stakeLevels.length ? stakeLevels.join(' + ') : 'NL5';
+}
+
+function _sessionDuration(startTime, endTime, handCount) {
+  var duration = startTime && endTime ? (endTime.getTime() - startTime.getTime()) / 3600000 : 0;
+  if (!isFinite(duration) || duration < 0) duration = (handCount || 0) * 0.02;
+  return Math.max(0.5, Math.round(duration * 10) / 10);
+}
+
+function _findTimeBoundedSession(group, sessions, gapMs) {
+  if (!group.startTime || !group.endTime) return null;
+  var candidates = sessions.filter(function (session) {
+    var start = _parseLocalTime(session.startedAt);
+    var end = _parseLocalTime(session.endedAt);
+    return start && end && group.startTime.getTime() <= end.getTime() + gapMs && group.endTime.getTime() >= start.getTime() - gapMs;
+  });
+  // 两个历史窗口都可匹配时不能静默合并其 Closure/Mark；留给用户明确选目标 Session。
+  return candidates.length === 1 ? candidates[0] : null;
+}
+
+function _extendSessionWindow(session, group) {
+  var sessionStart = _parseLocalTime(session.startedAt);
+  var sessionEnd = _parseLocalTime(session.endedAt);
+  var startsEarlier = !sessionStart || group.startTime.getTime() < sessionStart.getTime();
+  var endsLater = !sessionEnd || group.endTime.getTime() > sessionEnd.getTime();
+  session.startedAt = startsEarlier ? group.startedAt : session.startedAt;
+  session.endedAt = endsLater ? group.endedAt : session.endedAt;
+  var start = _parseLocalTime(session.startedAt);
+  var end = _parseLocalTime(session.endedAt);
+  session.date = session.startedAt ? session.startedAt.slice(0, 10) : session.date;
+  session.stakeLevels = _stakeLevelsOf(group, _sessionStakeLevels(session));
+  session.level = _formatSessionLevel(session.stakeLevels);
+  session.duration = _sessionDuration(start, end, session.hands);
+}
+
+function _makeSession(group, existingSessions, generateId, gapMs) {
+  var startStr = group.startedAt ? group.startedAt.slice(0, 10) : '';
   var hour = group.startTime ? group.startTime.getHours() : 0;
   var period = hour < 6 ? '凌晨' : hour < 12 ? '上午' : hour < 18 ? '下午' : '晚间';
-  var level = _deriveSessionLevel(group);  // [V7.9.0 修改] 取代硬编码 'NL5'
-  var matched = existingSessions.find(function (session) {
-    return session.date === startStr && session.level === level;
-  });
-  if (matched) return { session: matched, isNew: false };
+  var matched = _findTimeBoundedSession(group, existingSessions, gapMs);
+  if (matched) {
+    _extendSessionWindow(matched, group);
+    return { session: matched, isNew: false };
+  }
 
   var totalProfit = 0;
   group.hands.forEach(function (hand) { totalProfit += hand.profitBB || 0; });
+  var stakeLevels = _stakeLevelsOf(group);
   return {
     session: {
       id: generateId(),
       date: startStr,
-      level: level,
-      duration: Math.max(0.5, Math.round(group.hands.length * 0.02 * 10) / 10),
+      level: _formatSessionLevel(stakeLevels),
+      stakeLevels: stakeLevels,
+      startedAt: group.startedAt,
+      endedAt: group.endedAt,
+      duration: _sessionDuration(group.startTime, group.endTime, group.hands.length),
       hands: group.hands.length,
       profit: parseFloat(totalProfit.toFixed(1)),
       tilt: 5,
@@ -168,6 +234,8 @@ export function buildImportPlan(parsedHands, existingReviews, existingSessions, 
   var selected = annotated.filter(function (hand) { return !hand.isDuplicate; });
   var sessions = (existingSessions || []).map(_cloneSession);
   var mappings = [];
+  var gapHours = opts.sessionGapHours || CONSTANTS.SESSION_GAP_HOURS;
+  var gapMs = _sessionGapMs(gapHours);
 
   if (opts.targetSessionId) {
     var target = sessions.find(function (session) { return session.id === opts.targetSessionId; });
@@ -184,8 +252,8 @@ export function buildImportPlan(parsedHands, existingReviews, existingSessions, 
     }
     mappings.push({ session: target, hands: selected, isNew: false });
   } else {
-    _groupBySessionGap(selected, opts.sessionGapHours).forEach(function (group) {
-      var mapping = _makeSession(group, sessions, generateId);
+    _groupBySessionGap(selected, gapHours).forEach(function (group) {
+      var mapping = _makeSession(group, sessions, generateId, gapMs);
       if (mapping.isNew) sessions.push(mapping.session);
       mapping.hands = group.hands;
       mappings.push(mapping);
@@ -198,7 +266,7 @@ export function buildImportPlan(parsedHands, existingReviews, existingSessions, 
       records.push(_makeReviewRecord(hand, mapping.session.id, generateId));
     });
   });
-  // [V7.9.0 修改] 按唯一 Session 聚合手数/盈亏：多桌混档位或分批导入时，同一 Session 会由多个分组
+  // [V7.10.6 修改] 按唯一连续 Session 聚合手数/盈亏：分批导入续接同一时间窗口时，
   // 累积而成，只在创建时取首个分片会让 Session 统计严重偏小（真实语料实测暴露）。
   var preExistingIds = new Set((existingSessions || []).map(function (session) { return session.id; }));
   var agg = {};
@@ -218,7 +286,10 @@ export function buildImportPlan(parsedHands, existingReviews, existingSessions, 
     } else {
       session.hands = a.hands;
       session.profit = parseFloat(a.profit.toFixed(1));
-      session.duration = Math.max(0.5, Math.round(session.hands * 0.02 * 10) / 10);
+    }
+    // [V7.10.6 新增] 自动导入场次已有精确起止时间时，时长以真实窗口为准；手工场次维持用户填写值。
+    if (session.startedAt && session.endedAt) {
+      session.duration = _sessionDuration(_parseLocalTime(session.startedAt), _parseLocalTime(session.endedAt), session.hands);
     }
   });
   return {
