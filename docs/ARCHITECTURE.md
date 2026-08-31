@@ -57,12 +57,15 @@ src/
     decisionRadar.js # [V7.10.7 修改] Spot 信号 + Dossier；同类牌面 GTO 优先匹配、严格 MDA 条件匹配
     strategyDesk.js  # [V7.10.7 修改] Evidence & Strategy（证据包 + 策略修订 + Radar scope 录入）
     handReplay.js    # [V7.10.0 新增] 手牌可视化回放（只读派生层：desc 解析 + 逐街视图，零 store import）
+    spotMatcher.js   # [V7.11.0 新增] 单手牌 spot 识别（两人池位置交替归属 + 多人池噪声排除 + 河牌惊悚/空白启发式；零 store import）
+    pokerLogic.js    # [V7.11.0 新增] 复盘牌理参考渲染（命中 spot 输出推理链卡片；证据引用来自 EvidencePackRepo）
 
   data/
     srpData.js       # GTO 策略速查表（从 gtoRaw 自动生成，import Utils + gtoRaw）
     actionLines.js   # underBluff + overBluff 行动线表
     gtoBaselineSeed.js # [V7.10.8 修改] GTO 结构性参考种子 v4：按 Radar spot（scenario+question+boardCategory+sizingContext）落位 17 条；数字标注「正文核验/文章表格直读」；gate pa_gto_baseline_seed_v4，未编辑行按 seedRevision 升级
     externalEvidenceSeed.js # [V7.10.9 修改] 外部证据种子 v5：16 条（solver/mda/article/community/video，evidenceLevel 三级 + Radar scope）；含 4 条 street:'river' 河牌证据（由 matchEvidenceForSignal 的 street 过滤保证不进翻牌信号）
+    pokerLogicSeed.js # [V7.11.0 新增] 复盘牌理参考种子 v1：8 条 spot 推理链（翻牌 5 + 河牌 3），四步链路结构（范围/线/街牌效应/偏离解读）+ evidenceRefs 指向证据包
     strategy/
       gtoBaseline.js # L1 极端阈值自动编译（>90%/<5%）+ getGTOReference() + GTO_LEGACY_SCOPE
       gtoRaw/        # Solver 原始输出（旧遗留，scoped legacy reference）

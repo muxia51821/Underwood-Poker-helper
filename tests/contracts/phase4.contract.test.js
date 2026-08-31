@@ -245,3 +245,117 @@ test('v7.10.9 river evidence seeds stay off flop signals', () => {
   assert.ok(matches.directMda.every((p) => p.scope.street === 'flop'));
   assert.ok(matches.contextual.every((p) => p.scope.street === 'flop'));
 });
+
+// [V7.11.0 新增] 复盘牌理参考：单手牌 spot 识别 + 种子完整性 + 证据引用可解析。
+const { matchHandSpot, riverThreat, SPOT_MATCHER_VERSION } = await import('../../src/modules/spotMatcher.js');
+const { POKER_LOGIC_SEEDS, POKER_LOGIC_SEED_VERSION } = await import('../../src/data/pokerLogicSeed.js');
+const { PokerLogic } = await import('../../src/modules/pokerLogic.js');
+const { GTO_BASELINE_SEEDS: LOGIC_GTO_SEEDS } = await import('../../src/data/gtoBaselineSeed.js');
+
+function syntheticHand(overrides) {
+  return Object.assign({
+    id: 't1', handId: 'H1', desc: '',
+    preflopScenario: 'BTNvsBB', heroPosition: 'BTN', tableMax: 6,
+    actionLineOTF: '', actionLineOTT: '', actionLineOTR: '',
+  }, overrides);
+}
+
+test('v7.11.0 spot matcher routes hands to logic cards by role and street', () => {
+  assert.equal(SPOT_MATCHER_VERSION, 1);
+
+  // 翻牌：BTN cbet（BB check 后 BTN 下注、BB 跟注）
+  const flopCbet = syntheticHand({ actionLineOTF: 'X-B60-C' });
+  assert.equal(matchHandSpot(flopCbet).spotId, 'btnvsbb-raiser-cbet');
+  assert.equal(matchHandSpot(flopCbet).street, 'flop');
+
+  // 翻牌止步 + 打过转牌的手牌不做翻牌牌理（复盘重点在当前街）
+  const pastFlop = syntheticHand({ actionLineOTF: 'X-B60-C', actionLineOTT: 'X-X' });
+  assert.equal(matchHandSpot(pastFlop), null);
+
+  // 河牌：BTN 两街下注到河牌再下注（BB check 让路，空白河牌）
+  const riverBet = syntheticHand({
+    actionLineOTF: 'X-B60-C', actionLineOTT: 'X-B50-C', actionLineOTR: 'X-B75-C',
+    desc: 'OTF翻牌 Ah 7d 2c    行动：X B60 (1.2bb) C\nOTT转牌 4s    行动：X B50 C\nOTR河牌 Kc    行动：X B75 C',
+  });
+  const m1 = matchHandSpot(riverBet);
+  assert.equal(m1.spotId, 'btnvsbb-raiser-riverbet');
+  assert.equal(m1.riverType, 'blank');
+  assert.equal(m1.line, 'agg→agg');
+
+  // 河牌：BB 防守转牌过牌、河牌首动 stab（2c/8c/3c 三张草花 → 惊悚河牌）
+  const riverFirst = syntheticHand({
+    preflopScenario: 'BTNvsBB', heroPosition: 'BB',
+    actionLineOTF: 'X-B33-C', actionLineOTT: 'X-X', actionLineOTR: 'B50-C',
+    desc: 'OTF翻牌 Ah 7d 2c    行动：X B33 (0.7bb) C\nOTT转牌 8c    行动：X X\nOTR河牌 3c    行动：B50 C',
+  });
+  const m2 = matchHandSpot(riverFirst);
+  assert.equal(m2.spotId, 'btnvsbb-caller-riverfirst');
+  assert.equal(m2.riverType, 'scary');
+  assert.equal(m2.line, 'def→chk');
+
+  // 河牌：SB cbet 被跟、转牌双过、河牌 BB 反打 SB 应对（facebet）
+  const riverDual = syntheticHand({
+    preflopScenario: 'SBvsBB', heroPosition: 'SB',
+    actionLineOTF: 'X-B33-C', actionLineOTT: 'X-X', actionLineOTR: 'B40-C',
+    desc: 'OTF翻牌 Kh 9d 3c    行动：X B33 C\nOTT转牌 6s    行动：X X\nOTR河牌 2h    行动：B40 C',
+  });
+  const m3 = matchHandSpot(riverDual);
+  assert.equal(m3.spotId, 'sbvsbb-raiser-riverdual');
+  assert.equal(m3.question, 'facebet');
+
+  // COvsBTN 防守河牌无牌理卡（样本地图裁掉的场景）
+  const covsCaller = syntheticHand({
+    preflopScenario: 'COvsBTN', heroPosition: 'BTN',
+    actionLineOTF: 'X-B33-C', actionLineOTT: 'X-X', actionLineOTR: 'X-B50-F',
+  });
+  assert.equal(matchHandSpot(covsCaller), null);
+
+  // 多人池噪声（5 token 无 R）不识别
+  assert.equal(matchHandSpot(syntheticHand({ actionLineOTF: 'X-X-B60-C-F' })), null);
+
+  // 惊悚/空白启发式（3c 与 2c/8c 成三张草花 → 惊悚；Kh 不成花不成窗 → 空白）
+  assert.equal(riverThreat(['Ah', '7d', '2c', '8c'], '3c').scary, true);
+  assert.equal(riverThreat(['Ah', '7d', '2c', '8c'], 'Kh').scary, false);
+});
+
+test('v7.11.0 poker logic seeds are complete and evidence refs resolve', () => {
+  assert.equal(POKER_LOGIC_SEED_VERSION, 'v1');
+  assert.equal(POKER_LOGIC_SEEDS.length, 8);
+  const ids = POKER_LOGIC_SEEDS.map((s) => s.id);
+  assert.equal(new Set(ids).size, ids.length);
+  const resolvable = new Set(
+    EXTERNAL_EVIDENCE_SEEDS.map((s) => s.id)
+      .concat(LOGIC_GTO_SEEDS.map((s) => s.evidenceId)),
+  );
+  POKER_LOGIC_SEEDS.forEach((seed) => {
+    assert.ok(seed.rangeStory, seed.id + ' needs rangeStory');
+    assert.ok(seed.deviation && seed.deviation.low && seed.deviation.high, seed.id + ' needs deviation reads');
+    assert.ok(seed.boundary, seed.id + ' needs boundary');
+    assert.ok(seed.evidenceRefs.length, seed.id + ' needs evidence refs');
+    seed.evidenceRefs.forEach((ref) => {
+      assert.ok(resolvable.has(ref), seed.id + ' references unknown evidence ' + ref);
+    });
+  });
+  // 三条河牌卡 + 五条翻牌卡
+  assert.equal(POKER_LOGIC_SEEDS.filter((s) => s.street === 'river').length, 3);
+  assert.equal(POKER_LOGIC_SEEDS.filter((s) => s.street === 'flop').length, 5);
+});
+
+test('v7.11.0 poker logic renders a framed card only for matched hands', async () => {
+  localStorage.clear();
+  await initStorage({ safeMode: true });
+  const riverBet = syntheticHand({
+    id: 'logic-1',
+    actionLineOTF: 'X-B60-C', actionLineOTT: 'X-B50-C', actionLineOTR: 'X-B75-C',
+    desc: 'OTF翻牌 Ah 7d 2c    行动：X B60 (1.2bb) C\nOTT转牌 4s    行动：X B50 C\nOTR河牌 Kc    行动：X B75 C',
+  });
+  const html = PokerLogic.renderForHand(riverBet);
+  assert.ok(html.includes('牌理参考'));
+  assert.ok(html.includes('BTN 河牌下注'));
+  assert.ok(html.includes('空白河牌'));
+  assert.ok(html.includes('边界'));
+  assert.ok(!html.includes('<script'), 'card must not introduce script tags');
+  const flopHtml = PokerLogic.renderForHand(syntheticHand({ id: 'logic-2', actionLineOTF: 'X-B60-C' }));
+  assert.ok(flopHtml.includes('牌理参考') && flopHtml.includes('BTN C-bet'), 'flop match renders its card');
+  assert.equal(PokerLogic.renderForHand(syntheticHand({ id: 'logic-3', preflopScenario: 'other' })), '');
+});

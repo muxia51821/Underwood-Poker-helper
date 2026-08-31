@@ -1,0 +1,178 @@
+// [V7.11.0 新增] 复盘牌理参考种子：按 Radar spot 组织的推理链（只读知识，非策略答案）。
+// 四步链路：范围合法性 → 前置线过滤 → 街牌效应 → 偏离解读；每个 spot 挂可核验证据（evidenceRefs 指向证据包 id）。
+// 纪律：这里是"怎么想"的框架，不是"该下多少"的答案；所有频率结论只来自用户自有样本基线，来源证据仅作机制参照。
+export var POKER_LOGIC_SEED_VERSION = 'v1';
+
+export var POKER_LOGIC_SEEDS = [
+  {
+    id: 'btnvsbb-raiser-cbet',
+    street: 'flop',
+    scenario: 'BTNvsBB',
+    role: 'raiser',
+    question: 'cbet',
+    title: 'BTN C-bet（IP 进攻方）',
+    rangeStory: 'BTN 开牌加注的范围含全部最强牌（大对子、AK/AQs）和大量投机牌；BB 跟注范围被压缩（没有 3bet 的强牌、也没有纯垃圾）。所以你有 nuts 优势和 equity 优势——这是 C-bet 合法性的来源：不是"我打了加注所以要继续"，而是"我的范围里强牌比例更高，对手更难继续"。',
+    lineNotes: [
+      { line: '对方过牌后行动', note: '标准 C-bet 决策：对方 check 不会自动给你免费牌，下注抢走其 equity 实现权。' },
+      { line: '对方先下注（donk）', note: '本 spot 不纳入：donk 通常是另一套含义（小成牌保护），雷达与牌理参考都不覆盖。' },
+    ],
+    streetEffect: '牌面类别决定下注价值：高对子面对手只有两张牌能改进（更该下注）；三同花/三连张面对手范围里有成牌（下注价值下降、超池受限）；单花面对手同花听牌多（策略整体转向被动）。信号卡会显示同牌面类别的专项参考（若有）。',
+    deviation: {
+      low: 'C-bet 偏低通常意味着把"对手可能有好牌"当成了"对手已经有好牌"。你有范围优势时，过牌等于放弃对手 equity 的实现权，让 BB 的 bluff catcher 免费看到摊牌。复查时先看牌面类别：是不是在单调面/连张面整体收缩了。',
+      high: 'C-bet 偏高常见于把 C-bet 当成翻牌固定动作。对手不弃牌时，无价值无保护的持续下注是纯送钱。复查时对比同牌面类别：偏高是否集中在对手容易跟住的牌面（高连张）。',
+    },
+    evidenceRefs: ['ev-gto-btnvsbb-cbet-100bb-6max', 'ev-gto-btnvsbb-cbet-paired-high-100bb', 'ev-gto-btnvsbb-cbet-monotone-100bb', 'ev-gto-btnvsbb-cbet-flushy-straighty-100bb', 'ev-gto-wizard-ip-mtt-heuristics-40bb'],
+    boundary: '6max 100bb 总体锚点（63%/37%）来自 NL500z 级别解读，微级别对手倾向可能不同；牌面专项条目为单牌面定性；MTT 启发式只提供"范围动态优先于牌面"的思考框架，不提供频率。',
+  },
+  {
+    id: 'btnvsbb-caller-facebet',
+    street: 'flop',
+    scenario: 'BTNvsBB',
+    role: 'caller',
+    question: 'facebet',
+    title: 'BB 面对 C-bet（OOP 防守方）',
+    rangeStory: '你是范围劣势方（BB 跟注范围被 capped），但你有位置劣势换来的补偿：不需要往底池投入更多就能看到摊牌的选择权。防守的牌理核心是"用继续范围挡住对手的自动获利"，而不是"猜他有没有牌"。',
+    lineNotes: [
+      { line: '面对小注（约 33%）', note: '对手用广范围施压，你需要足够宽的继续范围（多为跟注），否则他被任意两张牌诈唬就有利可图。' },
+      { line: '面对大注/超池', note: '对手在声明两极范围，你的跟注范围应收窄到能对抗价值段的牌；弃牌比例上升是正常的，不是胆小。' },
+    ],
+    streetEffect: '应对构成（跟/弃/加注）随牌面变化：高对子面对手范围里一对居多，你的中上对子可以更从容跟注；连张/单调面加注段更两极（成牌或强听牌），面对加注要重新审视。',
+    deviation: {
+      low: '面对下注弃牌偏高是微级别最典型的 leak：被"下注=强牌"的条件反射支配。复查时先分尺寸：对小注弃牌偏高说明对手任何两张牌打你都有利可图；再看牌面类别是否被单调面吓退。',
+      high: '弃牌偏低（跟注过多）则相反：用 bluff catcher 接住了对手的价值段。信号本身不判断对错，复查时看这批手牌对手摊牌后是什么——如果多次被价值段抓到，才是真问题。',
+    },
+    evidenceRefs: ['ev-gto-btnvsbb-facebet-paired-high-100bb', 'ev-gto-btnvsbb-facebet-monotone-100bb', 'ev-gto-btnvsbb-facebet-flushy-straighty-100bb'],
+    boundary: '三条应对构成均绑定 33% 池或 125% 超池的具体尺寸与单牌面；尺寸效应（小注多跟、大注多弃）是可迁移的机制，具体百分比不可外推。',
+  },
+  {
+    id: 'sbvsbb-raiser-cbet',
+    street: 'flop',
+    scenario: 'SBvsBB',
+    role: 'raiser',
+    question: 'cbet',
+    title: 'SB C-bet（OOP 进攻方）',
+    rangeStory: 'SB 开牌加注范围比 BB 跟注范围略强，但优势远小于 BTN 对 BB——而且你翻后每一街都无位置。你的 C-bet 合法性主要来自"略强的范围+让对手的 equity 折价"，不是"碾压式压迫"。所以结构上：小注为主、下注后转牌计划要提前想好。',
+    lineNotes: [
+      { line: '翻牌先行动直接决策', note: '你永远是先行动方：check 是默认可接受的选项，下注需要理由（范围优势面或对手弃牌倾向）。' },
+      { line: '筹码深度影响结构', note: '来源数据显示全深度 check 与小注主导：40-30bb 大注集中在低对子与 A 高张面；20bb 时 C-bet 频率最高且以小注为主。' },
+    ],
+    streetEffect: 'OOP 的大注集中在特定纹理（低对子面、A 高张百老汇面——你的范围在这些面更两极）；中张动态面反而倾向过牌（对手 equity 实现更好）。被跟住后你的投机牌坍塌，转河主动权经常让渡。',
+    deviation: {
+      low: '偏低若集中在标准干燥面，可能是把"OOP 难打"当成了"不下注"；你的范围优势在干燥面仍然成立，过牌让 BB 用任意两张牌看免费牌。',
+      high: '偏高常见于把 BTN 对 BB 的压迫习惯带进优势不足的场景——对手有位置且范围差距小，高频下注后转牌无牌可打（"下注-过牌-弃牌"三连）。复查时看下注后的转牌行动分布。',
+    },
+    evidenceRefs: ['ev-gto-sbvsbb-cbet-directional', 'ev-gto-wizard-oop-mtt-heuristics-40bb'],
+    boundary: '六深度分布为 MTT/chip-EV 聚合（文章表格直读），与现金条件不符仅结构参考；MTT 启发式为 40bb UTG 场景，位置类比。具体频率不做与个人样本的差值。',
+  },
+  {
+    id: 'covsbtn-raiser-cbet',
+    street: 'flop',
+    scenario: 'COvsBTN',
+    role: 'raiser',
+    question: 'cbet',
+    title: 'CO C-bet（OOP 进攻方，对抗按钮冷跟）',
+    rangeStory: 'CO 开牌加注、BTN 冷跟：你的范围略强但对手拿了位置。OOP 进攻方的核心事实是——对手的 equity 优势来自位置而非牌力（他能更准确地继续/放弃）。所以整体 C-bet 频率显著低于 IP 加注者（来源结构：约 28% 对 63%+），且"过牌是策略，不是软弱"。',
+    lineNotes: [
+      { line: '低连张/中张面', note: '对手范围在这些面 equity 实现最好，你的过牌率最高——全范围过牌（如 96r/432r 类）是标准策略不是漏球。' },
+      { line: '高张无连张面', note: '对手范围里有大量 underpair 类牌更好防守、你的高牌更常 pair——这些面反而可以全范围下注：小注当对手难继续、大注当对手跟注范围宽。' },
+      { line: '被 check 后对手刺探', note: '你过牌后对手小注 stab，你的 check-raise 通常落在 10-18% 频率段——用强牌和带后备的计划牌混合。' },
+    ],
+    streetEffect: '静态面（AJ6 类）：你的范围优势大，下注频繁但主小注（保护中段 equity）；动态面（986 类）：范围接近对称，过牌为主、下注时尺寸两极。强制自己在动态面持续施压的代价远高于静态面（来源实验：range-bet 动态面亏约 10bb/100，静态面仅 2bb/100）。',
+    deviation: {
+      low: '如果你在静态面也过牌太多，是在放弃范围优势的变现窗口；对手的冷跟范围防御不了小注。',
+      high: '偏高通常是拿 IP C-bet 的习惯打 OOP：对手有位置，你的下注被 float 后转牌进退两难。复查时看被跟注后的转牌行动——大量"下注-过牌-弃牌"结构是 OOP 过度进攻的指纹。',
+    },
+    evidenceRefs: ['ev-gto-covsbtn-cbet-oop-framework-100bb', 'ev-gto-covsbtn-cbet-dynamic-static-40bb', 'ev-gto-covsbtn-cbet-40bb'],
+    boundary: '28%/72% 框架来自 UTG vs BTN 冷跟示例（位置类比）；40bb 聚合（25.4%）条件不符仅结构参考；两个来源的位置与深度都和 CO vs BTN 不完全一致，频率不可直接对照。',
+  },
+  {
+    id: 'covsbtn-caller-facebet',
+    street: 'flop',
+    scenario: 'COvsBTN',
+    role: 'caller',
+    question: 'facebet',
+    title: 'BTN 面对单次加注局 C-bet（IP 防守方）',
+    rangeStory: '你冷跟进入底池，对手是 OOP 加注者（范围略强、无位置劣势项的补偿给了你位置）。对手整体下注不多（结构上约四分之一强），所以你的默认姿态是：小注宽防、大注收缩；对手真正的两极下注出现时才需要严肃决策。',
+    lineNotes: [
+      { line: '面对标准尺寸下注', note: '对手 OOP 下注通常有更强范围支撑，你的跟注需要真实的摊牌价值或明确的改善计划。' },
+      { line: '面对 check 后再评估', note: '对手过牌时你获得免费牌，位置优势的价值正在于此—— stab 用小注、有摊牌价值牌可 check behind 控池。' },
+    ],
+    streetEffect: '对手的两极段（超池/全下式下注）在特定纹理出现：成对低面与 9x 高频下注（他的范围含 offsuit 9x 而你没有）；这些面他的范围其实更宽——应对可以相应上调跟注。',
+    deviation: {
+      low: '对 OOP 小注过度弃牌等于把位置优势白送——对手可以用最小风险赶走你。复查时分尺寸看。',
+      high: '面对大注跟注过多则是在用边缘牌接两极范围。样本少（当前库内该格薄），信号需谨慎解读。',
+    },
+    evidenceRefs: ['ev-gto-covsbtn-facebet-a99r-40bb'],
+    boundary: '唯一数值条目为 40bb 单牌面（A99r）+ nodelock 位移演示；当前样本该格仅约 20 手，偏离结论统计意义有限，优先当检查清单用。',
+  },
+  {
+    id: 'btnvsbb-raiser-riverbet',
+    street: 'river',
+    scenario: 'BTNvsBB',
+    role: 'raiser',
+    question: 'riverbet',
+    title: 'BTN 河牌下注（IP 进攻方终街）',
+    rangeStory: '河牌下注的权利仍来自范围：你对 BB 有 nuts 优势，且河牌是你最后一次变现机会——过牌后这手牌的范围优势就归零了。空白河牌不改变力量对比，你的施压权还在；惊悚河牌会重新洗牌（对手的听牌成了、你的边缘价值牌降级）。',
+    lineNotes: [
+      { line: '两街连续下注后（agg→agg）', note: '你已声明两街强度，对手跟住两次——他的范围压成中等牌和听牌转化。空白河牌价值阈值降低（第二对级也可薄价值）、诈唬选 block 他跟注段的牌；惊悚河牌先问"谁的范围被这张牌帮助"，再决定是否继续。' },
+      { line: '过牌后刺探转河（chk→agg）', note: '你的 stab 范围投机性强，第三街续注需要转牌有进展（拿到对子/听牌）或对手显示极弱。stab 后无进展仍连续三街，需要正确的诈唬比例支撑。' },
+    ],
+    streetEffect: {
+      blank: '空白河牌：价值阈值最低的一街（对手 bluff catcher 无法进步）——价值段放宽、诈唬选 blocker（block 对手顶对/跟注段）。对手过度弃牌时这是你的主要收租窗口。',
+      scary: '惊悚河牌（完成同花可能/顺子窗口）：重新定价——你的顶类可能不再够价值，对手的中等牌升级。下注需要新的理由（blocker、对手范围被锁死），超池尤其只属于你确实打到 nuts 的场合。',
+    },
+    deviation: {
+      low: '空白河牌下注偏低通常是把"可能被跟"当成了"会被跟"。你有范围优势时，河牌过牌等于宣告放弃——对手的 A-high 免费摊牌。复查时看这批手牌你的实际持牌是否多在价值段。',
+      high: '偏高常见两种：三街无脑连杆（对手从不弃牌时纯送钱），或惊悚面没有重新定价（把空白面的价值逻辑照搬到对手范围已升级的面上）。',
+    },
+    evidenceRefs: ['ev-gto-wizard-post-overbet-later-streets', 'ev-gto-wizard-nasty-rivers-oop'],
+    boundary: '「翻牌超注后转河」绑定超注前置线（机制同构、尺寸不同）；「惊悚河牌导航」为 OOP 视角（去值化机制通用、主动方策略仅结构参考）。均不做频率对照。',
+  },
+  {
+    id: 'btnvsbb-caller-riverfirst',
+    street: 'river',
+    scenario: 'BTNvsBB',
+    role: 'caller',
+    question: 'riverfirst',
+    title: 'BB 河牌首动（OOP 防守方转主动）',
+    rangeStory: '你是范围劣势方，但河牌首动权在你（OOP 先行动）。当对手显示放弃（C-bet 后转牌 check），他的范围两极化：要么 nuts 慢玩、要么放弃的空气。你的下注逻辑因此与进攻方完全不同——不是压迫，而是"抢夺+摊牌保护"：用中等牌击退他的空气、同时保留摊牌价值。',
+    lineNotes: [
+      { line: '翻牌防守→转牌过牌后（def→chk）', note: '对手两街示弱，他的空气无法在摊牌获胜。你的任意对子 stab 兼具击退与薄价值；但他的慢玩段（两极的 nuts）也存在——stab 的尺度要留有余地。' },
+      { line: '对方翻牌过牌你刺探后（chk→agg 线的河牌）', note: '你的刺探被跟住后，河牌是最后一注——对手跟注段已收窄，纯诈唬的性价比下降，偏重价值。' },
+    ],
+    streetEffect: {
+      blank: '空白河牌：对手范围没变，你的抢夺窗口有效；中等牌（中对、弱顶对）是 stab 主力——它们 beat 空气、输给价值段，下注让两者都按你要的方式行动。',
+      scary: '惊悚河牌：先评估"这张牌帮了谁"——它可能把对手的垃圾升级成怪兽（完成听牌），你的 stab 突然撞上价值段；也可能锁死他的范围（你持 block 牌）。惊悚面 stab 的门槛显著高于空白面。',
+    },
+    deviation: {
+      low: '示弱对手面前 stab 偏低，是把"我范围弱"当成了"我不能打"——对手的放弃范围（空气）正等你来抢。复查时看对手这条线上的摊牌频率。',
+      high: '偏高的问题通常是对手类型：遇到会 check-raise 反击或慢玩 nuts 的对手，stab 撞墙。复查时先看这条线上对手的加注/慢玩记录，再决定是否收刀。',
+    },
+    evidenceRefs: ['ev-gto-wizard-bvb-xcx-river', 'ev-gto-wizard-nasty-rivers-oop'],
+    boundary: '「BvB check-call 转河」讲的是 SB（equity 优势方）的转河——位置与范围方向与你（BB 劣势方）相反，只有"示弱→抢夺"的结构逻辑可参考，频率不可搬；「惊悚河牌导航」OOP 视角可参考去值化机制。',
+  },
+  {
+    id: 'sbvsbb-raiser-riverdual',
+    street: 'river',
+    scenario: 'SBvsBB',
+    role: 'raiser',
+    question: 'riverdual',
+    title: 'SB 河牌决策（OOP 进攻方：下注与面对下注）',
+    rangeStory: 'SB 对 BB 的优势是全场景里最微弱的——你略强的范围换来的是整手牌无位置。河牌的牌理基调因此是克制：小注为主、两极下注受限、对手跟注范围比你想象的宽。你的下注多数时候是"用小注收薄价值或挡住刺探"，不是 BTN 式压迫。',
+    lineNotes: [
+      { line: '下注决策（首动）', note: 'B-X-B 线（对手翻牌跟注、转牌 check）里对手几乎总有 equity 优势——你的河牌下注以小注为主， middling 牌在惊悚面失去价值下注资格。' },
+      { line: '面对下注（对手河牌反打）', note: '对手的河牌下注在他有位置的对抗里更两极；你的应对按"价值段/诈唬段"分界评估，惊悚面他的价值段更窄但更nut。' },
+      { line: '过牌陷阱（两花面成花河牌）', note: '来源结构：成花河牌 OOP 过牌一半以上同花设陷阱（AX 类 unblock 对手 Tx 刺探段）——check 不总是示弱。' },
+    ],
+    streetEffect: {
+      blank: '空白河牌：你的微弱优势仍在，小注薄价值+小注阻挡是主体；对手过度弃牌时频率可以上调，但大注需要真两极。',
+      scary: '惊悚河牌：你范围内的 middling 牌（中对、弱顶对）价值下注资格下降；对手范围里的成牌比例上升。这条线的下注应整体收缩，除非你确实持 nut 段或关键 blocker。',
+    },
+    deviation: {
+      low: '整体下注偏低若集中在空白面，是放弃了微弱优势的变现；但注意 SBvsBB 的正确基线本来就比 BTNvsBB 低——先对照自己两条场景的差距再下结论。',
+      high: '偏高的问题多是把 BTN 对 BB 的下注习惯平移过来。对手有位置、范围差距小，你的下注被 float 的代价比 BTN 场景高得多。',
+    },
+    evidenceRefs: ['ev-gto-wizard-bvb-xcx-river', 'ev-gto-wizard-nasty-rivers-oop', 'ev-gto-sbvsbb-cbet-directional'],
+    boundary: '「BvB check-call 转河」为 SB vs BB 场景直接对口（其线为对手翻牌刺探被跟，与你的 C-bet 线镜像同构、非同一前置线）；六深度分布为 MTT 聚合结构参考。',
+  },
+];

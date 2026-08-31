@@ -828,3 +828,66 @@ test('大批量导入模式：汇总预览、免勾选、导入全部新手牌',
   );
   expect(getRealErrors(errors)).toEqual([]);
 });
+
+// [V7.11.0 新增] 复盘牌理参考：命中 spot 的手牌展开后显示推理链卡片
+test('手牌复盘显示牌理参考卡片', async ({ page }) => {
+  const errors = captureRuntimeErrors(page);
+  await page.goto('/');
+  await page.click('[data-tab="review"]');
+  await page.click('[data-sub="session"]');
+  await page.click('#importGGBtn');
+  // 与 Radar e2e 同构的 BTN 视角手牌：Hero 开加注、对方 check-跟注，河牌 Hero 首动下注（空白河牌 Kc）
+  const block = [
+    "Poker Hand #E2E950: Hold'em No Limit ($0.02/$0.05) - 2026/06/02 21:00:00",
+    "Table 'NLH' 2-max Seat #1 is the button",
+    'Seat 1: Hero ($5.00 in chips)',
+    'Seat 2: Villain ($5.00 in chips)',
+    'Hero: posts small blind $0.02',
+    'Villain: posts big blind $0.05',
+    '*** HOLE CARDS ***',
+    'Dealt to Hero [Ks Qs]',
+    'Hero: raises $0.10 to $0.15',
+    'Villain: calls $0.10',
+    '*** FLOP *** [Ah 7d 2c]',
+    'Villain: checks',
+    'Hero: bets $0.16',
+    'Villain: calls $0.16',
+    '*** TURN *** [4s]',
+    'Villain: checks',
+    'Hero: bets $0.25',
+    'Villain: calls $0.25',
+    '*** RIVER *** [Kc]',
+    'Villain: checks',
+    'Hero: bets $0.35',
+    'Villain: calls $0.35',
+    'Hero shows [Ks Qs] (one pair)',
+    'Villain: shows [7h 7s] (two pair)',
+    '*** SHOWDOWN ***',
+    'Villain collected $1.42 from pot',
+    '*** SUMMARY ***',
+    'Total pot $1.42 | Rake $0.02',
+    'Board [Ah 7d 2c 4s Kc]',
+    'Seat 2: Villain ($5.09 in chips) showed [7h 7s] and won ($1.42) with (two pair)',
+  ].join('\n');
+  await page.setInputFiles('#ggFileInput', [
+    { name: 'logic-e2e.txt', mimeType: 'text/plain', buffer: Buffer.from(block, 'utf8') },
+  ]);
+  await expect(page.locator('#ggImportList .gg-import-check')).toHaveCount(1);
+  await page.click('.gg-sel-all-btn');
+  await page.click('#ggImportSelectedBtn');
+  await expect(page.locator('[data-sub="hand"]')).toHaveClass(/subnav__btn--active/);
+
+  const firstRow = page.locator('#handBody tr[data-hand-id]').first();
+  await firstRow.locator('[data-hand-expand]').click();
+  const expandRow = page.locator('tr[id^="hand-expand-row"]').first();
+  const logicBox = expandRow.locator('.poker-logic-box');
+  await expect(logicBox).toHaveCount(1);
+  await expect(logicBox.locator('summary')).toContainText('牌理参考');
+  await expect(logicBox.locator('summary')).toContainText('空白');
+  await expect(logicBox.locator('summary')).toContainText('agg→agg');
+  await logicBox.locator('summary').click();
+  await expect(logicBox).toContainText('范围合法性');
+  await expect(logicBox).toContainText('机制参照');
+  await expect(logicBox).toContainText('边界');
+  expect(getRealErrors(errors)).toEqual([]);
+});

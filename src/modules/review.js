@@ -12,6 +12,7 @@ import { SessionClosure } from './sessionClosure.js';  // [V7.9.1 新增] 每场
 import { DecisionRadar } from './decisionRadar.js';  // [V7.9.2 新增] Decision Radar
 import { HandPicker } from './handPicker.js';  // [V6.15.0]
 import { HandReplay } from './handReplay.js';  // [V7.10.0 新增] 手牌回放（只读派生视图）
+import { PokerLogic } from './pokerLogic.js';  // [V7.11.0 新增] 复盘牌理参考（命中 spot 时显示推理链卡片）
 import { StrategyDesk } from './strategyDesk.js';  // [V7.10.1 新增] Evidence & Strategy
 import { Navigation } from './navigation.js';  // [V7.7.2]
 
@@ -2133,6 +2134,8 @@ export const Review = {
     var html = '';
     // [V7.10.0 新增] 回放容器（置于 desc 原文之前；点击「回放」时懒渲染，只读派生视图）
     html += '<div id="hand-replay-' + r.id + '" class="hand-replay-slot" style="display:none"></div>';
+    // [V7.11.0 新增] 牌理参考（命中已定义 spot 时显示推理链卡片；未命中返回空串）
+    html += PokerLogic.renderForHand(r);
     // 手牌详情
     html += '<div style="color:#cbd5e1;white-space:pre-wrap;margin-bottom:6px">' + Utils.escapeHtml(r.desc || '--') + '</div>';
     // 错误 + 反思
