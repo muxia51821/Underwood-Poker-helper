@@ -228,3 +228,13 @@ Quiz 域                          概念 + DDoG 题型原型(只记录,另行设
 - CH11（11 课）：Fundamental Poker Metrics(1156-1159)、Basic GTO Math(1160-1163)、Indifference and Mixed Strategies(1164-1167)、Understanding Range Shapes Postflop(1229-1233)、Why does donking matter?(1200-1203)、Depolarized Turn Probes(1204-1208)、Trapping top set(1212-1216)、Showdown or Shove?(1272-1275)、Block-calling the river(1281-1284)、Why check back good draws?(1242-1246)、3-betting passive players(1178-1181)
 
 合计约 85 课已提炼（占全书 334 课的 ~25%），覆盖 8 张 spot 卡全部格子与概念骨干；其余课程按需在后续批次点选。
+
+## 8. V7.11.3 补充台账（扩量后）
+
+V7.11.3 概念库扩至 34 条后，新增提炼课程：CH1 Implied odds(33-35)、Nut Potential(55-56)、Pure mistakes vs frequency mistakes(72-73)、Targeting hand classes(59-61)、Finding the thresholds(65-66)、A hand in a vacuum(17-18)、What does GTO aim to achieve(26-27)；CH2 Linear vs Polarized 3-betting(110-113)；CH5 Solver noise(410-412)、How to interpret solver accuracy(436-439)、Clairvoyant Defense(420-424)、Understanding ICM(444-447)、Risk Premium(481-484)、MDF facing draws(432-435)；CH11 3-betting passive players(1178-1181)、Why check back good draws(1242-1246)。合计约 101 课已精读（占全书 ~30%）。
+
+## 9. V7.11.4 补充台账（概念库 46 条）
+
+新增提炼课程：CH1 Mixed strategies(43-45)；CH2 What's the point of mixing(143-146)、C-bet sizing in 3-bet pots(97-99)、Exploiting value heavy players(118-120)、Exploiting trappy players(125-128)、Effects of stack depth(168-170)；CH3 Which hands like going multiway(193-195)；CH4 Double overbet diligence(357-359)、Delayed c-betting limped pots(354-356)；CH5 MDF facing bluffs with showdown value(428-431)、Overbetting pocket pairs(490-493)、Strategic Domination(507-511)、Push-folding EV(457-460)；CH6 Equity realization and stack depth(645-647)；CH8 Squeezing out of position(825-829)、Owning draws with big turn bets(879-882)；CH9 Delay c-betting OOP in 3BPs(920-923)；CH10 4-bet shoving in different rake structures(1084-1086)、C-betting semi-connected boards in 3BPs(1063-1066)；CH11 C-betting in 3BPs(1173-1177)、The more the merrier(1187-1190)、Opening in a cash game(1195-1199)、How stack depth impacts strategy(1251-1254)。
+
+累计约 117 课已精读（占全书 ~35%），概念库 46 条（自测题 35 道）、spot 应用 44 条。Quiz 训练器升级为交互判分，掌握度存 `pa_concept_quiz_mastery`。

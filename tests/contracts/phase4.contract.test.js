@@ -320,7 +320,7 @@ test('v7.11.0 spot matcher routes hands to logic cards by role and street', () =
   assert.equal(riverThreat(['Ah', '7d', '2c', '8c'], 'Kh').scary, false);
 });
 
-test('v7.11.2 poker logic seeds assemble from resolvable applications, concepts and evidence', () => {
+test('v7.11.4 poker logic seeds assemble from resolvable applications, concepts and evidence', () => {
   assert.equal(POKER_LOGIC_SEED_VERSION, 'v3');
   assert.equal(POKER_LOGIC_SEEDS.length, 8);
   const ids = POKER_LOGIC_SEEDS.map((s) => s.id);
@@ -360,9 +360,9 @@ test('v7.11.2 poker logic seeds assemble from resolvable applications, concepts 
   assert.equal(POKER_LOGIC_SEEDS.filter((s) => s.street === 'flop').length, 5);
 });
 
-test('v7.11.3 concept seeds carry teaching dimensions with source discipline', () => {
-  assert.equal(CONCEPT_SEED_VERSION, 'v3');
-  assert.equal(CONCEPT_SEEDS.length, 34);
+test('v7.11.4 concept seeds carry teaching dimensions with source discipline', () => {
+  assert.equal(CONCEPT_SEED_VERSION, 'v4');
+  assert.equal(CONCEPT_SEEDS.length, 46);
   const ids = CONCEPT_SEEDS.map((c) => c.id);
   assert.equal(new Set(ids).size, ids.length, 'concept ids must be unique');
   const cardIds = new Set(POKER_LOGIC_SEEDS.map((s) => s.id));
@@ -438,8 +438,8 @@ test('v7.11.2 spot applications are spot-scoped with provenance', () => {
   });
 });
 
-test('v7.11.3 concept quiz items derive from selfCheck with valid answers', () => {
-  assert.equal(CONCEPT_QUIZ_VERSION, 1);
+test('v7.11.4 concept quiz items derive from selfCheck with valid answers', () => {
+  assert.equal(CONCEPT_QUIZ_VERSION, 2);
   const items = ConceptQuiz.getItems();
   const selfCheckCount = CONCEPT_SEEDS.filter((c) => c.selfCheck && c.selfCheck.question).length;
   assert.equal(items.length, selfCheckCount, 'one quiz item per selfCheck-bearing concept');
