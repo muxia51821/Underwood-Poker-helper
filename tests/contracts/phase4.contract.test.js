@@ -367,7 +367,7 @@ test('v7.11.4 concept seeds carry teaching dimensions with source discipline', (
   assert.equal(new Set(ids).size, ids.length, 'concept ids must be unique');
   const cardIds = new Set(POKER_LOGIC_SEEDS.map((s) => s.id));
   const clusters = new Set(['basic-math', 'calibration', 'equity-distribution', 'range-construction', 'defensive']);
-  const extractions = new Set(['正文核验', '文章表格直读', '正文核验+文章表格直读', '图像复核（留待）']);
+  const extractions = new Set(['正文核验', '文章表格直读', '正文核验+文章表格直读', '图像复核', '图像复核（留待）']);
   const hasSource = (ref) => ref && ref.lesson && (
     (ref.kind === 'ddog' && ref.chapter && ref.readerPages) ||
     (ref.kind === 'gwblog' && ref.url)
