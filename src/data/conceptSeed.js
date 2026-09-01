@@ -899,7 +899,7 @@ export var CONCEPT_SEEDS = [
       options: ['为了保持不可被利用', '不同范围部分受益于不同尺寸或动作', '为了获得更多 EV', '为了变得更难对付'],
       answer: '为了保持不可被利用',
       answerNote: '主要目的是不可被利用；"不同范围部分受益于不同尺寸/动作"同样成立（书给两个正确答案）。混合不赚 EV——混合动作对 GTO 对手 EV 本就相同。',
-      sourceRef: L('What is the point of mixing', 2, '143-146'),
+      sourceRef: L("What's the point of mixing?", 2, '143-146'),
     },
     relatedSpotIds: [],
     relatedConceptIds: ['concept-indifference', 'concept-pure-vs-frequency-mistakes'],

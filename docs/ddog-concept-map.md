@@ -161,12 +161,18 @@ CH2 扉页起的规则(每课首页 = 题目)意味着 CH2-CH11 的每课都可�
   7. 反直觉数值——Where do pot odds and MDF meet?(Φ≈162%)、Deepstack triple barrel math(由 4.5% flush 推最终 show-down 占比)。
 - 解析页惯用结构:先给结论 → 手算/solver 图证据 → 推广的 heuristics("何时适用/何时不适用")——与概念种子"机制 + 边界"结构天然对齐。
 
-## 7. 下一步(建议顺序)
+## 7. 状态与下一步（2026-09-01 更新）
 
-1. 木下裁决第 5 节 D1-D7(尤其 D1 概念词汇、D4 出处主次)。
-2. 概念种子 schema 设计(含 D2 的"误解"维度、D6 的 applicability 边界、与 evidencePacks 的引用关系),过契约测试。
-3. 按 D7 优先级提炼首批概念(每条回到课程全文核验数字,标注提取方式与页码)。
-4. 重写 `src/data/pokerLogicSeed.js` 为概念引用组装(四步框架导航)。
+**已完成**：D1-D7 已裁决（D1-D4 全部认可）；概念层已实施并发布至 master——V7.11.0（牌理参考框架）→ V7.11.1-V7.11.2（概念种子+DDoG 教学维度+spot 应用层）→ V7.11.3-V7.11.7（扩量至 52 概念/45 应用/52 道自测题+交互判分+错题集+图像复核收尾）；利用率台账见附录 B。
+
+**下一步（已批准的分批计划）**：
+1. 批次 A（V7.11.8）：CH11 剩余 14 课精读提炼 + 9 课标注收尾（见附录 B.3/B.4）
+2. 批次 B（V7.11.9）：CH2 剩余 19 课升级全文精读 → selfCheck 数组化（每概念 1-2 题）
+3. 批次 C（V7.11.10）：CH7 深度维度选 9 课 → 深度概念/对比 + spot 卡深度应用
+4. 批次 D/E（按需/缓）：场景课按 spot 卡需要点选；CH1 软技能归个人 OS 域
+
+质量纪律：每课全文精读、数字核验、图像复核强制、遗留"留待"当批清零、治理同步（见批次计划）。
+
 ## 附录 A:全书 334 课完整清单
 
 > 页码为 PDF 阅读器页码(书页印刷页码 = 阅读器页码 − 1)。课程标题保留书签原文(含原书笔误,如 Freerolling staights)。
@@ -560,3 +566,86 @@ CH2 扉页起的规则(每课首页 = 题目)意味着 CH2-CH11 的每课都可�
 | 29 | Trapping the Turn OOP | 1276–1280 |
 | 30 | Block-calling the river | 1281–1284 |
 | 31 | Summary | 1285–1290 |
+
+
+## 附录 B：利用率台账（2026-09-01 对照）
+
+> 方法：脚本对照三方数据——①书签大纲全 334 课（附录 A）；②`conceptSeed.js` 全部 sourceRef（L/B 引用）；③五次全文精读导出（pilot/v2/v3/v4/v5）。标题经规范化匹配（去符号小写、双向包含）；个别课因引用时标题笔误（如 What's 写作 What is）可能误计，批次执行时顺带修正。
+
+### B.0 总账
+
+| 状态 | 课数 | 占比 |
+|------|------|------|
+| 已提炼（sourceRef 进入种子） | 116 | 35% |
+| 已读未提炼（全文在握，内容多数间接已用） | 9 | 3% |
+| 未读 | 209 | 63% |
+| 合计 | 334 | 100% |
+
+### B.1 分章对照
+
+| 章 | 总数 | 已提炼 | 已读未用 | 未读 |
+|----|------|--------|----------|------|
+| CH1 Fundamentals | 30 | 18 | 1 | 11 |
+| CH2 Quizzes | 31 | 12 | 0 | 19 |
+| CH3 Spots | 31 | 3 | 0 | 28 |
+| CH4 Streets | 28 | 2 | 1 | 25 |
+| CH5 Advanced | 31 | 19 | 0 | 12 |
+| CH6 Equity | 30 | 18 | 1 | 11 |
+| CH7 Stack Depth | 30 | 1 | 0 | 29 |
+| CH8 Tactics | 31 | 16 | 1 | 14 |
+| CH9 Offense vs Defense | 31 | 11 | 1 | 19 |
+| CH10 Formats | 30 | 4 | 0 | 26 |
+| CH11 All Stars | 31 | 12 | 4 | 15 |
+| **合计** | **334** | **116** | **9** | **209** |
+
+### B.2 分层解读（缺口的性质不等）
+
+1. **概念层已基本齐**：CH1（18/30，未读 11 课中 10 课为软技能/学习方法，归个人 OS 域）、CH5（19/31，剩深水区：Straddle/[0,1] 博弈/freeroll 顺子等）、CH6（18/30，剩 Guess-the-line 系列应用课）。四大 equity 分析技术 + 基础数学 + 校准簇已就位。
+2. **最大未利用块 = 场景课**：CH3/4/7/10 共 120 课只用 10 课。**CH7 深度维度最薄（1/30）**——8 张 spot 卡全是 100bb 语境。场景课的价值是给 spot 卡补应用条目 + Quiz 场景题素材，按需取用不全量搬。
+3. **CH2 剩 19 道 quiz = Quiz 域现成题库**：每道对应已有概念，题型原型齐全（EV 手算/找谎言/找隐藏假设/反直觉数值/计算题）。
+4. **CH11 剩 15 课**：作者钦点"最重要清单"的未读半（含 Summary 非课）。
+
+### B.3 附录 B1：9 课"已读未提炼"处置表
+
+| 课 | 处置 |
+|----|------|
+| Using filters to examine blockers | 已间接用于 concept-blockers 机制文——补正式 sourceRef |
+| Understanding Range Shapes Postflop | 已间接用于 concept-range-morphology 机制文（配对已图像复核）——补 sourceRef |
+| Facing river check-raises on flush boards | 已间接用于 concept-mdf-boundary 机制文（幽灵组合例）——补 sourceRef |
+| C-betting in 3BPs | 已间接用于 concept-cbet-3bp 机制文——补 sourceRef |
+| 3-betting passive players | 已间接用于 concept-3bet-construction 机制文——补 sourceRef |
+| Delayed c-betting limped pots | 已间接用于 concept-delayed-cbet 机制文——补 sourceRef |
+| Equity realization and stack depth | 已间接用于 concept-stack-depth 阈值——补 sourceRef |
+| Showdown or Shove? | 部分用于 app-btn6-lines-2——补引用 |
+| Probing OOP on Ace high boards | **真未用**——"跨所有转牌超池为主用 probe 尺寸"写入 concept-probe 对比 |
+
+### B.4 附录 B2：209 课未读清单（按章，取用索引）
+
+**CH1（11，软技能/方法为主）**：Utilizing the glossary、Low-hanging fruit、Tilt management、Find your game - MTT, Spins or cash?、Where to start、How to warm up before a session、GTO Study tip: Focus on one spot、Bankroll management、The power of incremental improvement、GTO Study tip: Reviewing sessions、Understanding variance（方差——唯一漏的牌理相关课，批次 A 顺手收）
+
+**CH2（19，Quiz 题库素材，批次 B）**：Guess the hand、Which set has the most EV?、Over-realizing equity、Rangebetting UTG、Valuing hands on monotone flops、What does EV really mean?、Fundamental laws in poker、Range vs Range、Perfect polarity、Check-raise barreling、When to donk the turn?、What's the point of mixing?、Calculating Expected Value、Scared underpairs、Angry underpairs、Prisoners dilemma、Infinite quads、What's the difference?、Explosive flops
+
+**CH3（28，场景课）**：XR Shoving scary boards、When to start push-folding?、3-bet shoving pocket pairs、Valuing hands in 4-bet pots、Stacking off in spins、Checking back the flop HU、No limp for you!、Donking in 3-bet pots on low boards、Facing a 3-bet UTG、XR shoving 3-bet pots、Delayed c-bet OOP on wet boards、Cold 4-bet flop trends、Donk shoving rivers、Cbet trends in HU 3-bet pots、Squeezing short stacks in spins、Belligerent Big Blind、Finding the value line in checked down pots、Checking down with strong hands、Donking HU 4-bet pots、XR shoving flop in spins、Optimizing AK、Comparing MTT and Cash、Defending against overbet flops in HU pots、Block bet bonanza、Blocking the missed flush draw、Comparing flush draw blockers、Comparing blockers in HU 3-bet pots、C-betting Sets vs Overpairs
+
+**CH4（25，场景课）**：3-bet sizing with half-stacks、Opening pockets from EP、Adjusting RFI to short stacked、Overcalling the deep stacked squeeze、Complicating your short stacked RFI strategy、Where does EV come from?、Facing the cold 4-bet、Baby flush draws on mono flops、C-betting spins、Defending small pairs OOP、C-Betting low connected boards、Defending the BB deepstacked、Pricing and defense in 3-bet pots、Facing overbets HU、Calling down BvB、XR Barreling paired boards、Double donk diss、Turn strategy on trip boards、Explosive turn probes、Checking back the river、Defending the river block in passive pots、Double-paired river jams、Triple barrel defense in 3BP、Bluff-catching 4BP river shoves、How to play chop boards?
+
+**CH5（12，深水区概念）**：Bluffing the calling station、Understanding variance、Which flop is more likely?、Turning made hands into bluffs、Straddle Theory、Shipping shortstacked flops HU、4bet shoving 100bb deep、Freerolling staights、Risk of Ruin、Kelly Criterion、AKQ Game Block-bet、[0, 1] Game
+
+**CH6（11，应用课）**：Daily Dose of Memes、Guess the line! #2、BvB Broadway Bets、Short stack 3BP c-bets on wet board、Constructing HU 3-bets、Constructing Spin check-backs、Block-betting scary rivers in 4BP、Guess the move! #1、Guess the move! #2、Guess the move! #3、Realizing Equity on Broadway Boards
+
+**CH7（29，深度维度，批次 C 素材）**：Limping premiums、Why shove suited connectors?、Building short-stack turn shoves、Countering range-bets in limped pots、Checking back turns with flush draws、Shoving draws on the flop、Calling down medium made hands、Evaluating pairs on dangerous boards、3-betting flops in shortstack pots、Spin flop c-bet strategies、Midstack HU SnG turn probes、Evaluating midstack iso flops、OOP bet construction on trip rivers、Evaluating turn cards in short 3BP、Trapping the turn BvB、3-betting HU midstacks、Defending the straddle on wet flops、2nd barrel Bluff-catching in midstack 3BP、Turning the tables、Deepstack MTT heuristics, UTG vs BB、So many flush draws to choose from!、HU 3BP flop heuristics、Static bluff-catchers in deep 3BP、Defending the XR turn barrel、Defending the probe OB in 3BP、5-Flush deepstack river 3-bets、Deepstack value shove thresholds、Deepstack triple barrel math、The fearless fast-play
+
+**CH8（14，战术课）**：Turn barreling after small flop cbet、Double-paired rivers、Facing turn overbets、Finding donk bets against tight ranges、Flatting SB、Finding check-raises on dry ace flops、Bet Check Bet on connected runouts、Shoving shortstacks for your tournament life、Finding bluffs on 4-flush runouts、3-betting flops、Barreling turns in 3-bet pots、Triple barreling as the IP PFC in 3BPs、Check-raising vs delay c-bets、Check-raising for value on the flop
+
+**CH9（19，攻防课）**：Limp triple barrel、Half-stacked check-raises on dry boards、Examining polarized ISO strategies、Check-raise barreling in 3BPs、Donk Shoving in 4-Bet Pots、Barreling turns in HU 3BPs、Raising vs double-barrels、Check-raising out of the straddle、Barreling rivers after check-raising、Barreling turns in short stack 4BPs、Limp-call-donk、Defending vs double-barrels in 3BPs、Final 3 ICM scenarios、Facing double-barrels on monotone flops、Calling off short stack shoves、Defending vs c-bets in 3BPs、Defending vs c-bets with short stacks、Calling down as the OOP PFR in SRPs、Facing shoves on 5-straight boards
+
+**CH10（26，赛制课）**：It's a chop, right?!、Bluffing low pairs、C-betting after squeezing、Defending vs flop shoves at low SPRs、Check-raising flops in 3BPs、Defending vs polarized turn barrels、Range asymmetries after big c-bets、Probing the river after big c-bets、Check-raise giving up、4-bet bluffing HU、Min open or shove?、Donking out of the SB、Fast-playing top pair at low SPRS、Defending vs short stack triple barrels、Short stack turn barreling after XR、Donking out of the BB with short stacks、Limping with short stacks、Defending the BB in ICM scenarios、Constructing MTT c-bet strategies、C-betting vs an IP cold caller in MTTs、Aggressive postflop play with short stacks、Finding thin value in checked down pots、Bluff catching vs short stack triple barrel、Calling vs short stack shoves、4-betting as the chip leader、3-betting BvB as the mid stack
+
+**CH11（15，钦点清单，批次 A）**：Evaluating cold-called flop EQR、HU cash shortstack limps、Defending against polar turn barrels、Hero calling triple barrels in 3BP、Final Table on the BTN、Taking your shot、The Double-Plateau Distribution、Overperformance、Shortstack Triple Barrel Math、Overbetting the Turn、Countering Value-Heavy 3-bets、Bluff-Catching Triple Barrels、Constructing Shortstack Turn Shoves、Trapping the Turn OOP、Summary（非课）
+
+### B.5 后续批次映射
+
+- **批次 A（V7.11.8）**：CH11 剩余 14 课精读提炼 + 9 课标注收尾 + Understanding variance 顺手收
+- **批次 B（V7.11.9）**：CH2 剩余 19 课升级全文精读 → selfCheck 数组化（每概念 1-2 题）
+- **批次 C（V7.11.10）**：CH7 选 9 课（深度谱系）→ 深度概念/对比 + spot 卡深度应用
+- **批次 D/E（按需/缓）**：CH3/4/10 按 spot 卡需要点选；CH1 软技能归个人 OS 域
