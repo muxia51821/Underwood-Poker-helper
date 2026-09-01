@@ -6,8 +6,9 @@
 // readerPages 为 PDF 阅读器页码（书页印刷页码 = 阅读器页码 - 1）。
 // extraction 标注沿用读数规范：正文核验 / 文章表格直读 / 正文核验+文章表格直读 / 图像复核（2026-09-01 起遗留"留待"清零，新数字必须当批核验）。
 // 全书 334 课作为同一本参考源：典型 = 本库已提炼条目；全本 = docs/ddog-concept-map.md 附录 A 页码台账。
+// [V7.11.12 新增] 参考源纪律（木下裁决）：只讲牌理，牌例必须典型；对手行为驱动偏离（多 call→少诈唬多价值、多弃→多诈唬；小频率偏差可引起大策略偏移），不做"GTO 鱼"。NevirPoker 为待核验扩展参考源（需木下提供频道/视频链接后逐条核验再入种子，与 GW 博客 URL 同纪律）。
 // 本文件为静态只读知识，直接 import，不入 localStorage。schema 见 docs/concept-seed-schema.md。
-export var CONCEPT_SEED_VERSION = 'v10';
+export var CONCEPT_SEED_VERSION = 'v11';
 
 // sourceRef 简写：DDoG 课程（默认 extraction 正文核验）
 function L(lesson, chapter, readerPages, extraction) {
@@ -801,6 +802,32 @@ export var CONCEPT_SEEDS = [
     relatedConceptIds: ['concept-mdf-boundary', 'concept-pure-vs-frequency-mistakes'],
     relatedSources: [],
     sourceRef: L('What does GTO aim to achieve', 1, '26-27'),
+    seedRevision: 1,
+  },
+  {
+    id: 'concept-exploit-adjustments',
+    title: '剥削调整（对手模型 → 偏离方向）',
+    cluster: 'calibration',
+    mechanism: 'GTO 是起点不是终点：对手行为偏离 GTO 的方向决定你的调整方向——对方多 call（哪怕只偏一点）→ 诈唬变亏、价值变肥，价值加注变多、诈唬变少；对方多弃牌 → 诈唬更赚，任意两张的诈唬都接近 +EV。关键感受：极小的对手频率偏差可以引起你策略的巨大偏移（对方从不 XR 诈唬，你的薄价值就从"check 保摊牌"变成"bet-fold 求值"——一个小变化解锁一整层策略）。GTO 频率是你的出发点与止损线，不是实战目标。',
+    misconception: '把 GTO 频率当目标抄进实战（"GTO 鱼"）：对手明显偏离时仍按基线混合——这是把止损线当成了答案。反向错误：不建对手模型就凭感觉偏离，被对方反剥削。',
+    applicability: '通用；所有偏离解读格的底层逻辑。产品对照 Radar 个人样本时，偏离的方向由对手行为证据决定，不由 GTO 频率表决定。',
+    contrastExamples: [
+      { text: '对方从不 XR 诈唬：薄价值直接 bet-fold（不再怕被诈唬打掉最好手）——对手一个习惯的移除，解锁"bet>50% equity 即可下注"的一整层策略。', sourceRef: L('Exploiting value heavy players', 2, '118-120') },
+      { text: '对方总 check-back 翻牌（trap 型）：他到转牌的范围比正常 check-back 强得多——probe 变少、打得更防御；只按"新范围 vs GTO 基线"的偏离量调整，不臆测他没表现出来的部分。', sourceRef: L('Exploiting trappy players', 2, '125-128') },
+      { text: '对方明显 under-bluff：没有 pot odds 的抓诈手直接弃，MDF 作废——pot odds 优先于一切人类简化指标。', sourceRef: L('MDF vs Pot Odds', 5, '512-516') },
+    ],
+    thresholds: [],
+    selfChecks: [{
+      question: '对手翻牌后"略微"偏向多 call（比 GTO 多跟几个百分点）。你的下注范围应该怎么调？',
+      options: ['诈唬变少、价值段变肥（薄价值更多下注）', '维持 GTO 频率不动', '诈唬变多（他 call 得多说明手弱）', '整体下注变少'],
+      answer: '诈唬变少、价值段变肥（薄价值更多下注）',
+      answerNote: '对方多 call → 你的诈唬 fold equity 下降变亏、价值注被跟时更赚。微小的偏差就足以把薄价值从 check 段挪进 bet 段——GTO 频率只是基线，偏离方向由对手行为决定。',
+      sourceRef: L('Exploiting value heavy players', 2, '118-120'),
+    }],
+    relatedSpotIds: ['btnvsbb-raiser-riverbet', 'btnvsbb-caller-riverfirst', 'sbvsbb-raiser-riverdual'],
+    relatedConceptIds: ['concept-gto-aim', 'concept-mdf-boundary', 'concept-pure-vs-frequency-mistakes'],
+    relatedSources: [],
+    sourceRef: L('Exploiting value heavy players', 2, '118-120'),
     seedRevision: 1,
   },
   {

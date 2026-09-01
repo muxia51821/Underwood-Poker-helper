@@ -361,8 +361,8 @@ test('v7.11.4 poker logic seeds assemble from resolvable applications, concepts 
 });
 
 test('v7.11.10 concept seeds carry teaching dimensions with source discipline', () => {
-  assert.equal(CONCEPT_SEED_VERSION, 'v10');
-  assert.equal(CONCEPT_SEEDS.length, 53);
+  assert.equal(CONCEPT_SEED_VERSION, 'v11');
+  assert.equal(CONCEPT_SEEDS.length, 54);
   const ids = CONCEPT_SEEDS.map((c) => c.id);
   assert.equal(new Set(ids).size, ids.length, 'concept ids must be unique');
   const cardIds = new Set(POKER_LOGIC_SEEDS.map((s) => s.id));

@@ -4,6 +4,8 @@
 
 ## 未发布
 
+- V7.11.12 剥削调整概念 + 参考源纪律（木下教学裁决落地）：新增 concept-exploit-adjustments（对手模型→偏离方向：多 call→少诈唬多价值/多弃→多诈唬/小频率偏差引起大策略偏移；误解=把 GTO 频率抄进实战成"GTO 鱼"），3 对比来自已读课程（value-heavy bet-fold 解锁、trappy probe 收缩、under-bluff 弃 MDF）+ 1 道自测题（对方微偏多 call 该怎么调）；种子头部登记参考源纪律（只讲牌理、牌例须典型、不做 GTO 鱼）并把 NevirPoker 登记为待核验扩展参考源（需木下提供链接后逐条核验，与 GW 博客 URL 同纪律）。概念 54 条、题库 70 题。
+
 - V7.11.11 批次 D + 整体质量复查：场景课按需补应用——5 课全文精读（C-Betting low connected boards 330-333/Finding thin value in checked down pots 1133-1136/It's a chop, right?! 1037-1040/Blocking the missed flush draw 278-280/Belligerent Big Blind 247-249），+1 对比（Belligerent BB：单花 3BP 的 AKQ blocker 反转超池例外）+ 3 条 spot 应用（btn1 低连张面 20% c-bet 条件、sb8 check-down 薄价值 Q-high、sb8 chop 面 rake 博弈 50NL/500NL 分层）；Blocking the missed flush draw 原则已被 unblock-bluffs 覆盖不入种子（台账记录）。质量复查：①种子遗留「图像复核（留待）」清零（头部注释更新为新数字当批核验纪律）；②全量 sourceRef 课名与书签比对——修最后一处笔误（What's the point of mixing?）；③抽样回验 4 页数值（p41 方差 70%/95%、p88 黄金比例 1.618/38%、p149 EV 7bb vs 4.95bb、p765 同花 25%/25.9%）全部与种子一致。应用 50 条、题库 69 题、累计精读 177 课（约全书 53%）。
 
 - V7.11.10 批次 C：CH7 深度维度选 9 课全文精读（30 课深库首次成规模利用），+9 处对比/阈值 + 1 道计算自测 + 2 条 spot 深度应用：implied-odds（10bb limp 极化分工：limp=弱手+价值、shove=高 equity 好 blocker；16bb combo draw 首选全下）、thin-value（短码 OOP 次对转牌全下=实现策略，被跟 39% 但否认 equity+迫过弃）、mdf-draws（combo draw 线性策略瞄 air）、trapping（BvB 40bb 顺子快慢打分野：AJs block 继续范围→call 慢打、KQ 脆弱→快打）、blockers（防守侧选不 block 对方诈唬的 FD）、bluff-catching（静态对子 77-99 弃牌时点=面对转牌 barrel）、4straight-chop-defense（5-flush 深码 chop 动态：3-bet 价值阈值降到第二大同花）、overbetting（150bb 砖河价值阈值弹性至 T9 两对）、alpha-mdf 第二题（200bb 三街连乘 18%/同花 25% 计算题）；spot 应用 +2（btn6 深度阈值、btn2 深度应对谱）。台账见 schema 文档第 14 节；累计精读 172 课（约全书 52%）。
