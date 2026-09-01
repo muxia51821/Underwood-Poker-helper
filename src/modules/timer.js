@@ -12,6 +12,9 @@ export function _setTimerGlobals(beepFn, vibrateFn, notifyFn) {
 }
 
 export const Timer = {
+  running: false,
+  paused: false,
+  remainingMs: null,
   init() {
     this.workInput = document.getElementById('workMin');
     this.breakInput = document.getElementById('breakMin');
@@ -57,6 +60,20 @@ export const Timer = {
     this.startBtn.setAttribute('aria-pressed', String(isRunning));
     this.startBtn.setAttribute('aria-label', isRunning ? '暂停计时' : '开始专注计时');
   },
+  // [V7.8.0 修复] 暂停状态保存剩余时长，不再让绝对 endTime 在暂停期间继续流逝。
+  getPhaseDurationMs() {
+    const minutes = this.phase === 'work'
+      ? parseInt(this.workInput && this.workInput.value)
+      : this.isLongBreak
+        ? parseInt(this.longBreakMin && this.longBreakMin.value)
+        : parseInt(this.breakInput && this.breakInput.value);
+    return (minutes || (this.phase === 'work' ? 25 : 2)) * 60000;
+  },
+  getRemainingMs() {
+    if (this.paused && this.remainingMs != null) return Math.max(0, this.remainingMs);
+    if (this.endTime != null) return Math.max(0, this.endTime - Date.now());
+    return this.getPhaseDurationMs();
+  },
   restoreState() {
     const state = Store.timer.get();
     if (state && state.longBreak) {
@@ -69,21 +86,39 @@ export const Timer = {
       this.longBreakMin.value = 15;
     }
     this.cycleCount = state && state.cycleCount || 0;
+    this.isLongBreak = !!(state && state.isLongBreak);
     if (this.cycleCountEl) {
       const interval = parseInt(this.longBreakInterval && this.longBreakInterval.value) || 4;
       this.cycleCountEl.textContent = this.cycleCount + '/' + interval;
     }
     this.updateLongBreakSummary();
     const now = Date.now();
+    const pausedRemaining = state && state.remainingMs != null ? Number(state.remainingMs) : NaN;
+    if (state && state.status === 'paused' && Number.isFinite(pausedRemaining) && pausedRemaining >= 0) {
+      this.phase = state.phase || 'work';
+      this.endTime = null;
+      this.remainingMs = pausedRemaining;
+      this.workStart = state.workStart ? new Date(state.workStart) : null;
+      this.breakStart = state.breakStart ? new Date(state.breakStart) : null;
+      this.running = false;
+      this.paused = true;
+      this.syncPrimaryAction();
+      this.updateDisplay();
+      return;
+    }
     if (state && state.endTime) {
       const expDur =
-        (state.phase === 'work'
-          ? parseInt(this.workInput.value)
-          : parseInt(this.breakInput.value)) * 60000;
+        (state.isLongBreak
+          ? parseInt(this.longBreakMin.value)
+          : state.phase === 'work'
+            ? parseInt(this.workInput.value)
+            : parseInt(this.breakInput.value)) * 60000;
       const maxEnd = now + expDur * 2;
       if (state.endTime > now && state.endTime < maxEnd) {
         this.phase = state.phase;
         this.endTime = state.endTime;
+        this.remainingMs = null;
+        this.paused = false;
         this.workStart = state.workStart ? new Date(state.workStart) : null;
         this.breakStart = state.breakStart ? new Date(state.breakStart) : null;
         this.interval = setInterval(() => this.tick(), 1000);
@@ -95,6 +130,8 @@ export const Timer = {
       if (state.endTime <= now && state.endTime > now - CONSTANTS.STATE_EXPIRE_MS) {
         this.phase = state.phase;
         this.endTime = state.endTime;
+        this.remainingMs = null;
+        this.paused = false;
         this.workStart = state.workStart ? new Date(state.workStart) : null;
         this.breakStart = state.breakStart ? new Date(state.breakStart) : null;
         this.running = false;
@@ -136,7 +173,12 @@ export const Timer = {
         this.phase === 'work'
           ? parseInt(this.workInput.value)
           : parseInt(this.breakInput.value);
-      this.endTime = Date.now() + m * 60000;
+      if (this.paused) {
+        this.remainingMs = m * 60000;
+        this.endTime = null;
+      } else {
+        this.endTime = Date.now() + m * 60000;
+      }
       this.updateDisplay();
       this.persistState();
     }
@@ -150,16 +192,34 @@ export const Timer = {
     Store.timer.save(
       this.running && this.endTime
         ? {
+            status: 'running',
             phase: this.phase,
             endTime: this.endTime,
+            remainingMs: null,
+            isLongBreak: !!this.isLongBreak,
+            workStart: this.workStart && this.workStart.toISOString(),
+            breakStart: this.breakStart && this.breakStart.toISOString(),
+            longBreak: lb,
+            cycleCount: this.cycleCount || 0,
+          }
+        : this.paused && this.remainingMs != null
+        ? {
+            status: 'paused',
+            phase: this.phase,
+            endTime: null,
+            remainingMs: Math.max(0, this.remainingMs),
+            isLongBreak: !!this.isLongBreak,
             workStart: this.workStart && this.workStart.toISOString(),
             breakStart: this.breakStart && this.breakStart.toISOString(),
             longBreak: lb,
             cycleCount: this.cycleCount || 0,
           }
         : {
+            status: 'idle',
             endTime: null,
             phase: 'work',
+            remainingMs: null,
+            isLongBreak: false,
             workStart: null,
             breakStart: null,
             longBreak: lb,
@@ -169,19 +229,25 @@ export const Timer = {
   },
   toggle() {
     if (this.running) {
+      this.remainingMs = this.endTime == null ? 0 : Math.max(0, this.endTime - Date.now());
       clearInterval(this.interval);
+      this.interval = null;
+      this.endTime = null;
       this.running = false;
+      this.paused = true;
       this.syncPrimaryAction();
       this.persistState();
+      this.updateDisplay();
     } else {
       if (Notification.permission === 'default') Notification.requestPermission();
-      if (!this.endTime || this.endTime <= Date.now()) {
-        const m =
-          this.phase === 'work'
-            ? parseInt(this.workInput.value)
-            : parseInt(this.breakInput.value);
-        this.endTime = Date.now() + m * 60000;
+      const now = Date.now();
+      if (this.paused && this.remainingMs != null && this.remainingMs > 0) {
+        this.endTime = now + this.remainingMs;
+      } else if (this.endTime == null || this.endTime <= now) {
+        this.endTime = now + this.getPhaseDurationMs();
       }
+      this.paused = false;
+      this.remainingMs = null;
       if (this.phase === 'work' && !this.workStart) this.workStart = new Date();
       if (this.phase === 'break' && !this.breakStart) this.breakStart = new Date();
       this.interval = setInterval(() => this.tick(), 1000);
@@ -192,9 +258,13 @@ export const Timer = {
   },
   reset() {
     clearInterval(this.interval);
+    this.interval = null;
     this.running = false;
+    this.paused = false;
     this.phase = 'work';
     this.cycleCount = 0;
+    this.isLongBreak = false;
+    this.remainingMs = null;
     this.endTime = Date.now() + parseInt(this.workInput.value) * 60000;
     this.workStart = null;
     this.breakStart = null;
@@ -203,12 +273,15 @@ export const Timer = {
     this.updateDisplay();
   },
   tick() {
+    if (!this.running || this.endTime == null) return;
     const n = Date.now();
     const r = Math.max(0, Math.ceil((this.endTime - n) / 1000));
     this.display.textContent = String(Math.floor(r / 60)).padStart(2, '0') + ':' + String(r % 60).padStart(2, '0');
     if (r <= 0) this.switchPhase();
   },
   switchPhase() {
+    this.paused = false;
+    this.remainingMs = null;
     const now = new Date();
     if (this.phase === 'work') {
       if (this.workStart)
@@ -307,9 +380,7 @@ export const Timer = {
     }
   },
   updateDisplay() {
-    const r = this.endTime
-      ? Math.max(0, Math.ceil((this.endTime - Date.now()) / 1000))
-      : 25 * 60;
+    const r = Math.max(0, Math.ceil(this.getRemainingMs() / 1000));
     this.display.textContent = String(Math.floor(r / 60)).padStart(2, '0') + ':' + String(r % 60).padStart(2, '0');
     if (this.phase === 'work') {
       this.phaseBdg.textContent = '专注中';
