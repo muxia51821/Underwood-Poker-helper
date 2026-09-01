@@ -274,3 +274,16 @@ Schema v8：selfCheck 单题 → selfChecks 数组。15 道第二题挂靠：equ
 产出：+9 对比（挂 implied-odds ×2/thin-value/mdf-draws/trapping/blockers/bluff-catching/4straight-chop-defense/overbetting）+ alpha-mdf 第二题（200bb 三街连乘计算：18%/25%）+ spot 应用 2 条（btn6 深度阈值弹性、btn2 深度应对谱 12.2/55.7 vs 15.5/48.5）。深度维度从 1/30 提升到 10/30。累计精读 172 课（约全书 52%），概念库 53 条、应用 47 条、自测 54 道（69 题库含 alpha-mdf 第二题——与 batch B 合计）。
 
 更正：题库计数——batch B 后题库 68（53+15），batch C 新增 alpha-mdf 第二题 → 69。此前第 13 节的"题库 68 题"为 batch B 时点数。
+
+## 15. V7.11.11 台账（批次 D 场景课 + 整体质量复查）
+
+新增全文精读课程：CH4 C-Betting low connected boards(330-333)；CH10 Finding thin value in checked down pots(1133-1136)、It's a chop, right?!(1037-1040)；CH3 Blocking the missed flush draw(278-280)、Belligerent Big Blind(247-249)。
+
+产出：+1 对比（concept-cbet-3bp：A♥K♥Q♦ 单花 3BP 的 blocker 反转超池例外）+ 3 条 spot 应用（app-btn1-lines-3 低连张面 20% c-bet 条件、app-sb8-lines-3 check-down 薄价值 Q-high 65-70%、app-sb8-streets-2 chop 面 rake 博弈 50NL 全下/500NL 双 check）。Blocking the missed flush draw 的"不持 block 诈唬的花色"原则已被 bluff-catching 的 unblock-bluffs 对比覆盖，不入种子（避免重复，台账留痕）。
+
+**整体质量复查结果（2026-09-01）**：
+1. 遗留标注：种子内「图像复核（留待）」清零；头部注释更新为新数字"当批核验"纪律。
+2. 课名一致性：全量 161 个 DDoG sourceRef 与书签比对，修复最后一处笔误（What's the point of mixing?）——现零不匹配。
+3. 数值抽样回验：渲染 4 页（阅读器 p41/p88/p149/p765）视觉核对——方差 70%/95%、黄金比例 1.618/38%、EV 7bb vs 4.95bb、同花 25%（图 25.9%）全部与种子一致。
+4. Schema 一致性：契约测试 64 项全绿（概念 53 条、应用 50 条、题库 69 题、id 唯一、出处必填、引用可解析、每格至少 1 应用）。
+5. 累计精读 177 课（约全书 53%）；剩余未读 148 课主要为 CH3/CH9 未点选场景课与 CH1 软技能（个人 OS 域待办）。

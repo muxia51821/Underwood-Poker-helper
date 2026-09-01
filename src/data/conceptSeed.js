@@ -4,10 +4,10 @@
 //   新增 CONCEPT_APPLICATIONS：spot × 四步 的应用条目（把概念落到本产品 8 个 spot 的格子里）。
 // 牌理内容均为权威来源提炼（附出处），禁止自写叙述冒充内容——主出处 = Daily Dose of GTO（DDoG）课程，
 // readerPages 为 PDF 阅读器页码（书页印刷页码 = 阅读器页码 - 1）。
-// extraction 标注沿用读数规范：正文核验 / 文章表格直读 / 图像复核（留待）。
+// extraction 标注沿用读数规范：正文核验 / 文章表格直读 / 正文核验+文章表格直读 / 图像复核（2026-09-01 起遗留"留待"清零，新数字必须当批核验）。
 // 全书 334 课作为同一本参考源：典型 = 本库已提炼条目；全本 = docs/ddog-concept-map.md 附录 A 页码台账。
 // 本文件为静态只读知识，直接 import，不入 localStorage。schema 见 docs/concept-seed-schema.md。
-export var CONCEPT_SEED_VERSION = 'v9';
+export var CONCEPT_SEED_VERSION = 'v10';
 
 // sourceRef 简写：DDoG 课程（默认 extraction 正文核验）
 function L(lesson, chapter, readerPages, extraction) {
@@ -1031,7 +1031,7 @@ export var CONCEPT_SEEDS = [
     misconception: '以为 solver 混合是"随机掷骰子"或"为了赚更多 EV"。混合是在 EV 相同的动作间分配频率，使对手任何偏离都无利可图。',
     applicability: '通用；解读 solver/GTO 频率的基础语义。',
     contrastExamples: [
-      { text: '同一手 K7 的六个动作：除 1916% 全下明显劣外，125%/75%/50%/33%/check 的 EV 几乎全同（4.1-4.11）——混合发生在无差别动作之间。', sourceRef: L('What is the point of mixing', 2, '143-146', '正文核验+文章表格直读') },
+      { text: '同一手 K7 的六个动作：除 1916% 全下明显劣外，125%/75%/50%/33%/check 的 EV 几乎全同（4.1-4.11）——混合发生在无差别动作之间。', sourceRef: L("What's the point of mixing?", 2, "143-146", "正文核验+文章表格直读") },
     ],
     thresholds: [],
     selfChecks: [{
@@ -1118,6 +1118,7 @@ export var CONCEPT_SEEDS = [
       { text: '同为 paired 面：SRP 小注瞄 air；3BP 大尺寸瞄中段口袋对（BTN 的 QQ/JJ/TT c-bet 最频）。', sourceRef: L('C-bet sizing in 3-bet pots', 2, '97-99') },
       { text: '3BP semi-connected 面的尺寸分裂：66% = 强顶对+超对（脆弱抢先），33% = sets+弱顶对（sets block call 段）。', sourceRef: L('C-betting semi-connected boards in 3BPs', 10, '1063-1066') },
       { text: '3BP 低 paired 面：范围里 trips 极少，BTN 用超对优势超池施压 CO 弱口袋对（QQ/JJ/TT c-bet 最频，fold out overcards）——SRP 的"paired 面小注瞄 air"在此失效。', sourceRef: L('C-betting in 3BPs', 11, '1173-1177') },
+      { text: '单花 3BP 的 blocker 反转（A♥K♥Q♦ 面）：AKQ block 双方自然同花 → 剩巨大 nut 优势对大量 draws——BB 两对类反而用 125% 大尺寸（"monotone 小注"惯例被 blocker 推翻）。', sourceRef: L('Belligerent Big Blind', 3, '247-249') },
     ],
     thresholds: [],
     selfChecks: [{
@@ -1645,4 +1646,13 @@ export var CONCEPT_APPLICATIONS = [
   { id: 'app-btn2-deviation-3', spotId: 'btnvsbb-caller-facebet', step: 'deviation',
     text: '深度越深，BB 对 33% 翻牌注 call 越多、raise 越少（50bb: 15.5/48.5 vs 200bb: 12.2/55.7，文章表格直读）——implied odds 放大，但 XR 门槛升到更强 nuts。',
     conceptIds: ['concept-stack-depth'], sourceRef: L('How stack depth impacts strategy', 11, '1251-1254', '正文核验+文章表格直读') },
+  { id: 'app-btn1-lines-3', spotId: 'btnvsbb-raiser-cbet', step: 'lines',
+    text: '低连张面（543 类）的 c-bet 尺寸取决于对方有没有 donk 范围：BB 简化策略（从不 donk）时 BTN 只 c-bet 20%——面利 BB 且对方不送权重，c-bet 要收敛。',
+    conceptIds: ['concept-range-bet'], sourceRef: L('C-Betting low connected boards', 4, '330-333') },
+  { id: 'app-sb8-lines-3', spotId: 'sbvsbb-raiser-riverdual', step: 'lines',
+    text: '全 check-down 后的薄价值 block（74742 双paired 面 10bb）：Q-high 有 65-70% equity 即可 block 求值——对方此前已 bet 掉多数 A-high+，薄价值阈值由对方剩余跟注范围（弱到 J-high）决定。',
+    conceptIds: ['concept-thin-value', 'concept-block-bet'], sourceRef: L('Finding thin value in checked down pots', 10, '1133-1136') },
+  { id: 'app-sb8-streets-2', spotId: 'sbvsbb-raiser-riverdual', step: 'streets',
+    text: 'chop 面 rake 博弈（AKQJT chop 面，limped 面机制迁移）：50NL（cap 4bb）SB 全下 100% 逼对方弃 chop（跟注=各付 2bb rake、-1bb EV）；500NL（cap 0.6bb）双方 check 100%——rake 结构直接改写 chop 面策略。',
+    conceptIds: ['concept-rake-impact'], sourceRef: L("It's a chop, right?!", 10, '1037-1040') },
 ];
