@@ -4,6 +4,8 @@
 
 ## 未发布
 
+- V7.11.9 批次 B：概念自测多题制——schema v8（`selfCheck` 单题 → `selfChecks` 数组，53 条概念全量迁移）；CH2 剩余 18 课全部升级全文精读后新增 15 道第二题（题库 53 → 68）+ 4 处对比（monotone 实现规律/弃牌权益不均质/几何式 54%×3 街/shortstack TT shove）——覆盖 EV 手算（分支×概率：check 7bb vs bet 4.95bb）、rake 分层（50NL flat/500NL raise 弱占优）、找隐藏假设（对方不打固定策略）、找定律（pot odds 唯一恒真）、极化极值（quads 也 range-check）、几何尺寸（SPR4 极化 54%）等 DDoG 题型原型；conceptQuiz.getItems 展平（首题 id=概念 id 兼容旧掌握度/错题数据，第二题起 = 概念id#2，`CONCEPT_QUIZ_VERSION` 4）；pokerLogic.js 渲染多题折叠块。契约测试：selfChecks 数组校验、题库数=展平数、错题簿逻辑（v4）。
+
 - V7.11.8 批次 A：CH11 All Stars 钦点清单收尾——剩余 14 课全文精读提炼，+17 处对比/阈值与 1 条新概念：equity-realization（冷跟面 AQ 最差 EQR/76s 超实现 AK 欠实现）、board-distribution-shapes（双平台=paired+高张）、bluff-catching 三连（极化转牌注优选 53s 类 outdraw 手、33 不 block 诈唬、纯抓诈手严格定义 vs value-beater）、alpha-mdf（跨街 MDF 连乘：37% call-down、28/37=75% 同花稀释）、trapping（OOP set 陷阱 JJ/99 block check-back 段）、overbetting（200bb 成抽 turn 中和 nut 优势、J 保留）、3bet-construction（对抗紧小 3-bet 跟 86s/对抗 passive 更大更线性）、implied-odds（HU 短码 limp 91%→73%）、icm（FT BTN 20-40-5 最紧：翻倍+6%/出局-12%）、value-bluff-ratio（短码 TT shove 实现逻辑）、mdf-boundary/cbet-3bp/delayed-cbet/stack-depth/thin-value/probe 补 sourceRef；新增 concept-variance-basics（方差与样本量：1 万手 70% 领先/10 万手 95%，文章表格直读）。台账见 `docs/concept-seed-schema.md` 与 map 附录 B；累计精读 145 课（约全书 43%）。
 
 - V7.11.7 概念自测题库全量覆盖：52 条概念每条 1 道书源自测题（40 → 52，新增 pot odds 门槛计算、形态配对、抓诈唬 pot odds、combo EQR、implied odds 场景、纯/频率错误、尺寸瞄准、阈值三问、手牌无真空、GTO 目标、solver 噪声、range-bet 例外）——全部提炼自已全文精读课程，quiz-first 全覆盖；`CONCEPT_SEED_VERSION` v6；契约测试同步（v6/52 条/52 题自测）。

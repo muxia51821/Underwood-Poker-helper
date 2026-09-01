@@ -361,7 +361,7 @@ test('v7.11.4 poker logic seeds assemble from resolvable applications, concepts 
 });
 
 test('v7.11.8 concept seeds carry teaching dimensions with source discipline', () => {
-  assert.equal(CONCEPT_SEED_VERSION, 'v7');
+  assert.equal(CONCEPT_SEED_VERSION, 'v8');
   assert.equal(CONCEPT_SEEDS.length, 53);
   const ids = CONCEPT_SEEDS.map((c) => c.id);
   assert.equal(new Set(ids).size, ids.length, 'concept ids must be unique');
@@ -390,11 +390,14 @@ test('v7.11.8 concept seeds carry teaching dimensions with source discipline', (
       assert.ok(t.text, c.id + ' threshold ' + i + ' needs text');
       if (t.sourceRef) assert.ok(hasSource(t.sourceRef), c.id + ' threshold ' + i + ' sourceRef malformed');
     });
-    if (c.selfCheck) {
-      assert.ok(c.selfCheck.question, c.id + ' selfCheck needs question');
-      assert.ok(Array.isArray(c.selfCheck.options) && c.selfCheck.options.length >= 2, c.id + ' selfCheck needs options');
-      assert.ok((c.selfCheck.options || []).includes(c.selfCheck.answer), c.id + ' selfCheck answer must be one of options');
-      assert.ok(hasSource(c.selfCheck.sourceRef), c.id + ' selfCheck needs sourceRef');
+    if (c.selfChecks) {
+      assert.ok(Array.isArray(c.selfChecks) && c.selfChecks.length >= 1, c.id + ' selfChecks needs array');
+      c.selfChecks.forEach((sc, si) => {
+        assert.ok(sc.question, c.id + ' selfCheck ' + si + ' needs question');
+        assert.ok(Array.isArray(sc.options) && sc.options.length >= 2, c.id + ' selfCheck ' + si + ' needs options');
+        assert.ok((sc.options || []).includes(sc.answer), c.id + ' selfCheck ' + si + ' answer must be one of options');
+        assert.ok(hasSource(sc.sourceRef), c.id + ' selfCheck ' + si + ' needs sourceRef');
+      });
     }
     c.relatedSpotIds.forEach((sid) => assert.ok(cardIds.has(sid), c.id + ' references unknown spot ' + sid));
     c.relatedConceptIds.forEach((rid) => assert.ok(ids.includes(rid), c.id + ' references unknown related concept ' + rid));
@@ -406,7 +409,7 @@ test('v7.11.8 concept seeds carry teaching dimensions with source discipline', (
     'equity distribution vocabulary required',
   );
   // 教学维度覆盖广度：自测题与对比例是主要形态，至少 2/3 的概念具备其一
-  const withTeaching = CONCEPT_SEEDS.filter((c) => c.selfCheck || (c.contrastExamples || []).length).length;
+  const withTeaching = CONCEPT_SEEDS.filter((c) => (c.selfChecks || []).length || (c.contrastExamples || []).length).length;
   assert.ok(withTeaching >= Math.ceil(CONCEPT_SEEDS.length * 2 / 3), 'teaching dimensions must cover most concepts');
 });
 
@@ -438,11 +441,11 @@ test('v7.11.2 spot applications are spot-scoped with provenance', () => {
   });
 });
 
-test('v7.11.8 concept quiz items derive from selfCheck with valid answers', () => {
-  assert.equal(CONCEPT_QUIZ_VERSION, 3);
+test('v7.11.9 concept quiz items derive from selfChecks with valid answers', () => {
+  assert.equal(CONCEPT_QUIZ_VERSION, 4);
   const items = ConceptQuiz.getItems();
-  const selfCheckCount = CONCEPT_SEEDS.filter((c) => c.selfCheck && c.selfCheck.question).length;
-  assert.equal(items.length, selfCheckCount, 'one quiz item per selfCheck-bearing concept');
+  const flatCount = CONCEPT_SEEDS.reduce((n, c) => n + (c.selfChecks || []).length, 0);
+  assert.equal(items.length, flatCount, 'one quiz item per selfCheck entry (flattened)');
   assert.ok(items.length >= 10, 'quiz bank must be non-trivial');
   items.forEach((it) => {
     assert.ok(it.question, it.id + ' needs question');
@@ -457,7 +460,7 @@ test('v7.11.8 concept quiz items derive from selfCheck with valid answers', () =
 });
 
 test('v7.11.6 concept quiz error book records, dedupes and clears', () => {
-  assert.equal(CONCEPT_QUIZ_VERSION, 3);
+  assert.equal(CONCEPT_QUIZ_VERSION, 4);
   ConceptQuiz.clearErrors();
   const items = ConceptQuiz.getItems();
   const it = items[0];

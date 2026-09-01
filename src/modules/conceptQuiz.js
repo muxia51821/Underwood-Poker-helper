@@ -8,7 +8,7 @@
 import { Utils } from '../utils.js';
 import { CONCEPT_SEEDS } from '../data/conceptSeed.js';
 
-export var CONCEPT_QUIZ_VERSION = 3;
+export var CONCEPT_QUIZ_VERSION = 4;
 
 var MASTERY_KEY = 'pa_concept_quiz_mastery';
 var ERRORS_KEY = 'pa_concept_quiz_errors';
@@ -43,20 +43,22 @@ function _saveErrors(list) {
 
 export var ConceptQuiz = {
   // 题库：确定性排序（cluster + id），每题 = 概念种子的 selfCheck
+  // [V7.11.9 修改] selfChecks 数组展平：首题 id = 概念 id（兼容旧掌握度/错题数据），第二题起 = 概念id#2
   getItems: function () {
     return CONCEPT_SEEDS
-      .filter(function (c) { return c.selfCheck && c.selfCheck.question; })
-      .map(function (c) {
-        return {
-          id: c.id,
-          title: c.title,
-          cluster: c.cluster,
-          question: c.selfCheck.question,
-          options: c.selfCheck.options,
-          answer: c.selfCheck.answer,
-          answerNote: c.selfCheck.answerNote,
-          sourceRef: c.selfCheck.sourceRef,
-        };
+      .flatMap(function (c) {
+        return (c.selfChecks || []).map(function (sc, i) {
+          return {
+            id: i === 0 ? c.id : c.id + '#' + (i + 1),
+            title: c.title,
+            cluster: c.cluster,
+            question: sc.question,
+            options: sc.options,
+            answer: sc.answer,
+            answerNote: sc.answerNote,
+            sourceRef: sc.sourceRef,
+          };
+        });
       })
       .sort(function (a, b) { return (a.cluster + '|' + a.id).localeCompare(b.cluster + '|' + b.id); });
   },

@@ -7,7 +7,7 @@
 // extraction 标注沿用读数规范：正文核验 / 文章表格直读 / 图像复核（留待）。
 // 全书 334 课作为同一本参考源：典型 = 本库已提炼条目；全本 = docs/ddog-concept-map.md 附录 A 页码台账。
 // 本文件为静态只读知识，直接 import，不入 localStorage。schema 见 docs/concept-seed-schema.md。
-export var CONCEPT_SEED_VERSION = 'v7';
+export var CONCEPT_SEED_VERSION = 'v8';
 
 // sourceRef 简写：DDoG 课程（默认 extraction 正文核验）
 function L(lesson, chapter, readerPages, extraction) {
@@ -34,13 +34,13 @@ export var CONCEPT_SEEDS = [
       { text: 'pot odds% = 需跟注额 ÷ 跟注后总底池（CH11 变体在分子分母计入 rake）。', sourceRef: L('Basic GTO Math', 11, '1160-1163') },
       { text: '河牌无后续行动：raw equity ≥ pot odds 即可跟；有后续行动：用实现后份额判断。', sourceRef: L('Pot odds', 1, '21-23') },
     ],
-    selfCheck: {
+    selfChecks: [{
       question: '转牌，对方下注 5bb 进 10bb 的池。你的 pot odds 门槛是多少？',
       options: ['25%（赢池份额）', '33%', '20%', '50%'],
       answer: '25%（赢池份额）',
       answerNote: 'pot odds% = 5/20 = 25%。注意这是"赢回底池的比例"门槛，不等于"25% raw equity 就能跟"——有后续行动时要用实现后份额判断。',
       sourceRef: L('Pot odds', 1, '21-23'),
-    },
+    }],
     relatedSpotIds: ['btnvsbb-caller-facebet', 'covsbtn-caller-facebet'],
     relatedConceptIds: ['concept-equity', 'concept-equity-realization', 'concept-alpha-mdf'],
     relatedSources: [],
@@ -62,13 +62,13 @@ export var CONCEPT_SEEDS = [
     thresholds: [
       { text: '33% 池 → 守 75%/弃 25%；50% 池 → 守 67%/弃 33%；75% 池 → 守 57%/弃 43%；pot → 守 50%/弃 50%；125% 池 → 守 44%；150% 池 → 守 40%（文章表格直读）。', sourceRef: L('Balancing your blastoffs', 5, '397') },
     ],
-    selfCheck: {
+    selfChecks: [{
       question: '存在一个下注尺寸，使对手面对它时的 MDF% 恰好等于其 pot odds%。是哪个？',
       options: ['√2，141% 池', 'π，314% 池', '100% 池', '黄金比例 Φ，162% 池'],
       answer: '黄金比例 Φ，162% 池',
       answerNote: '设 s = bet/pot：MDF = 1/(s+1)，pot odds = s/(2s+1)，两式相等解得 s = Φ≈1.618，此时两个百分比都是 38%。',
       sourceRef: L('Where do pot odds and MDF meet?', 2, '86-89'),
-    },
+    }],
     relatedSpotIds: ['btnvsbb-caller-facebet', 'covsbtn-caller-facebet'],
     relatedConceptIds: ['concept-pot-odds', 'concept-indifference', 'concept-value-bluff-ratio', 'concept-mdf-boundary'],
     relatedSources: [],
@@ -86,13 +86,13 @@ export var CONCEPT_SEEDS = [
       { text: '慢打也是无差别：AA 顶 set 在转牌 bet 100%→check 的 EV 表几乎全平（17.42→18.17，文章表格直读）——"保护 checking range"与"nut 想陷阱"是一枚硬币两面。', sourceRef: L('Trapping top set', 11, '1213-1216', '正文核验+文章表格直读') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: '扑克理论里说一只手"无差别"，指的是什么？',
       options: ['这只手是 0EV', '这只手只走纯动作、不混合', '这只手不确定哪个动作最好', '这只手在两个及以上 EV 相同的动作间混合'],
       answer: '这只手在两个及以上 EV 相同的动作间混合',
       answerNote: '常见误解是"无差别 = 0EV"：价值手完全可以在两个 +EV 动作间无差别。call-fold 无差别（跟注 EV = 弃牌 EV = 0）只是特例。',
       sourceRef: L('What is indifference actually?', 5, '407-409'),
-    },
+    }],
     relatedSpotIds: ['btnvsbb-caller-facebet', 'sbvsbb-raiser-cbet', 'covsbtn-raiser-cbet', 'covsbtn-caller-facebet'],
     relatedConceptIds: ['concept-value-bluff-ratio', 'concept-alpha-mdf'],
     relatedSources: [],
@@ -110,13 +110,20 @@ export var CONCEPT_SEEDS = [
       { text: '"45.6% equity"与"45.6% 概率赢"是两回事：A3s 在 Q32-J77 面 45.6% equity = check-down 期望拿 45.6% 的池；有下注行动后实际 EV 只有其一半（见 concept-equity-realization）。', sourceRef: L('Fundamental Poker Metrics', 11, '1156-1159') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: 'equity 的严格定义是哪个？',
       options: ['你期望赢下这手牌的频率', '你的"公平份额"（投资者语义）', '若底池直接 check 到摊牌，你期望赢得的底池百分比（计入平分）', '你期望赢的底池百分比（考虑后续所有行动）'],
       answer: '若底池直接 check 到摊牌，你期望赢得的底池百分比（计入平分）',
       answerNote: 'equity 是 check-down 假设下的量；"公平份额"（EV ÷ 底池）在有后续行动时拿不到——位置/范围/nut 优势会把 EV 扭向一方。',
       sourceRef: L('What is equity?', 6, '532-535'),
     },
+      {
+        question: 'BTN 用 KTs 跟 3-bet，跟注的 EV 是 +1.41bb（相对弃牌）。起始 100bb，跟注后你的期望堆栈是多少？',
+        options: ['98.91bb（弃牌堆栈 97.5 + 1.41）', '101.41bb（100 + 1.41）', '103.91bb', '90.5bb'],
+        answer: '98.91bb（弃牌堆栈 97.5 + 1.41）',
+        answerNote: 'EV 相对弃牌定义：弃牌后堆栈 97.5bb，+1.41 → 98.91bb。+EV 不等于"盈利"，只等于"比弃牌好"——很多决策是找输得最少的动作。',
+        sourceRef: L('What does EV really mean?', 2, '107-109'),
+      }],
     relatedSpotIds: [],
     relatedConceptIds: ['concept-equity-realization', 'concept-equity-buckets'],
     relatedSources: [],
@@ -135,6 +142,7 @@ export var CONCEPT_SEEDS = [
       { text: 'OOP 河牌的 check 价值被位置压低（IP 会反打）：被跟仅 45% equity 的 KQs 也该 jam——"下注永远相对于 check 定价"。', sourceRef: L('Value betting with <50% equity', 8, '875-878') },
       { text: 'block-bet 的设计目的就是实现：OOP 用 10% 小注给顶对/次对这类脆弱手变现，强手（同花）走超池线。', sourceRef: L('Building block bets OOP', 4, '387-391') },
       { text: 'EQR 数值实例（图像复核）：BB OOP 的 QT 在 K-T-5 面 check 线 EV 2.6bb、EQ 67.51%、EQR 70.71%——OOP 位置使实现打折（EQR<100%）。', sourceRef: L('What exactly is equity realization?', 2, '115-117', '图像复核') },
+      { text: 'monotone 面的实现规律（AJ4 单花面）：有同花背卡的手才能实现 equity——87s 被守 48.9% 频率（EQR 14.7%），无同花卡的 J8s/KQs 高频混弃；4-flush runout 还需范围防守。', sourceRef: L('Valuing hands on monotone flops', 2, '104-106', '正文核验+文章表格直读') },
       { text: '转牌 EQR 时序：T94 面 check-through 后，BB 的 EQR 在 paired T 上最大化——SB flop 多 bet 顶对，check 段无 Tx；超张/成抽转牌抵消该优势，paired T 把它放大成 nut 优势。', sourceRef: L('Realizing the best turn cards', 6, '637-640') },
       { text: '冷跟面（40bb K54）的 EQR 排序反直觉：AQ equity 最高却实现最差（后街难榨值、常提前弃牌）；低 equity 带 draw 的手（87s 类）反而超实现——能 outdraw 多街跟注的手。', sourceRef: L('Evaluating cold-called flop EQR', 11, '1168-1172') },
       { text: '超实现的典型（JJ3 面 BTN）：76s 因 BB 被迫过弃而超实现；AK 更值钱却欠实现——若强制 check-down 能赢 2/3 池，实际只得 1/2。', sourceRef: L('Overperformance', 11, '1238-1241') },
@@ -142,13 +150,20 @@ export var CONCEPT_SEEDS = [
     thresholds: [
       { text: '对手两街示弱 + 无成牌河牌：你的顶对可达 90%+ equity（打成 nuts）；同一顶对面对对手超池线只是 marginal bluff catcher。', sourceRef: L('Probing the river on dry runouts', 8, '866-870') },
     ],
-    selfCheck: {
+    selfChecks: [{
       question: 'EQR（Equity Realization）度量的是什么？',
       options: ['一只手的 EV 表现相对其 equity', '之后 streets 价值下注的能力', '到摊牌"实现公平份额"的频率', '你的 implied odds 与 nut potential'],
       answer: '一只手的 EV 表现相对其 equity',
       answerNote: '精确公式：EQR = EV pot share ÷ equity pot share。例：A3s 45.6% equity、check-down 期望 2.5bb、实际 EV 1.39bb → 只实现约 55%。',
       sourceRef: L('What is EQR?', 6, '626-628'),
     },
+      {
+        question: '987 单花面（CO 开、BTN 跟），CO 范围里哪只手的 EQR 最高？',
+        options: ['A6s（坚果同花听牌+顺子听牌）', 'KK', 'A9', '87s'],
+        answer: 'A6s（坚果同花听牌+顺子听牌）',
+        answerNote: 'A6s 几乎总能打到河牌，凭坚果同花+顺子听牌的额外 implied odds 赢得超过"公平份额"——能导航后续街的手实现更多。',
+        sourceRef: L('Over-realizing equity', 2, '83-85'),
+      }],
     relatedSpotIds: ['btnvsbb-caller-facebet', 'covsbtn-raiser-cbet', 'covsbtn-caller-facebet'],
     relatedConceptIds: ['concept-equity', 'concept-equity-buckets'],
     relatedSources: [],
@@ -168,13 +183,13 @@ export var CONCEPT_SEEDS = [
       { text: '"中等强度"是相对概念：顶对在成花 turn 只剩约 65% equity——这就是成花/成对 turn 迫使下注方降尺寸的原因。', sourceRef: L('Depolarized turn barrels', 8, '813-816') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: '一个 BB vs CO 的 spot，CO 的 equity 桶形是"Best hands + Trash hands 为主"。相对 BB，CO 的范围形态是？',
       options: ['Polarized（极化）', 'Depolarized / Condensed（浓缩）', 'Linear（线性）', 'Merged（混合）'],
       answer: 'Polarized（极化）',
       answerNote: '极化分布 = nuts + 空气、缺中段；它倾向大注、把筹码在河牌前打进——极化方拥有"知道自己是否领先"的信息优势。',
       sourceRef: L('Translating buckets to range shapes', 6, '536-540'),
-    },
+    }],
     relatedSpotIds: ['btnvsbb-raiser-cbet', 'btnvsbb-caller-facebet', 'sbvsbb-raiser-cbet', 'covsbtn-raiser-cbet', 'covsbtn-caller-facebet', 'btnvsbb-raiser-riverbet', 'btnvsbb-caller-riverfirst', 'sbvsbb-raiser-riverdual'],
     relatedConceptIds: ['concept-range-morphology', 'concept-nut-advantage', 'concept-equity-realization'],
     relatedSources: [],
@@ -193,13 +208,13 @@ export var CONCEPT_SEEDS = [
       { text: '转牌 brick 面 OOP probe = polarized 几何超池（强顶对+ 抽牌作诈唬，KJ 都强到能打光）；而对手范围加 nuts 的 turn（成花/成对）迫使你降尺寸、转 depolarized。', sourceRef: L('Probing turn bricks', 6, '573-576') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: 'BB 对 SB 的 open 做 3-bet。这个 3-bet 范围是什么形态？',
       options: ['Condensed（浓缩）', 'Linear（线性）', 'Polarized（极化）', 'Merged（混合）'],
       answer: 'Polarized（极化）',
       answerNote: 'BB 对 SB open 的 3-bet 装极强手与极弱手（极化）；对比：CO RFI = linear、BTN flat vs HJ = condensed、BB 3bet vs BTN = merged。',
       sourceRef: L('Fundamentals of morphology', 6, '561-564'),
-    },
+    }],
     relatedSpotIds: ['btnvsbb-raiser-cbet', 'sbvsbb-raiser-cbet', 'btnvsbb-caller-riverfirst'],
     relatedConceptIds: ['concept-equity-buckets', 'concept-nut-advantage'],
     relatedSources: [],
@@ -220,13 +235,20 @@ export var CONCEPT_SEEDS = [
     thresholds: [
       { text: 'donk / XR / 超池 jam 之前，先数双方范围 nutted 手占比（sets/两对/同花等）——占比不够就不该极化。', sourceRef: L('Donking the flop', 8, '844-847') },
     ],
-    selfCheck: {
+    selfChecks: [{
       question: 'HJ vs BB SRP，443 面被跟。HJ 在哪个转牌下注最凶？',
       options: ['4', '2', '5', 'K'],
       answer: '4',
       answerNote: '4 大幅放大 HJ 的 overpair 优势——它不是 equity 最高的转牌，却是弃牌激励最强、最值得开火的转牌。大注的燃料是 nut 优势。',
       sourceRef: L('Leveraging nut advantages on turns', 9, '940-944'),
     },
+      {
+        question: 'BTN 为何在 AKT 面（而非 AK9 面）偏好超池？',
+        options: ['AK9 面会 flops 出 BB 的 QJ 顺子，BTN 缺 nut 优势', 'AKT 面更干燥', 'AK9 面 rake 更低', 'AKT 面对方更爱跟'],
+        answer: 'AK9 面会 flops 出 BB 的 QJ 顺子，BTN 缺 nut 优势',
+        answerNote: '把 BB 的 QJ 从模拟里移除后，BTN 在 AK9 几乎纯超池——nut 优势被对方具体组合否定，是超池与否的开关。',
+        sourceRef: L("What's the difference?", 2, '177-179'),
+      }],
     relatedSpotIds: ['btnvsbb-raiser-cbet', 'sbvsbb-raiser-cbet', 'covsbtn-raiser-cbet', 'btnvsbb-raiser-riverbet', 'sbvsbb-raiser-riverdual'],
     relatedConceptIds: ['concept-equity-buckets', 'concept-range-morphology'],
     relatedSources: [],
@@ -244,13 +266,20 @@ export var CONCEPT_SEEDS = [
       { text: 'AA 加注选花色：875 rainbow 面，持面外花色（club）的 AA 更常 raise——它 block 弃牌、unblock 对方带 BDFD 高张的 float（AQs/AJs/KQs 无 BDFD 会弃）。', sourceRef: L('Backdoor suits', 5, '461-465') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: 'CO vs BTN 3BP，875 面对手 donk，你持 AA 考虑加注。四个花色里你更愿意 AA 带哪个？',
       options: ['Spade（面内花色）', 'Diamond（面内花色）', 'Club（面外花色）', 'Heart（面内花色）'],
       answer: 'Club（面外花色）',
       answerNote: 'rainbow 面先看"哪个花色不在面上"：面外花色 block 弃牌、unblock 跟注——价值手要动作，正需要这个方向。',
       sourceRef: L('Backdoor suits', 5, '461-465'),
     },
+      {
+        question: 'JT3 面，为什么 22 带方块比不带方块下注更多且 EV 更高？',
+        options: ['out 更干净：成 set 不会完成对方同花', '持有方块提升后街可见度', 'block 对方同花 draw', 'out 数更多'],
+        answer: 'out 更干净：成 set 不会完成对方同花',
+        answerNote: '22 的 EV 主要来自命中 set——带方块意味着 set 不给对方同花，out 更干净（各答案都沾边，这是最准的）。',
+        sourceRef: L('Angry underpairs', 2, '157-159', '正文核验+文章表格直读'),
+      }],
     relatedSpotIds: ['btnvsbb-raiser-cbet', 'sbvsbb-raiser-cbet', 'covsbtn-raiser-cbet'],
     relatedConceptIds: ['concept-blockers', 'concept-equity-realization'],
     relatedSources: [],
@@ -272,13 +301,20 @@ export var CONCEPT_SEEDS = [
     thresholds: [
       { text: '好陷阱三条件：对后续 runout 不脆弱；block 对方会跟的手；unblock 对方会弃的手——AA 三条全中，故常 trap 而非超池。', sourceRef: L('Overbet sizing motifs', 5, '440-443') },
     ],
-    selfCheck: {
+    selfChecks: [{
       question: 'CO vs BB SRP，翻转两街 check，BB 河牌 lead。你的 KK 带黑桃时 raise、不带时只 call。为什么？',
       options: ['带黑桃 unblock 跟注', '带黑桃 block 弃牌', '带黑桃 block miss 掉的同花听牌', '带黑桃 block 3-bet'],
       answer: '带黑桃 unblock 跟注',
       answerNote: 'BB 这条线的顶对大多不含黑桃；KK 想被更差的牌跟——持 K♠ 少 block 对方的跟注组合，价值手正需要这个方向。',
       sourceRef: L('Raising the river in position', 3, '203-205'),
     },
+      {
+        question: 'AJ2 面 CO 开牌、BB 跟注。JJ/AA/22 三个 set 谁的 EV 最高？',
+        options: ['JJ（最可能从更差手榨值）', 'AA（最大 set）', '22（最小 set 最隐蔽）', '三者相同'],
+        answer: 'JJ（最可能从更差手榨值）',
+        answerNote: 'AA block 顶对反而难榨值（常陷阱或小注）；22 与 JJ blocker 相近，但 22 block 掉 BB 唯一的 set 和自然加注——JJ 最可能从更差手收到钱。',
+        sourceRef: L('Which set has the most EV?', 2, '79-82'),
+      }],
     relatedSpotIds: ['btnvsbb-raiser-riverbet', 'btnvsbb-caller-riverfirst', 'sbvsbb-raiser-riverdual'],
     relatedConceptIds: ['concept-backdoor-equity', 'concept-bluff-catching'],
     relatedSources: [],
@@ -303,13 +339,13 @@ export var CONCEPT_SEEDS = [
     thresholds: [
       { text: '对方 XR 后的价值段起点例：HU 500bb check-down 面，raise = trips+；SRP XR 面，价值 = 同花、诈唬 = 次对以下——中间整段都是无差别抓诈区。', sourceRef: L('Triple Barrel Fold', 8, '861-865') },
     ],
-    selfCheck: {
+    selfChecks: [{
       question: '对方河牌 pot 尺寸下注。按书的抓诈唬决策树，对方诈唬频率至少多少你才有跟注的 pot odds？',
       options: ['约 33%', '约 25%', '约 50%', '约 40%'],
       answer: '约 33%',
       answerNote: 'pot 尺寸下注给你 3:1 的底池赔率，需约 33% equity——决策树第二问（第一问：我能否打过对方的诈唬组合？）。',
       sourceRef: L('Bluff-catching rivers', 1, '46-47'),
-    },
+    }],
     relatedSpotIds: ['sbvsbb-raiser-riverdual'],
     relatedConceptIds: ['concept-pot-odds', 'concept-blockers', 'concept-indifference', 'concept-mdf-boundary'],
     relatedSources: [],
@@ -326,18 +362,26 @@ export var CONCEPT_SEEDS = [
     contrastExamples: [
       { text: '同一河牌两种尺寸两个价值主体：20% block-bet 的价值段 = 顶对，150% 超池的价值段 = 同花——尺寸分裂是在瞄准对方范围的不同部分。', sourceRef: L('Splitting value on the river', 2, '150-152') },
       { text: '短码转牌 shove 的实现逻辑（Spin 25bb Q85 面）：SB 面对 75% 注 shove 最频 = TT——脆弱中段手（超对/次对/A8）shove 实现 equity + 即时弃牌权益，call 后弃 river 更差；sets/两对陷阱、FD 留 implied odds。', sourceRef: L('Constructing Shortstack Turn Shoves', 11, '1267-1271') },
+      { text: '完美极化 + SPR 4 的最优尺寸 = 几何式 54%×3 街（每街等比例，河牌刚好打光）——迫使对方按 MDF 尽量宽防守，最大化 nuts 价值；错开的尺寸让对方整体跟得更紧或更宽。', sourceRef: L('Perfect polarity', 2, '132-135') },
       { text: '诈唬手按 blocker 选而非按摊牌价值选：J9 有摊牌价值却因 block 两对跟注段而去 shove；AJ/AT block 弃牌段只能 check。', sourceRef: L('Triple-barrel bluffing', 9, '961-964') },
     ],
     thresholds: [
       { text: '75% 池 → 诈唬 30%；pot 池 → 理论 1/3、rake 下核验约 30%（70/30）；诈唬占比必须 ≈ 对方 pot odds 门槛，多于它对方全跟、少于它对方全弃。', sourceRef: L('Balancing bluffs', 2, '174-176') },
     ],
-    selfCheck: {
+    selfChecks: [{
       question: '你的范围只有 nuts 或纯诈唬，河牌 shove 75% 池，对方持 bluff catcher。使对方无差别的诈唬占比是？',
       options: ['诈唬 30%', '诈唬 43%', '诈唬 17%', '诈唬 33%'],
       answer: '诈唬 30%',
       answerNote: '75% 池给对方 30% 的 pot odds 门槛——你的诈唬占比就该是 30%。多于它：对方全跟 +EV；少于它：对方弃掉全部抓诈手也无损。',
       sourceRef: L('Balancing bluffs', 2, '174-176'),
     },
+      {
+        question: 'BTN 双 barrel 后河牌你只有 quads、对方策略不变。Hero 该怎么打？',
+        options: ['继续 range-check（连 quads 也 check）', '全部下注', '混合下注与 check', 'block-bet 引 raise'],
+        answer: '继续 range-check（连 quads 也 check）',
+        answerNote: '对方策略不变时，range-check 仍是对 quads 价值最大的应对——solver 就是 EV 最大化算法，GTO 策略以对方策略为条件，不是"为平衡而平衡"。',
+        sourceRef: L('Infinite quads', 2, '171-173'),
+      }],
     relatedSpotIds: ['btnvsbb-raiser-riverbet', 'sbvsbb-raiser-riverdual'],
     relatedConceptIds: ['concept-alpha-mdf', 'concept-indifference'],
     relatedSources: [],
@@ -360,13 +404,20 @@ export var CONCEPT_SEEDS = [
     thresholds: [
       { text: 'NL500 聚合（文章表格直读）：BB 对 HJ 翻牌 c-bet 实际弃牌率 33% 池→42%、50%→49%、76%→57%、124%→67%，对照 alpha 25%/33%/43%/55%——过弃幅度随尺寸放大。', sourceRef: L('Overdefend pre - Overfold post', 8, '830-834', '正文核验+文章表格直读') },
     ],
-    selfCheck: {
+    selfChecks: [{
       question: '对方河牌 pot 全下。你明确知道他严重 under-bluff（价值太重）。你持范围前半段的纯抓诈手。跟（守 MDF）还是弃？',
       options: ['弃——没有 pot odds 就不跟', '跟——需要守够 MDF 防被利用'],
       answer: '弃——没有 pot odds 就不跟',
       answerNote: '这是"game theory 最常被误用"的一课：MDF 防的是对方过度诈唬；他 clearly under-bluff 时，没有 pot odds 的手直接弃——solver 河牌面对极化范围正是这么做的。',
       sourceRef: L('MDF vs Pot Odds', 5, '512-516'),
     },
+      {
+        question: '面对河牌全下，以下哪条指标是"恒真"的？',
+        options: ['跟注宽到满足 MDF', '跟注能打过对方部分价值范围的手', '跟注 equity 高于 pot odds 要求的手', 'block 价值 unblock 诈唬的手'],
+        answer: '跟注 equity 高于 pot odds 要求的手',
+        answerNote: 'pot odds 是唯一直接从跟注 EV 推导的指标；pot odds 优先于 MDF（对方不诈唬时守 MDF 无意义），blocker/打过部分价值只是粗略信号，都可能导向 -EV 跟注。',
+        sourceRef: L('Fundamental laws in poker', 2, '121-124'),
+      }],
     relatedSpotIds: ['btnvsbb-caller-facebet', 'covsbtn-caller-facebet', 'sbvsbb-raiser-riverdual'],
     relatedConceptIds: ['concept-alpha-mdf', 'concept-bluff-catching', 'concept-indifference'],
     relatedSources: [],
@@ -385,13 +436,20 @@ export var CONCEPT_SEEDS = [
       { text: 'range-bet 的另一面是对手为何能被压弃：QQ2 面 BB 因无连接被迫弃约 50%（MDF 只允许弃 25%）——CO 才敢 range-bet；BB 的回击是 XR>28%（防守含金量高于 call）。', sourceRef: L('Countering range-bettors', 8, '782-786') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: '以下哪类牌面是 range-bet 的例外（solver 更倾向超池而非全范围小注）？',
       options: ['A-Broadway-Brick 类（如 AQ2）', 'K-high 类（如 KQ2）', '所有 A-high 面', '所有 paired 面'],
       answer: 'A-Broadway-Brick 类（如 AQ2）',
       answerNote: 'A-Broadway-Brick 面的 fold equity 相对价值低（你支配所有会弃的手）——超池榨顶段更有价值，中段转入 check；K-high 类才是 range-bet 面。',
       sourceRef: L('Should you rangebet these flops', 8, '777-781'),
     },
+      {
+        question: 'UTG 开牌、BB 跟注。哪个翻牌最接近 UTG 的 range-bet？',
+        options: ['A22', 'JT9', 'A32', 'Q66'],
+        answer: 'JT9',
+        answerNote: 'BB 的优势在低张——两张以上低牌的面不常 range-bet；JT9 放大所有 9+ 高张（UTG 范围主体），BB 大幅过弃。',
+        sourceRef: L('Rangebetting UTG', 2, '93-96'),
+      }],
     relatedSpotIds: ['btnvsbb-raiser-cbet', 'covsbtn-raiser-cbet'],
     relatedConceptIds: ['concept-nut-advantage', 'concept-range-morphology', 'concept-check-raise-construction'],
     relatedSources: [],
@@ -410,13 +468,20 @@ export var CONCEPT_SEEDS = [
       { text: '明知对手是 range-bettor 也不 donk：他 check 后必然重开，你总有 XR 选项——"不需要自己建池，如果对方会替你建"。', sourceRef: L('Should you donk into a rangebettor', 5, '477-480') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: 'UTG vs BB SRP。为什么 BB 在 765 面要 donk（即使 range-check 对 GTO 对手也不损 EV）？',
       options: ['强手靠 donk 获得 EV', '为了不可被利用（剥夺对手安全 pot-control 的选项）', '全范围靠 donk 获得 EV', '弱手靠 donk 获得 EV'],
       answer: '为了不可被利用（剥夺对手安全 pot-control 的选项）',
       answerNote: '若对手知道你从不 donk，他就再也不用 c-bet（安全过牌控池）——这会让你范围顶段的强手失去建池机会。donk 是结构性防御。',
       sourceRef: L('Why does donking matter', 11, '1200-1203'),
     },
+      {
+        question: 'BTN 开牌、BB 跟注（K-T-5 面），转牌 pairing 5。BTN 翻牌哪个 c-bet 尺寸后，BB donk 最多？',
+        options: ['75% 池', '33% 池', '50% 池', '125% 池'],
+        answer: '75% 池',
+        answerNote: '底对失衡：BTN 很少用 75% 打底对，但 BB 对 75% 几乎守全部 5x——75% 线是 donk 底对的最佳时机；33%/50% 面 BTN 覆盖更好，125% 线 BB 底对被弃、BTN 用第三对半诈唬。',
+        sourceRef: L('When to donk the turn?', 2, '139-142', '正文核验+文章表格直读'),
+      }],
     relatedSpotIds: [],
     relatedConceptIds: ['concept-nut-advantage', 'concept-range-morphology'],
     relatedSources: [],
@@ -437,13 +502,13 @@ export var CONCEPT_SEEDS = [
       { text: 'A-high 干面的 probe 主尺寸（A86 面 50NL）：跨所有转牌，BB 最常用 probe 尺寸 = 超池（101%+）——中段手不值价值下注，两对+ 极化超池是主结构。', sourceRef: L('Probing OOP on Ace high boards', 8, '787-790') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: 'HJ vs BB SRP，flop checks through。BB 在低砖 turn（2/3/4/6）的 probe 形态是？',
       options: ['Linear', 'Merged', 'Polarized', 'Condensed / Depolarized'],
       answer: 'Polarized',
       answerNote: 'brick 面上 OOP probe 用几何超池 + 极化范围：强顶对+ 作价值、抽牌作诈唬——KJ 都强到可以在 brick 河牌打光。',
       sourceRef: L('Probing turn bricks', 6, '573-576'),
-    },
+    }],
     relatedSpotIds: ['btnvsbb-caller-riverfirst'],
     relatedConceptIds: ['concept-range-morphology', 'concept-nut-advantage', 'concept-block-bet'],
     relatedSources: [],
@@ -465,13 +530,13 @@ export var CONCEPT_SEEDS = [
     thresholds: [
       { text: '面对 30% block-bet 的最弱价值加注 = 顶对（K kicker 以上）——对方 block 范围主体是次对，顶对瞄准 7x 类实现无差别。', sourceRef: L('How thin should you raise the river', 5, '494-497') },
     ],
-    selfCheck: {
+    selfChecks: [{
       question: 'BvB，SB c-bet 33% 被跟，A 转牌。SB 分裂 33%/66%/130% 三种尺寸——block-bet（33%）线的价值主体是哪个手类？',
       options: ['顶对', 'Sets', '次对（Second pair）', '两对'],
       answer: '次对（Second pair）',
       answerNote: 'block-bet 走薄价值：次对用它实现；两对以上走更大的极化尺寸。按手类分尺寸是河牌/转牌分裂设计的核心。',
       sourceRef: L('Splitting the turn OOP BvB', 8, '853-856'),
-    },
+    }],
     relatedSpotIds: ['btnvsbb-caller-riverfirst', 'sbvsbb-raiser-riverdual'],
     relatedConceptIds: ['concept-thin-value', 'concept-equity-realization'],
     relatedSources: [],
@@ -488,17 +553,25 @@ export var CONCEPT_SEEDS = [
     contrastExamples: [
       { text: '同一位置不同 SPR：KQs 在 CO vs SB 3BP 河牌被跟仅 45% equity 仍 jam（OOP check 会被反打）；若位置互换，同手 check behind 实现 equity 即可。', sourceRef: L('Value betting with <50% equity', 8, '875-878') },
       { text: '三街诈唬的 blocker 精选（A2J-7Q 面 125%/75% 线）：T7/K2 block KT 顺 + A7/A2 类跟牌 → 诈唬 EV 超过 check；98/96 block 更多弃牌手 → check back（打不过就别送）。', sourceRef: L('Showdown or Shove?', 11, '1272-1275') },
+      { text: '弃牌权益不均质（A22 类面）：最弱的超对反而更常下注——低对 fold out 的高牌恰是能 outdraw 它的手（deny equity 收益大）；KK 弃掉这些手几乎无收益。', sourceRef: L('Scared underpairs', 2, '153-156') },
       { text: 'Vluff 实例：BTN 86% 河牌注持 T9s——同时 fold 掉 SB 更好的 QJ/KJ、被更差的 A6/A7 跟。前提 = 你声明极化范围、对方按 blocker 决定抓诈。', sourceRef: L('The Vluff', 5, '472-476') },
       { text: '面对 30% block-bet 的最弱价值加注 = 顶对 K+ kicker：对方 block 主体是次对，宽被动线里你的 A8o 面对该注约 90% equity。', sourceRef: L('How thin should you raise the river', 5, '494-497') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: 'SB 三街半池连注到河牌，河牌 shove 持 KQs——被跟时只有 45% equity。为什么 solver 仍价值下注？',
       options: ['fold equity 补偿被跟时的落后', '为了超实现 equity', 'OOP 的 check 价值更低（IP 会反打）', '为了阻止 IP 诈唬'],
       answer: 'OOP 的 check 价值更低（IP 会反打）',
       answerNote: '四个答案都沾边，最精确的是：下注永远相对于 check 定价。OOP check 后 IP 可以反打把你压进难堪的决策；位置互换同手只需 check behind。',
       sourceRef: L('Value betting with <50% equity', 8, '875-878'),
     },
+      {
+        question: 'IP 顶对河牌（池 10bb）：check 有 70% equity（EV 7bb）；pot 下注对方 50% 弃/30% 跟（55% equity）/20% 加注（你弃牌）。该下注吗？',
+        options: ['不该——EV(下注) 4.95bb < EV(check) 7bb', '该——fold equity 足够', '该——70% equity 领先', '该——只有 20% 被加注'],
+        answer: '不该——EV(下注) 4.95bb < EV(check) 7bb',
+        answerNote: 'EV(bet) = 50%×10 + 30%×6.5 + 20%×(-10) = 4.95bb——被加注即弃的分支拖垮整体；薄价值注要按完整分支手算，不是"被跟时领先就行"。',
+        sourceRef: L('Calculating Expected Value', 2, '147-149'),
+      }],
     relatedSpotIds: ['btnvsbb-raiser-riverbet', 'btnvsbb-caller-riverfirst', 'sbvsbb-raiser-riverdual'],
     relatedConceptIds: ['concept-value-bluff-ratio', 'concept-block-bet'],
     relatedSources: [],
@@ -518,13 +591,20 @@ export var CONCEPT_SEEDS = [
       { text: 'XR 的时机由 blocker 定：663 面 A6 trips XR 最少（block CO 的 call 段），常延迟到转/河。', sourceRef: L('Check-raising on paired boards', 10, '1048-1051') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: 'CO vs BB SRP，Q72 干面，CO c-bet 33%。BB 的 XR 范围形态是？',
       options: ['Linear', 'Merged', 'Polarized', 'Condensed / Depolarized'],
       answer: 'Merged',
       answerNote: '干面缺自然诈唬手：BB 把 nuts、弱牌半诈唬和中段手（弱 7x/2x 抽 5 out）一起塞进 XR——这正是 merged 的定义。',
       sourceRef: L('Check-raising dry boards', 6, '585-588'),
     },
+      {
+        question: '642 面 CO c-bet 1/3、BB XR 1/2 被跟。BB 转牌在哪张上开火最频？',
+        options: ['3（给 BB 大量顺子）', '2（成对）', 'Q（高张）', '8（完成同花）'],
+        answer: '3（给 BB 大量顺子）',
+        answerNote: 'BB 的主力半诈唬是 5♦ gutshot——转 3 给 BB 很多顺子；同花张反而是 CO 优势（BB 只 XR 部分同花听牌，CO 防所有同花听牌）。',
+        sourceRef: L('Check-raise barreling', 2, '136-138'),
+      }],
     relatedSpotIds: ['btnvsbb-caller-facebet', 'covsbtn-caller-facebet'],
     relatedConceptIds: ['concept-range-morphology', 'concept-blockers'],
     relatedSources: [],
@@ -545,13 +625,13 @@ export var CONCEPT_SEEDS = [
       { text: 'OOP 转牌 set 的 trap 选择（K92-J 面）：JJ/99 最常慢打——它们 block BB 的 check-back 段（次对/第三对）→ check 更引下注；KK block call 段也 block Kx 下注段 → bet/check 无显著差；22 无 blocker 性质总是 bet。', sourceRef: L('Trapping the Turn OOP', 11, '1276-1280') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: 'SB 开牌 AA，8QA 面顶 set c-bet 被跟，Q 转牌。SB 常该 check——为什么？',
       options: ['SB 需要保护 checking range（对手会疯狂打你的 check 线）', 'AA block 对方的 calling range', 'AA block 对方的 betting range', 'AA 陷阱与下注赚得一样多（EV 相同所以混合）'],
       answer: 'AA 陷阱与下注赚得一样多（EV 相同所以混合）',
       answerNote: '无差别原理：混合仅在两动作 EV 相同时发生。"保护 check 线"与"nut 想陷阱"是一体两面——弱化的 check 线正是诱使对手下注、使 trap 有利可图的原因。',
       sourceRef: L('Trapping top set', 11, '1213-1216'),
-    },
+    }],
     relatedSpotIds: ['btnvsbb-caller-riverfirst', 'sbvsbb-raiser-riverdual'],
     relatedConceptIds: ['concept-indifference', 'concept-blockers'],
     relatedSources: [],
@@ -571,13 +651,13 @@ export var CONCEPT_SEEDS = [
       { text: 'limp 选项的范围效应（20bb HU cash）：允许 open-limp 时 SB 玩 91% 手牌，禁 limp 掉到 73%——limp 提升 range 底部 EV，并给对方坏的 shove 价格（短码下更重要）。', sourceRef: L('HU cash shortstack limps', 11, '1182-1186') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: 'BTN 翻牌 stab 后转牌超池 125%（代表两对+）。CO 为什么用 A5 跟注而弃掉顶对和超对？',
       options: ['A5 有 implied odds：命中时能 outdraw 对方价值段顶部', 'A5 的 raw equity 更高', '顶对摊牌必输', 'A5 block 对方两对'],
       answer: 'A5 有 implied odds：命中时能 outdraw 对方价值段顶部',
       answerNote: '顶对/超对面对两对+范围是静态抓诈手；A5 命中时能 outdraw 顶部、miss 时少投入——implied odds 判断的两要素。',
       sourceRef: L('Implied odds', 1, '33-35'),
-    },
+    }],
     relatedSpotIds: ['btnvsbb-caller-facebet'],
     relatedConceptIds: ['concept-pot-odds', 'concept-nut-advantage'],
     relatedSources: [],
@@ -595,13 +675,13 @@ export var CONCEPT_SEEDS = [
       { text: '同一手在错误线上打纯错误动作 = 恒亏；同手在正确线上用错频率 = 面对均衡对手无损、只被剥削型对手惩罚。', sourceRef: L('Pure mistakes vs frequency mistakes', 1, '72-73') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: '「频率错误」（混合比例不对）什么时候会被惩罚？',
       options: ['只有当对手偏离均衡（打剥削）时', '任何时候都被惩罚', '只被 GTO 对手惩罚', '从不被惩罚'],
       answer: '只有当对手偏离均衡（打剥削）时',
       answerNote: '纯错误对固定 Nash 恒亏；频率错误只有剥削型对手才能惩罚——复查个人频率偏差时先分清错误类型。',
       sourceRef: L('Pure mistakes vs frequency mistakes', 1, '72-73'),
-    },
+    }],
     relatedSpotIds: [],
     relatedConceptIds: ['concept-mdf-boundary', 'concept-gto-aim'],
     relatedSources: [],
@@ -619,13 +699,13 @@ export var CONCEPT_SEEDS = [
       { text: '同一范围两个尺寸两套瞄准：33% block-bet 让 air 无差别，125% 超池让中段对子无差别——尺寸由目标手类反推。', sourceRef: L('Targeting hand classes', 1, '59-61') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: 'AQ7 面 SB 可选 33% block-bet 或 125% 超池。这两个尺寸各自瞄准 BB 的哪段手？',
       options: ['block-bet 瞄准 air，125% 瞄准 2nd/3rd pair', 'block-bet 瞄准顶对，125% 瞄准 air', '两者都瞄准 air', '两者都瞄准 2nd/3rd pair'],
       answer: 'block-bet 瞄准 air，125% 瞄准 2nd/3rd pair',
       answerNote: '尺寸是瞄准工具：先问"想让对方的哪段手无差别"，再定尺寸。',
       sourceRef: L('Targeting hand classes', 1, '59-61'),
-    },
+    }],
     relatedSpotIds: ['btnvsbb-raiser-riverbet', 'sbvsbb-raiser-riverdual'],
     relatedConceptIds: ['concept-indifference', 'concept-block-bet'],
     relatedSources: [],
@@ -643,13 +723,13 @@ export var CONCEPT_SEEDS = [
       { text: '同一河牌 raise 面的价值阈值例：宽 check-down 面里，raise = trips+，顶对只是抓诈段——先找"价值段起点"再分配手。', sourceRef: L('Block-calling the river', 11, '1281-1284') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: '书中「找阈值」的三问不包括以下哪项？',
       options: ['最弱的价值下注手', '最强的弃牌手', '最弱的可跟手', '最强的慢打手'],
       answer: '最强的慢打手',
       answerNote: '三问是：最弱跟注手 / 最弱价值下注手 / 最强弃牌手——知道阈值后范围构造变成"在阈值间分配手"。',
       sourceRef: L('Finding the thresholds', 1, '65-66'),
-    },
+    }],
     relatedSpotIds: [],
     relatedConceptIds: ['concept-range-morphology', 'concept-hand-in-vacuum'],
     relatedSources: [],
@@ -667,13 +747,20 @@ export var CONCEPT_SEEDS = [
       { text: 'KT on AT7r：有效筹码、对手范围不同，最佳动作完全不同——单手问题本身不成立。', sourceRef: L('A hand in a vacuum is meaningless', 1, '17-18') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: '「KT 在 A-T-7 rainbow 面的最佳打法是什么？」为什么书上说这个问题无法回答？',
       options: ['缺少上下文：有效筹码/对手范围/前置线未给定', 'KT 在该面太弱没有最佳打法', 'rainbow 面策略不存在', '因为 KT 被 AT 支配'],
       answer: '缺少上下文：有效筹码/对手范围/前置线未给定',
       answerNote: '扑克是 range-vs-range 而非 hand-vs-hand；同一手在不同上下文里最佳动作不同——先问"我的范围想做什么"。',
       sourceRef: L('A hand in a vacuum is meaningless', 1, '17-18'),
     },
+      {
+        question: '"你的范围策略影响你的单手策略"成立的隐藏假设是什么？',
+        options: ['对方不打固定策略（会随之调整）', '对方打 GTO', '对方是剥削型玩家', '对方范围恒定不变'],
+        answer: '对方不打固定策略（会随之调整）',
+        answerNote: '若对方不随你调整，你就在打"你的手 vs 对方策略"——范围构造对单手表现无影响。隐藏假设是对方会响应。',
+        sourceRef: L('Range vs Range', 2, '129-131'),
+      }],
     relatedSpotIds: [],
     relatedConceptIds: ['concept-thresholds-thinking', 'concept-equity-buckets'],
     relatedSources: [],
@@ -691,13 +778,13 @@ export var CONCEPT_SEEDS = [
       { text: 'GTO 对固定 under-bluff 对手不再最优——此时按 pot odds 弃牌（exploit）EV 更高；GTO 的价值是"不会被反噬"。', sourceRef: L('MDF vs Pot Odds', 5, '512-516') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: 'GTO 的最终目标是什么？',
       options: ['构造不可被利用的策略（balance）', '对任何对手都最大化 EV', '让对手犯错最多', '最小化方差'],
       answer: '构造不可被利用的策略（balance）',
       answerNote: 'GTO 是下界保证：对最强反制策略最大化利润；面对可利用对手时偏离（exploit）才有更高 EV。',
       sourceRef: L('What does GTO aim to achieve', 1, '26-27'),
-    },
+    }],
     relatedSpotIds: [],
     relatedConceptIds: ['concept-mdf-boundary', 'concept-pure-vs-frequency-mistakes'],
     relatedSources: [],
@@ -715,13 +802,13 @@ export var CONCEPT_SEEDS = [
       { text: '同一解里 fold 显示比 call 低一点 EV：完美求解后 fold 会完全消失、raise 与 call 收敛同 EV——低频动作的"略低 EV"是精度残差。', sourceRef: L('Solver noise', 5, '410-412') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: '一个解标注 99.75% 精度。这意味着什么？',
       options: ['整个方案最多可被利用约 0.25% pot', '每只手的 EV 精确到 0.25%', '方案有 0.25% 概率出错', '解只完成了 99.75%'],
       answer: '整个方案最多可被利用约 0.25% pot',
       answerNote: '有限精度下低频动作可能显示略低 EV（数值噪声）；完美求解后低频动作消失、剩余动作 EV 精确相等。',
       sourceRef: L('Solver noise', 5, '410-412'),
-    },
+    }],
     relatedSpotIds: [],
     relatedConceptIds: ['concept-solver-accuracy', 'concept-indifference'],
     relatedSources: [],
@@ -739,13 +826,13 @@ export var CONCEPT_SEEDS = [
       { text: '同一解：整体可利用 0.3% pot，但单只手面对完美剥削可损失远超此数——上界是方案级的，不是手级的。', sourceRef: L('How to interpret solver accuracy', 5, '436-439') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: 'GW General solutions 解到 0.2-0.3% 精度（Nash Distance）。这确切意味着什么？',
       options: ['每只组合的动作 EV 精确到 0.3% pot', '整个方案最多可被利用 0.3% pot', '每只组合的动作 EV 精确到最佳决策的 0.3%', '整个方案精确到最佳方案的 0.3%'],
       answer: '整个方案最多可被利用 0.3% pot',
       answerNote: 'MES 对整个方案最多赚 0.3% pot；个体手可以被利用得更多。5.5bb pot → 约 1.65bb/100。',
       sourceRef: L('How to interpret solver accuracy', 5, '436-439'),
-    },
+    }],
     relatedSpotIds: [],
     relatedConceptIds: ['concept-solver-noise', 'concept-gto-aim'],
     relatedSources: [],
@@ -763,13 +850,13 @@ export var CONCEPT_SEEDS = [
       { text: '同一转牌注：OOP 永不弃河 → IP 全弃；OOP 平衡（河牌弃 3/9）→ IP 转牌有 break-even float。防守价值取决于对方后续的弃牌频率。', sourceRef: L('Clairvoyant Defense', 5, '420-424') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: 'Toy game：OOP 范围 2/3 nuts + 1/3 诈唬，转牌下注。为什么 IP 整个范围直接弃牌？',
       options: ['IP 拿不到跟注的 pot odds', 'OOP 河牌永不弃牌，IP 的跟注无法实现 equity', 'OOP 转牌 under-bluffing', 'IP 的抓诈手被 block'],
       answer: 'OOP 河牌永不弃牌，IP 的跟注无法实现 equity',
       answerNote: 'IP 有 pot odds 跟转牌，但 OOP 河牌必 shove 全范围（2:1 布局）→ IP 跟注的回收完全依赖 OOP 河牌弃牌；OOP 没有 give-ups，所以 IP 转牌直接弃。',
       sourceRef: L('Clairvoyant Defense', 5, '420-424'),
-    },
+    }],
     relatedSpotIds: [],
     relatedConceptIds: ['concept-equity-realization', 'concept-mdf-boundary'],
     relatedSources: [],
@@ -788,13 +875,13 @@ export var CONCEPT_SEEDS = [
       { text: 'ICM 位置决策（3 人 FT，奖金 46.67/31.11/22.22）：BTN 开牌最紧的筹码分布 = 20-40-5（开 18.5%）——中码最脆：对 SB 翻倍只 +6% 锦标赛权益、第三名出局 -12%；50-20-30 大筹码面反而开 44.6% 最宽（文章表格直读）。', sourceRef: L('Final Table on the BTN', 11, '1217-1220', '正文核验+文章表格直读') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: '关于 ICM，哪个说法是对的？',
       options: ['ICM 适用于 winner-take-all', 'ICM 考虑玩家位置', '翻倍筹码不等于翻倍价值', 'ICM 高估大筹码优势'],
       answer: '翻倍筹码不等于翻倍价值',
       answerNote: 'ICM 边际价值递减：翻倍筹码价值增长不到一倍。其余全错：不适用 WTA、不考虑位置、实际低估大筹码优势。',
       sourceRef: L('Understanding ICM', 5, '444-447'),
-    },
+    }],
     relatedSpotIds: [],
     relatedConceptIds: ['concept-risk-premium'],
     relatedSources: [],
@@ -812,13 +899,13 @@ export var CONCEPT_SEEDS = [
     thresholds: [
       { text: '样本量经验线：1 万手 70% 领先 / 10 万手 95% 领先（5bb/100、SD 100bb/100 假设下）——下风期评估先看手数。', sourceRef: L('Understanding variance', 1, '40-42', '正文核验+文章表格直读') },
     ],
-    selfCheck: {
+    selfChecks: [{
       question: '胜率 5bb/100、标准差 100bb/100。打 1 万手，你领先的概率大约是？',
       options: ['约 70%', '约 95%', '约 50%', '接近 100%'],
       answer: '约 70%',
       answerNote: 'SD 100bb/100 时波动巨大：1 万手期望 +500bb 但一个标准差就是 ±1000bb——70% 领先、30% 套牢是正常的，5 万手才有 95% 领先。',
       sourceRef: L('Understanding variance', 1, '40-42', '正文核验+文章表格直读'),
-    },
+    }],
     relatedSpotIds: [],
     relatedConceptIds: ['concept-gto-aim', 'concept-pure-vs-frequency-mistakes'],
     relatedSources: [],
@@ -836,13 +923,13 @@ export var CONCEPT_SEEDS = [
       { text: '同一 shove：chip EV 需要 35% equity，ICM 需要 45.7%——差值即风险溢价，随奖项结构与筹码分布变化。', sourceRef: L('Risk Premium', 5, '481-484') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: 'Blinds 25/50，BTN shove，BB 的 chip pot odds 要求 35% equity。考虑 ICM，BB 实际需要多少？',
       options: ['+10%（需要 45%）', '+20%（需要 55%）', '+5%（需要 40%）', '+15%（需要 50%）'],
       answer: '+10%（需要 45%）',
       answerNote: 'ICM 折算：弃牌价值 $18.28 / 风险换 $40.03 = 45.7%——额外 10.4% 是风险溢价。',
       sourceRef: L('Risk Premium', 5, '481-484'),
-    },
+    }],
     relatedSpotIds: [],
     relatedConceptIds: ['concept-icm', 'concept-pot-odds'],
     relatedSources: [],
@@ -860,13 +947,13 @@ export var CONCEPT_SEEDS = [
       { text: '同一 pot shove：纯 0% 诈唬 → 守 50%；20% equity draw 诈唬 → 守 57%——半诈唬"等效于更小的注"。', sourceRef: L('MDF facing draws', 5, '432-435') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: '对方转牌 pot shove，其诈唬全是保有 20% equity 的 draw（check 的 EV 也是 20% pot）。你要守多宽使这些 draw 无差别？',
       options: ['Call 57%', 'Call 37%', 'Call 67%', 'Call 47%'],
       answer: 'Call 57%',
       answerNote: '半诈唬风险低于纯诈唬（被跟时仍有 equity）：守 57% 而非 50%。等价理解：20% draw 的 pot shove 风险收益 ≈ 60% pot 纯诈唬。',
       sourceRef: L('MDF facing draws', 5, '432-435'),
-    },
+    }],
     relatedSpotIds: [],
     relatedConceptIds: ['concept-alpha-mdf', 'concept-mdf-boundary'],
     relatedSources: [],
@@ -886,13 +973,13 @@ export var CONCEPT_SEEDS = [
       { text: 'passive 对手（少 4-bet、多 call/fold）：中段手对 4-bet 掉 EV 很重——3-bet 更大 + 线性，OOP 靠 3-bet 超实现 equity、直接建池。', sourceRef: L('3-betting passive players', 11, '1178-1181') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: 'BTN 开牌，你在 BB。对方从不 call 3-bet（只会 raise/fold）。你怎么调整？',
       options: ['更小尺寸 + 极化范围', '更大尺寸 + 极化范围', '更小尺寸 + 线性范围', '更大尺寸 + 线性范围'],
       answer: '更小尺寸 + 极化范围',
       answerNote: '对方不 call：更小尺寸给诈唬最佳价格（raise-fold 损失最小），极化范围 = 价值手不怕 raise、诈唬手乐于弃。反之 passive（call 为主）→ 更大 + 线性。',
       sourceRef: L('Linear vs Polarized 3-betting', 2, '110-113'),
-    },
+    }],
     relatedSpotIds: [],
     relatedConceptIds: ['concept-range-morphology', 'concept-targeting'],
     relatedSources: [],
@@ -910,13 +997,13 @@ export var CONCEPT_SEEDS = [
       { text: '同一听牌：高 SPR 常半诈唬开火（fold equity + equity）；低 SPR 下 check back 更优——SPR 是听牌处理方式的开关。', sourceRef: L('Why check back good draws', 11, '1242-1246') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: 'CO vs BTN 3BP，BTN c-bet 25% 被跟，转牌出 K。为什么 BTN 2/3 的同花听牌 check back？',
       options: ['避免被 XR 打掉 equity', 'SPR 低到河牌能进钱', '保留 implied odds + 保护 check 范围', '以上全部'],
       answer: '以上全部',
       answerNote: '四个原因全部成立：好听牌低 SPR 下像中段成手，bet-fold 高 EV 手是灾难；check 保留 implied odds；河牌能进钱；保护 check 范围。',
       sourceRef: L('Why check back good draws', 11, '1242-1246'),
-    },
+    }],
     relatedSpotIds: [],
     relatedConceptIds: ['concept-implied-odds', 'concept-equity-realization'],
     relatedSources: [],
@@ -934,13 +1021,20 @@ export var CONCEPT_SEEDS = [
       { text: '同一手 K7 的六个动作：除 1916% 全下明显劣外，125%/75%/50%/33%/check 的 EV 几乎全同（4.1-4.11）——混合发生在无差别动作之间。', sourceRef: L('What is the point of mixing', 2, '143-146', '正文核验+文章表格直读') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: '为什么 solver 要混合策略？',
       options: ['为了保持不可被利用', '不同范围部分受益于不同尺寸或动作', '为了获得更多 EV', '为了变得更难对付'],
       answer: '为了保持不可被利用',
       answerNote: '主要目的是不可被利用；"不同范围部分受益于不同尺寸/动作"同样成立（书给两个正确答案）。混合不赚 EV——混合动作对 GTO 对手 EV 本就相同。',
       sourceRef: L("What's the point of mixing?", 2, '143-146'),
     },
+      {
+        question: 'solver 混合策略的两个目的（书课给两个正确答案）是什么？',
+        options: ['不可被利用 + 范围不同部分受益于不同尺寸/动作', '赚更多 EV + 更难对付', '纯为不可被利用', '纯为更难对付'],
+        answer: '不可被利用 + 范围不同部分受益于不同尺寸/动作',
+        answerNote: 'K7 例：除 1916% 全下（EV 0.75）外各尺寸 EV 几乎全同（4.1-4.11）——混合不是赚 EV，是堵住剥削并让各手类各得其所。',
+        sourceRef: L("What's the point of mixing?", 2, "143-146", "正文核验+文章表格直读"),
+      }],
     relatedSpotIds: [],
     relatedConceptIds: ['concept-indifference', 'concept-pure-vs-frequency-mistakes'],
     relatedSources: [],
@@ -958,13 +1052,13 @@ export var CONCEPT_SEEDS = [
       { text: '同一 pot 全下：0% equity 纯诈唬 → 守 50%；20% check-back equity 诈唬 → 守 40%。诈唬的备用价值把无差别点推向更窄防守。', sourceRef: L('MDF facing bluffs with showdown value', 5, '428-431') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: '对方河牌 pot 全下，其诈唬作 check-back 时保有 20% equity。你要守多宽使这些诈唬无差别？',
       options: ['Call 50%', 'Call 30%', 'Call 60%', 'Call 40%'],
       answer: 'Call 40%',
       answerNote: '0.2 = (1-call%) - call% → call% = 40%。只有能打过诈唬的手计入 MDF：80% 范围能打过，守其中一半 = 全范围 40%。',
       sourceRef: L('MDF facing bluffs with showdown value', 5, '428-431'),
-    },
+    }],
     relatedSpotIds: [],
     relatedConceptIds: ['concept-alpha-mdf', 'concept-mdf-boundary', 'concept-mdf-draws'],
     relatedSources: [],
@@ -986,13 +1080,13 @@ export var CONCEPT_SEEDS = [
       { text: '超池价值准入：被跟时 equity 必须领先对方跟注段（书例 A9 落后弃、AT 勉强领先进）。', sourceRef: L('Double overbet diligence', 4, '357-359') },
       { text: '200bb 深码超池的 turn 选择（A95 面）：成对/成抽的 turn（6/9/8）中和进攻方 nut 优势（对方获得反制超池的 nuts）；J turn 保留 nut 优势 → 超池最频。价值侧 = 强顶对+；成抽 turn 上 AQ 类不能超注（会 overplay）。', sourceRef: L('Overbetting the Turn', 11, '1255-1258') },
     ],
-    selfCheck: {
+    selfChecks: [{
       question: 'HJ vs BB SRP，AK5 面。HJ 应考虑用哪只口袋对超池翻牌？',
       options: ['99', 'AA', '22', 'QQ'],
       answer: '22',
       answerNote: '22 弱到可转诈唬、有后门顺潜力、unblock 对方弃牌段，且被动线难实现 equity——完美超池诈唬候选。99/QQ 太强，AA block 跟注段该陷阱。',
       sourceRef: L('Overbetting pocket pairs', 5, '490-493'),
-    },
+    }],
     relatedSpotIds: ['btnvsbb-raiser-riverbet', 'btnvsbb-raiser-cbet'],
     relatedConceptIds: ['concept-nut-advantage', 'concept-trapping', 'concept-thin-value'],
     relatedSources: [],
@@ -1012,13 +1106,13 @@ export var CONCEPT_SEEDS = [
       { text: '3BP 低 paired 面：范围里 trips 极少，BTN 用超对优势超池施压 CO 弱口袋对（QQ/JJ/TT c-bet 最频，fold out overcards）——SRP 的"paired 面小注瞄 air"在此失效。', sourceRef: L('C-betting in 3BPs', 11, '1173-1177') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: 'CO 开牌、BTN 3-bet、CO 跟注。哪种牌面纹理 BTN 倾向用最大的 c-bet 尺寸？',
       options: ['Paired flops（成对面）', 'Unpaired flops（非成对面）', 'Tripled flops（三连面）'],
       answer: 'Paired flops（成对面）',
       answerNote: '3BP 对手范围 air 少、口袋对多——paired 面升尺寸瞄准对方中段口袋对（QQ/JJ/TT 最常 c-bet）。与 SRP 的"paired 面小注"正好相反。',
       sourceRef: L('C-bet sizing in 3-bet pots', 2, '97-99'),
-    },
+    }],
     relatedSpotIds: [],
     relatedConceptIds: ['concept-targeting', 'concept-nut-advantage', 'concept-range-morphology'],
     relatedSources: [],
@@ -1036,13 +1130,13 @@ export var CONCEPT_SEEDS = [
       { text: '同一 BB 范围 BTN open 后：SB 再 call 时 55 的 EV 0.73→1.10（唯一增益），A6s 0.51→0.36、AJo 0.70→0.47、76s 0.30→0.24——多人池只有 set-mining 类受益。', sourceRef: L('Which hands like going multiway', 3, '193-195', '正文核验+文章表格直读') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: 'BTN 开牌、SB 跟注、你在 BB。哪只手因 SB 跟注（相比 SB 弃牌）而 EV 增益？',
       options: ['55', 'T5s', 'KQo', '98s'],
       answer: '55',
       answerNote: '55 靠 set mining 在多人池保留 EV（0.73→1.10）；KQo/98s/T5s 全部掉 EV——低对子 implied odds 高、不易被支配，是多人池唯一受益类。',
       sourceRef: L('The more the merrier', 11, '1187-1190'),
-    },
+    }],
     relatedSpotIds: [],
     relatedConceptIds: ['concept-implied-odds', 'concept-squeeze-construction'],
     relatedSources: [],
@@ -1060,13 +1154,20 @@ export var CONCEPT_SEEDS = [
       { text: '同一 UTG vs BTN 3-bet：Stars 50NL（无 preflop rake）有 4-bet shove 范围；GG（preflop 高 rake）没有——4-bettor 在 GG 无论是否弃牌都要付 rake，shove 激励消失。', sourceRef: L('4-bet shoving in different rake structures', 10, '1084-1086') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: '当 rake 升高（更高比例/上限）时，开局范围应怎么调整？',
       options: ['开更多同花连/低对子', '开更多高张手', '开更少同花连/低对子', '开更少高张手'],
       answer: '开更少同花连/低对子',
       answerNote: '同花连/低对子的 EV 主要来自 postflop——被 rake 吃得最多；高张手靠收盲。所以高 rake → 更少投机手、更多高张（"开更多高张"也成立，书给两个正确项）。',
       sourceRef: L('Opening in a cash game', 11, '1195-1199'),
     },
+      {
+        question: 'Chop 面（raise 后只有顺子跟）：AK 河牌面对 5.5bb 领注（池 7.5bb）。50NL（5% cap 4bb）与 500NL（5% cap 0.6bb）分别怎么打？',
+        options: ['50NL flat、500NL raise（弱占优）', '都 raise', '都 flat', '50NL raise、500NL flat'],
+        answer: '50NL flat、500NL raise（弱占优）',
+        answerNote: '50NL cap 到 80bb+ 池才封顶：raise nuts 只被顺子跟、多付 rake → -EV；500NL 12bb 池就封顶——call 已付满 rake，raise 同 EV 且弱占优（对方犯错才有额外收益）。',
+        sourceRef: L('Prisoners dilemma', 2, '160-163', '正文核验+文章表格直读'),
+      }],
     relatedSpotIds: [],
     relatedConceptIds: ['concept-gto-aim', 'concept-hand-in-vacuum'],
     relatedSources: [],
@@ -1086,13 +1187,13 @@ export var CONCEPT_SEEDS = [
       { text: 'limped pot 的 EQR 深度谱（Spin）：BB EQR 从 12bb 的 103.4% 升到 25bb 的 105.8%——总 equity 不变，位置优势随深度放大，IP（BB）实现改善。', sourceRef: L('Equity realization and stack depth', 6, '645-647', '正文核验+文章表格直读') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: '筹码变深时，以下哪个说法是错的？',
       options: ['nut advantage 对最优策略影响更大', 'implied/reverse implied odds 被放大', 'IP 优势增大', 'premium 手 preflop 价值上升'],
       answer: 'premium 手 preflop 价值上升',
       answerNote: '深码下 TT-KK/AK 的 preflop EV 反而下降（难进钱、画牌差）；只有 AA 升值。其余三项都是深码的真实效应。',
       sourceRef: L('Effects of stack depth', 2, '168-170'),
-    },
+    }],
     relatedSpotIds: [],
     relatedConceptIds: ['concept-nut-advantage', 'concept-implied-odds', 'concept-equity-realization'],
     relatedSources: [],
@@ -1110,13 +1211,13 @@ export var CONCEPT_SEEDS = [
       { text: '同一 BB 位置：squeeze（预期被 call 多）→ 线性；3-bet vs 开牌者（预期 raise/fold 多）→ 极化。极性跟随对方的 continue 方式。', sourceRef: L('Squeezing out of position', 8, '825-829') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: 'HJ 开 2.5bb、BTN 跟注、轮到 BB。BB 的 squeeze 范围应该怎么构造？',
       options: ['Linear（线性）', 'Condensed（浓缩）', 'Polarized（极化）', 'Merged（混合）'],
       answer: 'Linear（线性）',
       answerNote: 'squeeze 预期面对 call 远多于 4-bet（BTN 冷跟范围 capped）——线性 top-down 对抗 call 最优；且 3-way 池 BB 可把更多价值手放进 raise。',
       sourceRef: L('Squeezing out of position', 8, '825-829'),
-    },
+    }],
     relatedSpotIds: [],
     relatedConceptIds: ['concept-range-morphology', 'concept-3bet-construction', 'concept-multiway-pots'],
     relatedSources: [],
@@ -1134,13 +1235,13 @@ export var CONCEPT_SEEDS = [
       { text: '零盲注桌：开 AA 与不开同 EV（对手最优应对下反馈循环收敛到极紧）；有盲注时位置+死钱才让宽开有利可图。', sourceRef: L('Strategic Domination', 5, '507-511') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: '无盲注无 ante 的 home game，BTN 的最优开局范围是？',
       options: ['约 43%', '什么都不开', '任意两张', '只有 AA'],
       answer: '只有 AA',
       answerNote: '没有死钱就没有玩手理由：只有比"会跟的手"更强的手才该开，反馈循环收敛到极紧——开 AA 与不开同 EV，但 shove AA 弱支配弃牌（对方只能靠犯错让你更差）。',
       sourceRef: L('Strategic Domination', 5, '507-511'),
-    },
+    }],
     relatedSpotIds: [],
     relatedConceptIds: ['concept-gto-aim', 'concept-rake-impact'],
     relatedSources: [],
@@ -1158,13 +1259,13 @@ export var CONCEPT_SEEDS = [
       { text: '同一 shove：对方跟 62% 时 J3o 需 36% equity break-even；对方跟得更宽，所需 equity 更高——break-even 是对方频率的函数。', sourceRef: L('Push-folding EV', 5, '457-460') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: 'HU SnG 5bb，SB shove J3o，BB 会跟 62% 范围。J3o 对 BB 跟注范围需要多少 equity 才不亏？',
       options: ['30%', '42%', '25%', '36%'],
       answer: '36%',
       answerNote: '三结果方程：弃 +1.5bb / 跟输 -4.5bb / 跟赢 +5.5bb，按对方 62% 跟注频率加权，设 EV=0 解得约 36%。',
       sourceRef: L('Push-folding EV', 5, '457-460'),
-    },
+    }],
     relatedSpotIds: [],
     relatedConceptIds: ['concept-pot-odds', 'concept-alpha-mdf'],
     relatedSources: [],
@@ -1182,13 +1283,13 @@ export var CONCEPT_SEEDS = [
       { text: '同为 flop check 后：3BP OOP（SB）→ 超池极化（overpair 陷阱+空气）；limped pot SB → 200% 超池（顶对+ 价值）。OOP delayed c-bet 天然极化。', sourceRef: L('Delay c-betting OOP in 3BPs', 9, '920-923') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: 'SB vs CO 3BP，flop check through，转牌 8-6-3-2 类。SB 的首选 delayed c-bet 尺寸是？',
       options: ['Medium（36%-67%）', 'Overbet（101%+）', 'Small（<36%）', 'Large（67%-100%）'],
       answer: 'Overbet（101%+）',
       answerNote: 'SB 的 flop check 段陷阱很多 overpair（想尽快进钱）、其余是高张空气——极化超池或 check，没有中段值得小注。',
       sourceRef: L('Delay c-betting OOP in 3BPs', 9, '920-923'),
-    },
+    }],
     relatedSpotIds: ['sbvsbb-raiser-cbet'],
     relatedConceptIds: ['concept-range-morphology', 'concept-nut-advantage', 'concept-probe'],
     relatedSources: [],
@@ -1206,13 +1307,13 @@ export var CONCEPT_SEEDS = [
       { text: '同一 54s 四种河牌：Q 河 check EV 0 → shove 4.1；其余河牌 check EV 0.89-1.33 → check。摊牌价值归零的 runout 上，成牌变诈唬。', sourceRef: L('Owning draws with big turn bets', 8, '879-882', '正文核验+文章表格直读') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: 'SB c-bet 33% 后在 175% 转牌超池持 54s。哪张河牌必须 shove（而非 check）？',
       options: ['9', '6', 'Q', 'A'],
       answer: 'Q',
       answerNote: 'Q 河牌让对方的 KQ/KT/QT（被超池压进跟注的组合）beat 54s——摊牌价值归零，check EV 0，shove EV 4.1：fold equity 是唯一收益。',
       sourceRef: L('Owning draws with big turn bets', 8, '879-882'),
-    },
+    }],
     relatedSpotIds: [],
     relatedConceptIds: ['concept-value-bluff-ratio', 'concept-thin-value', 'concept-equity-realization'],
     relatedSources: [],
@@ -1231,13 +1332,13 @@ export var CONCEPT_SEEDS = [
       { text: 'Guess the stack depth：997 面 33%/50%/50% 线里，CO 的 3-bet 在 50bb 时强价值最多（防 shove 威胁）；越深越可用抽牌构造。', sourceRef: L('Guess the stack depth', 6, '558-560') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: 'Equity Distribution Graph 上，BTN 的 QQ 标注为"50 / 70.2%"。这两个数字是什么？',
       options: ['QQ 对 CO 有 70% equity，且在 BTN 范围内按 equity 排第 50 百分位', 'QQ 在自己范围排第 70 百分位，且有 50% equity', 'QQ 赢下这手牌的概率是 50%，实现 70%', 'QQ 的 EV 是 70% 底池，位于范围前 50%'],
       answer: 'QQ 对 CO 有 70% equity，且在 BTN 范围内按 equity 排第 50 百分位',
       answerNote: 'x 轴 = 自己范围内按 raw equity 的百分位；y 轴 = 对对方范围的手-vs-范围 equity。别把横轴当绝对牌力排名。',
       sourceRef: L('Equity Distribution Graphs', 6, '594-597'),
-    },
+    }],
     relatedSpotIds: [],
     relatedConceptIds: ['concept-equity-buckets', 'concept-range-morphology', 'concept-nut-advantage'],
     relatedSources: [],
@@ -1258,13 +1359,20 @@ export var CONCEPT_SEEDS = [
       { text: '双平台分布：paired 面 + 高张（K77 类）= 顶对手的低平台 + trips 的高平台；低张 paired 面（992 类）则 = trips 平台 + 其上口袋对的阶梯。平台形状直接暴露成牌构成。', sourceRef: L('The Double-Plateau Distribution', 11, '1234-1237') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: 'CO 开牌、BTN 跟注。哪种 flop 最可能产生"天然极化"的 equity 分布？',
       options: ['JT4s', '888', 'K72r', 'T86r'],
       answer: '888',
       answerNote: '三连面放大口袋对与 overcards：CO 的优势恰在超对/更高 overcards（极化价值+半诈唬），BTN 冷跟范围浓缩向中段口袋对、缺 nuts 无法极化。',
       sourceRef: L('Polarized Distributions', 6, '545-548'),
     },
+      {
+        question: 'BTN vs BB SRP，哪类翻牌平均"炸池"最猛（成池时底池最大）？',
+        options: ['双方 EV 接近、争夺激烈的低面（如 632r）', 'BTN nut 优势明显的 A 高面', 'monotone 面', 'paired 面'],
+        answer: '双方 EV 接近、争夺激烈的低面（如 632r）',
+        answerNote: 'IP EV + OOP EV + rake EV = 起始底池；双方 EV 越接近，OOP 打得越凶 → 更多继续、平均底池更大。',
+        sourceRef: L('Explosive flops', 2, '180-184'),
+      }],
     relatedSpotIds: ['btnvsbb-raiser-cbet', 'covsbtn-raiser-cbet', 'sbvsbb-raiser-cbet'],
     relatedConceptIds: ['concept-equity-buckets', 'concept-equity-distribution-graphs', 'concept-nut-advantage'],
     relatedSources: [],
@@ -1283,13 +1391,13 @@ export var CONCEPT_SEEDS = [
       { text: '无 nuts 全下四原因全对：986 面 SB 146% shove 装脆弱价值不装 sets，BTN 仍须 call 60%——低 SPR + draw-heavy 共同作用。', sourceRef: L('The no-nut shove', 6, '618-621') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: '986 单花+双花面（Spin 25bb），SB 146% 全下但范围里没有 nuts。为什么这仍是最优的？',
       options: ['draw-heavy 面激励用脆弱价值 shove', 'draws 与 nutted value 接近，几乎不死抽', '低 SPR 迫使 BTN 更宽 call；draw-heavy 迫使对方宽 call 使半诈唬无差别', '以上全部'],
       answer: '以上全部',
       answerNote: '四个原因全部成立（书课原话：All of the answers are correct）——脆弱价值 shove + 对方 60% call 率，无 nuts 也能使对方无差别。',
       sourceRef: L('The no-nut shove', 6, '618-621'),
-    },
+    }],
     relatedSpotIds: [],
     relatedConceptIds: ['concept-equity-buckets', 'concept-value-bluff-ratio', 'concept-mdf-draws'],
     relatedSources: [],
@@ -1307,13 +1415,13 @@ export var CONCEPT_SEEDS = [
       { text: 'KJo 四个 combo：equity 差 4%，pot share 差 14pp（36% vs 22%）——blocker 对实现的杠杆远大于对 equity 的杠杆。', sourceRef: L('Gutshot performance', 6, '641-644') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: 'CO 开 KJo、BTN 跟注，T95 面。哪个 KJo combo 的 EQR 最高？',
       options: ['KJs（同时 block 前后门同花 draw）', 'KJo（无同花）', '任意 combo 等价', '取决于位置而非花色'],
       answer: 'KJs（同时 block 前后门同花 draw）',
       answerNote: '最好 KJs 36% pot share vs 最差 22%——equity 差仅约 4%，实现差 14 个百分点：blocker 对实现的杠杆远大于对 equity。',
       sourceRef: L('Gutshot performance', 6, '641-644'),
-    },
+    }],
     relatedSpotIds: [],
     relatedConceptIds: ['concept-equity-realization', 'concept-blockers', 'concept-backdoor-equity'],
     relatedSources: [],
@@ -1331,13 +1439,13 @@ export var CONCEPT_SEEDS = [
       { text: '643 面 CO 80.7%/BB 90.5% 同时欠实现：无 rake 时 EV 和 = 5.1bb 池，rake 抽走 0.73bb（约 14%）。', sourceRef: L('Can both ranges underperform', 6, '633-636') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: '643 面，CO 的 EQR 80.7%、BB 的 EQR 90.5%——双方都欠实现。怎么会？',
       options: ['动态纹理迫使双方偏离 equity 太频繁', 'EQR 不是零和', '欠实现的组合数超过超实现的', 'rake 降低双方 EV，损害双方 EQR'],
       answer: 'rake 降低双方 EV，损害双方 EQR',
       answerNote: '激烈争夺的面双方都投入多 → 总 rake 上升 → 双方 EV 同时缩水（本例 rake ≈ 底池 14%）。其余选项都是真实机制但"双方同时欠"的直接原因是 rake。',
       sourceRef: L('Can both ranges underperform', 6, '633-636'),
-    },
+    }],
     relatedSpotIds: [],
     relatedConceptIds: ['concept-equity-realization', 'concept-rake-impact'],
     relatedSources: [],
@@ -1355,13 +1463,13 @@ export var CONCEPT_SEEDS = [
       { text: 'UTG 的 probe 构造 = 6x + Ax + 诈唬：QQ/AJ（裸 Ax）可弃，能 outdraw Ax 的手因 implied odds 总是继续。', sourceRef: L('Facing turn probes on 4-straight boards', 9, '981-984') },
     ],
     thresholds: [],
-    selfCheck: {
+    selfChecks: [{
       question: 'HJ vs UTG 3BP，5432 面 check-through，UTG 转牌 probe 125%。HJ 哪些手可以弃？',
       options: ['QQ 和 AJ（裸 Ax）', '所有 Ax 都必须跟', '只能弃 44 以下的对子', '全范围弃牌'],
       answer: 'QQ 和 AJ（裸 Ax）',
       answerNote: 'UTG 用 6x+Ax+诈唬使裸 Ax 无差别；能 outdraw Ax 的手 implied odds 惊人、总是继续——弃牌发生在"裸"的 Ax 上。',
       sourceRef: L('Facing turn probes on 4-straight boards', 9, '981-984'),
-    },
+    }],
     relatedSpotIds: [],
     relatedConceptIds: ['concept-pot-odds', 'concept-implied-odds', 'concept-blockers'],
     relatedSources: [],

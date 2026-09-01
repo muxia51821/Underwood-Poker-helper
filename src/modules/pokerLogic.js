@@ -69,16 +69,19 @@ function conceptLine(conceptId) {
   (c.thresholds || []).forEach((t) => {
     html += '<div style="margin-top:3px;padding-left:8px;border-left:2px solid #8a6a2a;color:#c8c2a8">📐 ' + esc(t.text) + sourceLine(t.sourceRef) + '</div>';
   });
-  if (c.selfCheck && c.selfCheck.question) {
-    html += '<details style="margin-top:4px"><summary style="cursor:pointer;color:#8fb3de">❓ 考考自己（先想再看答案）：' + esc(c.selfCheck.question) + '</summary>';
+  // [V7.11.9 修改] selfChecks 数组：每题一个折叠块（题多时标 Q2/Q3…）
+  (c.selfChecks || []).forEach((sc, si) => {
+    if (!sc.question) return;
+    const qLabel = si === 0 ? '' : '（' + (si + 1) + '）';
+    html += '<details style="margin-top:4px"><summary style="cursor:pointer;color:#8fb3de">❓ 考考自己' + qLabel + '（先想再看答案）：' + esc(sc.question) + '</summary>';
     html += '<div style="margin-top:3px;color:#a8afba">';
-    (c.selfCheck.options || []).forEach((opt) => { html += '<div>· ' + esc(opt) + '</div>'; });
+    (sc.options || []).forEach((opt) => { html += '<div>· ' + esc(opt) + '</div>'; });
     html += '</div>';
-    html += '<div style="margin-top:3px;color:#9fd49f"><b>答案：' + esc(c.selfCheck.answer) + '</b></div>';
-    if (c.selfCheck.answerNote) html += '<div style="margin-top:2px;color:#a8afba">' + esc(c.selfCheck.answerNote) + '</div>';
-    html += sourceLine(c.selfCheck.sourceRef);
+    html += '<div style="margin-top:3px;color:#9fd49f"><b>答案：' + esc(sc.answer) + '</b></div>';
+    if (sc.answerNote) html += '<div style="margin-top:2px;color:#a8afba">' + esc(sc.answerNote) + '</div>';
+    html += sourceLine(sc.sourceRef);
     html += '</details>';
-  }
+  });
   if (c.applicability) html += '<div style="margin-top:3px;color:#8b949e">适用边界：' + esc(c.applicability) + '</div>';
   html += sourceLine(c.sourceRef);
   html += '</div>';
