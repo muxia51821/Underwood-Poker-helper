@@ -254,3 +254,9 @@ PDF 页面渲染 PNG（pymupdf, 150dpi）逐张人工核验：
 新增提炼课程：CH6 Symmetrical Distributions(541-544)、Polarized Distributions(545-548)、Guess the line! #1(549-553)、Guess the stack depth(558-560)、The staircase distribution(609-613)、The no-bluff shove(614-617)、The no-nut shove(618-621)、Gutshot performance(641-644)、Can both ranges underperform(633-636)、Realizing the best turn cards(637-640)；CH9 Facing turn probes on 4-straight boards(981-984)、Defending the BXB line on 4-flush boards(1005-1007)、Bluffcatching vs deep stack triple-barrels(977-980)、Defending vs huge overbets(993-996)。
 
 累计约 131 课已精读（占全书 ~39%），概念库 52 条（自测 40 道）、spot 应用 45 条。Equity Distribution Graph 从占位转正，四大 equity 分析技术在概念库中全部就位（Buckets/Morphology/Distribution Graphs/EQR）。
+
+## 12. V7.11.8 补充台账（批次 A：CH11 收尾，概念库 53 条）
+
+新增提炼课程：CH1 Understanding variance(40-42)；CH11 Evaluating cold-called flop EQR(1168-1172)、Overperformance(1238-1241)、The Double-Plateau Distribution(1234-1237)、Defending against polar turn barrels(1191-1194)、Hero calling triple barrels in 3BP(1209-1212)、Bluff-Catching Triple Barrels(1262-1266)、Shortstack Triple Barrel Math(1247-1250)、Constructing Shortstack Turn Shoves(1267-1271)、Trapping the Turn OOP(1276-1280)、Overbetting the Turn(1255-1258)、Countering Value-Heavy 3-bets(1259-1261)、HU cash shortstack limps(1182-1186)、Final Table on the BTN(1217-1220)。
+
+9 课"已读未提炼"处置完成：8 课以正式 sourceRef 对比条目补标（Using filters/Understanding Range Shapes 原有行内引用维持）、Probing OOP on Ace high boards 新增 probe 对比。Taking your shot 归个人 OS 域待办。累计精读 145 课（约全书 43%），概念库 53 条、自测 53 道、应用 45 条。

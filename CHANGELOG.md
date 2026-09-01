@@ -4,6 +4,8 @@
 
 ## 未发布
 
+- V7.11.8 批次 A：CH11 All Stars 钦点清单收尾——剩余 14 课全文精读提炼，+17 处对比/阈值与 1 条新概念：equity-realization（冷跟面 AQ 最差 EQR/76s 超实现 AK 欠实现）、board-distribution-shapes（双平台=paired+高张）、bluff-catching 三连（极化转牌注优选 53s 类 outdraw 手、33 不 block 诈唬、纯抓诈手严格定义 vs value-beater）、alpha-mdf（跨街 MDF 连乘：37% call-down、28/37=75% 同花稀释）、trapping（OOP set 陷阱 JJ/99 block check-back 段）、overbetting（200bb 成抽 turn 中和 nut 优势、J 保留）、3bet-construction（对抗紧小 3-bet 跟 86s/对抗 passive 更大更线性）、implied-odds（HU 短码 limp 91%→73%）、icm（FT BTN 20-40-5 最紧：翻倍+6%/出局-12%）、value-bluff-ratio（短码 TT shove 实现逻辑）、mdf-boundary/cbet-3bp/delayed-cbet/stack-depth/thin-value/probe 补 sourceRef；新增 concept-variance-basics（方差与样本量：1 万手 70% 领先/10 万手 95%，文章表格直读）。台账见 `docs/concept-seed-schema.md` 与 map 附录 B；累计精读 145 课（约全书 43%）。
+
 - V7.11.7 概念自测题库全量覆盖：52 条概念每条 1 道书源自测题（40 → 52，新增 pot odds 门槛计算、形态配对、抓诈唬 pot odds、combo EQR、implied odds 场景、纯/频率错误、尺寸瞄准、阈值三问、手牌无真空、GTO 目标、solver 噪声、range-bet 例外）——全部提炼自已全文精读课程，quiz-first 全覆盖；`CONCEPT_SEED_VERSION` v6；契约测试同步（v6/52 条/52 题自测）。
 
 - V7.11.6 概念自测错题集：答错入册（`pa_concept_quiz_errors`，按题去重保留最新错误答案）、答对销账、重做错题模式（只出错题，剩余数在总结页显示）、错题集折叠视图（题目+你的答案+正确答案+解析+出处，计数徽章+清空按钮）——复用 quizTrainer 错题集（`pa_quiz_errors`）的交互模式；`CONCEPT_QUIZ_VERSION` 3；契约测试新增错题簿逻辑校验（入册/去重/未知 id 过滤/销账/清空），测试总数 64。
