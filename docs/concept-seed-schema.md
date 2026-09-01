@@ -266,3 +266,11 @@ PDF 页面渲染 PNG（pymupdf, 150dpi）逐张人工核验：
 新增全文精读课程（CH2 首页级→全文升级，18 课）：Guess the hand(76-78)、Which set has the most EV?(79-82)、Over-realizing equity(83-85)、Rangebetting UTG(93-96)、Valuing hands on monotone flops(104-106)、What does EV really mean?(107-109)、Fundamental laws in poker(121-124)、Range vs Range(129-131)、Perfect polarity(132-135)、Check-raise barreling(136-138)、When to donk the turn?(139-142)、Calculating Expected Value(147-149)、Scared underpairs(153-156)、Angry underpairs(157-159)、Prisoners dilemma(160-163)、Infinite quads(171-173)、What's the difference?(177-179)、Explosive flops(180-184)。
 
 Schema v8：selfCheck 单题 → selfChecks 数组。15 道第二题挂靠：equity-realization（987 面 A6s 最高 EQR）、range-bet（JT9）、mdf-boundary（pot odds 唯一恒真定律）、hand-in-vacuum（对方不打固定策略）、value-bluff-ratio（quads 也 range-check）、mixed-strategies（双目的）、equity（EV 相对弃牌、98.91bb）、board-distribution-shapes（632r 最炸池=双方 EV 接近）、backdoor-equity（22 带花 out 更干净）、check-raise-construction（转 3 顺子最多）、donk-bet（75% 线底对失衡）、thin-value（EV 手算 4.95<7）、blockers（JJ set 最能榨值）、nut-advantage（AK9 被 QJ 否定 nut 优势）、rake-impact（50NL flat/500NL raise 弱占优）。对比 +4：monotone 实现规律、弃牌权益不均质、几何式 54%×3、短码 TT shove（批次 A 已加）。题库 68 题、累计精读 163 课（约全书 49%）。Guess the hand 一课留存未用（11-outs 手牌推理题，单选格式不适配）。
+
+## 14. V7.11.10 补充台账（批次 C：CH7 深度维度，概念库 53 条）
+
+新增全文精读课程：CH7 Limping premiums(650-654)、Building short-stack turn shoves(659-662)、Shoving draws on the flop(670-673)、Trapping the turn BvB(708-711)、So many flush draws to choose from!(732-735)、Static bluff-catchers in deep 3BP(741-744)、5-Flush deepstack river 3-bets(754-758)、Deepstack value shove thresholds(759-763)、Deepstack triple barrel math(764-767)。
+
+产出：+9 对比（挂 implied-odds ×2/thin-value/mdf-draws/trapping/blockers/bluff-catching/4straight-chop-defense/overbetting）+ alpha-mdf 第二题（200bb 三街连乘计算：18%/25%）+ spot 应用 2 条（btn6 深度阈值弹性、btn2 深度应对谱 12.2/55.7 vs 15.5/48.5）。深度维度从 1/30 提升到 10/30。累计精读 172 课（约全书 52%），概念库 53 条、应用 47 条、自测 54 道（69 题库含 alpha-mdf 第二题——与 batch B 合计）。
+
+更正：题库计数——batch B 后题库 68（53+15），batch C 新增 alpha-mdf 第二题 → 69。此前第 13 节的"题库 68 题"为 batch B 时点数。

@@ -360,8 +360,8 @@ test('v7.11.4 poker logic seeds assemble from resolvable applications, concepts 
   assert.equal(POKER_LOGIC_SEEDS.filter((s) => s.street === 'flop').length, 5);
 });
 
-test('v7.11.8 concept seeds carry teaching dimensions with source discipline', () => {
-  assert.equal(CONCEPT_SEED_VERSION, 'v8');
+test('v7.11.10 concept seeds carry teaching dimensions with source discipline', () => {
+  assert.equal(CONCEPT_SEED_VERSION, 'v9');
   assert.equal(CONCEPT_SEEDS.length, 53);
   const ids = CONCEPT_SEEDS.map((c) => c.id);
   assert.equal(new Set(ids).size, ids.length, 'concept ids must be unique');
@@ -441,7 +441,7 @@ test('v7.11.2 spot applications are spot-scoped with provenance', () => {
   });
 });
 
-test('v7.11.9 concept quiz items derive from selfChecks with valid answers', () => {
+test('v7.11.10 concept quiz items derive from selfChecks with valid answers', () => {
   assert.equal(CONCEPT_QUIZ_VERSION, 4);
   const items = ConceptQuiz.getItems();
   const flatCount = CONCEPT_SEEDS.reduce((n, c) => n + (c.selfChecks || []).length, 0);

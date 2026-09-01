@@ -7,7 +7,7 @@
 // extraction 标注沿用读数规范：正文核验 / 文章表格直读 / 图像复核（留待）。
 // 全书 334 课作为同一本参考源：典型 = 本库已提炼条目；全本 = docs/ddog-concept-map.md 附录 A 页码台账。
 // 本文件为静态只读知识，直接 import，不入 localStorage。schema 见 docs/concept-seed-schema.md。
-export var CONCEPT_SEED_VERSION = 'v8';
+export var CONCEPT_SEED_VERSION = 'v9';
 
 // sourceRef 简写：DDoG 课程（默认 extraction 正文核验）
 function L(lesson, chapter, readerPages, extraction) {
@@ -68,7 +68,14 @@ export var CONCEPT_SEEDS = [
       answer: '黄金比例 Φ，162% 池',
       answerNote: '设 s = bet/pot：MDF = 1/(s+1)，pot odds = s/(2s+1)，两式相等解得 s = Φ≈1.618，此时两个百分比都是 38%。',
       sourceRef: L('Where do pot odds and MDF meet?', 2, '86-89'),
-    }],
+    },
+      {
+        question: '200bb 3BP，BB 三街连开 66%/66%/102%，UTG 全程跟注不 raise。若 UTG 翻牌有 4.5% 同花，摊牌范围里同花占多少？',
+        options: ['25%', '50%', '10%', '35%'],
+        answer: '25%',
+        answerNote: 'MDF 逐街连乘：0.60×0.50×0.60≈0.18——最终 call-down 只有起始范围 18%；4.5%/18% = 25%。这就是深度越大 nut 优势越重要的算术。',
+        sourceRef: L('Deepstack triple barrel math', 7, '764-767', '正文核验+文章表格直读'),
+      }],
     relatedSpotIds: ['btnvsbb-caller-facebet', 'covsbtn-caller-facebet'],
     relatedConceptIds: ['concept-pot-odds', 'concept-indifference', 'concept-value-bluff-ratio', 'concept-mdf-boundary'],
     relatedSources: [],
@@ -297,6 +304,7 @@ export var CONCEPT_SEEDS = [
       { text: '价值手的 blocker 方向：BB 河牌 lead 后，KK 带黑桃 raise（BB 顶对大多不含黑桃——少 block 跟注）、无黑桃只 call（unblocks calls 的牌想被跟）。', sourceRef: L('Raising the river in position', 3, '203-205') },
       { text: '诈唬手的 blocker 方向：BTN 三街后最佳河牌诈唬是 J9（58% 的 BB 河牌 call 是两对、9 block 之）；AJ/AT block 弃牌段 → QJ/JT/J6 是坏诈唬，check back 100% 输。', sourceRef: L('Triple-barrel bluffing', 9, '961-964') },
       { text: 'blocker 决定 XR 的时机：663 面 A6 trips 最少 XR——A6 block CO 的 call 范围（强高张+backdoor），常延迟到转/河再 XR。', sourceRef: L('Check-raising on paired boards', 10, '1048-1051') },
+      { text: '防守侧选同花听牌（75bb 双花 runout 面对 76% delay c-bet）：FD 占 BB 范围约 16%——继续太多会被价值注剥削，优先 call「不 block 对方诈唬段」的听牌（unblock bluffs）。', sourceRef: L('So many flush draws to choose from!', 7, '732-735') },
     ],
     thresholds: [
       { text: '好陷阱三条件：对后续 runout 不脆弱；block 对方会跟的手；unblock 对方会弃的手——AA 三条全中，故常 trap 而非超池。', sourceRef: L('Overbet sizing motifs', 5, '440-443') },
@@ -335,6 +343,7 @@ export var CONCEPT_SEEDS = [
       { text: '对抗极化转牌注（A85-2 面 125%）：四个抓诈手 equity 接近，最优是 53s——能在 5/4/3 转 river outdraw AK/AQ（对抗极化范围，价值段与诈唬段之间的手都是潜在抓诈手，优选有清晰 outdraw 路径 + 好 blocker 的）。', sourceRef: L('Defending against polar turn barrels', 11, '1191-1194') },
       { text: '3BP 三街全下（Q88-22，25/50/44）：最高 EV 抓诈口袋对 = 33——唯一不 block 对方任何诈唬的手。最好的抓诈手 unblock 诈唬和/或 block 价值。', sourceRef: L('Hero calling triple barrels in 3BP', 11, '1209-1212') },
       { text: '「纯抓诈手」的严格定义（TK2-44 面 55/55/90）：打不过对方任何价值注的手（55 正介于诈唬与价值之间、对平衡对手无差别）；能打过部分价值注的（A4/KT）是 value-beater，不适用无差别逻辑。低 SPR 下对方连 Kx 顶对甚至 JJ/QQ 都全下。', sourceRef: L('Bluff-Catching Triple Barrels', 11, '1262-1266') },
+      { text: '静态对子（77-99）在 3BP 的弃牌时点 = 面对转牌 barrel：preflop（set-mine）与干面 flop 仍守，转 Q 同时打了 SB 诈唬又降 77-99 equity → 弱于 T 的静态对子弃。', sourceRef: L('Static bluff-catchers in deep 3BP', 7, '741-744') },
     ],
     thresholds: [
       { text: '对方 XR 后的价值段起点例：HU 500bb check-down 面，raise = trips+；SRP XR 面，价值 = 同花、诈唬 = 次对以下——中间整段都是无差别抓诈区。', sourceRef: L('Triple Barrel Fold', 8, '861-865') },
@@ -553,6 +562,7 @@ export var CONCEPT_SEEDS = [
     contrastExamples: [
       { text: '同一位置不同 SPR：KQs 在 CO vs SB 3BP 河牌被跟仅 45% equity 仍 jam（OOP check 会被反打）；若位置互换，同手 check behind 实现 equity 即可。', sourceRef: L('Value betting with <50% equity', 8, '875-878') },
       { text: '三街诈唬的 blocker 精选（A2J-7Q 面 125%/75% 线）：T7/K2 block KT 顺 + A7/A2 类跟牌 → 诈唬 EV 超过 check；98/96 block 更多弃牌手 → check back（打不过就别送）。', sourceRef: L('Showdown or Shove?', 11, '1272-1275') },
+      { text: '短码 OOP 转牌全下的实现策略（10bb HU limped 面）：BB 用 8x/次对全下——被跟仅约 39% equity，但否认 equity、引更差手跟、迫 SB 过弃，同时改善范围顶部 EV。', sourceRef: L('Building short-stack turn shoves', 7, '659-662') },
       { text: '弃牌权益不均质（A22 类面）：最弱的超对反而更常下注——低对 fold out 的高牌恰是能 outdraw 它的手（deny equity 收益大）；KK 弃掉这些手几乎无收益。', sourceRef: L('Scared underpairs', 2, '153-156') },
       { text: 'Vluff 实例：BTN 86% 河牌注持 T9s——同时 fold 掉 SB 更好的 QJ/KJ、被更差的 A6/A7 跟。前提 = 你声明极化范围、对方按 blocker 决定抓诈。', sourceRef: L('The Vluff', 5, '472-476') },
       { text: '面对 30% block-bet 的最弱价值加注 = 顶对 K+ kicker：对方 block 主体是次对，宽被动线里你的 A8o 面对该注约 90% equity。', sourceRef: L('How thin should you raise the river', 5, '494-497') },
@@ -623,6 +633,7 @@ export var CONCEPT_SEEDS = [
       { text: 'AK5 面 AA 不进超池线：它 block 对方 calling range，而 trap 三条件全中——"AA 靠陷阱赚得比超池多"。', sourceRef: L('Overbet sizing motifs', 5, '440-443') },
       { text: '河牌两对的 trap 选择：A6/A2/62 check（block 对手 check-back 段 6x/2x → 更可能被下注，留 check-shove 机会）；J9/96 block 对手价值段（Jx/9x）→ 自己找价值。', sourceRef: L('Trapping the river OOP', 9, '1008-1011') },
       { text: 'OOP 转牌 set 的 trap 选择（K92-J 面）：JJ/99 最常慢打——它们 block BB 的 check-back 段（次对/第三对）→ check 更引下注；KK block call 段也 block Kx 下注段 → bet/check 无显著差；22 无 blocker 性质总是 bet。', sourceRef: L('Trapping the Turn OOP', 11, '1276-1280') },
+      { text: 'BvB 40bb 顺子的快慢打分野（K92-J 面）：AJs block BB 继续范围大部分 → call 慢打（不脆弱、不怕抽）；KQ 脆弱 → 立即入钱 cool 顺子并打走 FD；T9s unblock 对方 Ax/Jx 跟注 → 快打。', sourceRef: L('Trapping the turn BvB', 7, '708-711') },
     ],
     thresholds: [],
     selfChecks: [{
@@ -649,6 +660,7 @@ export var CONCEPT_SEEDS = [
       { text: '同一转牌超池：顶对/超对 = 静态抓诈手该弃；A5 有 implied odds 可 outdraw 顶部——同范围里不同手类的跟注判据完全不同。', sourceRef: L('Implied odds', 1, '33-35') },
       { text: 'J8 vs A8 同 out 数：A8 equity 更高却更不值钱——J8 抽到的是 nuts（cooler 别人），A8 抽到的常是二手牌。', sourceRef: L('Nut Potential', 1, '55-56') },
       { text: 'limp 选项的范围效应（20bb HU cash）：允许 open-limp 时 SB 玩 91% 手牌，禁 limp 掉到 73%——limp 提升 range 底部 EV，并给对方坏的 shove 价格（短码下更重要）。', sourceRef: L('HU cash shortstack limps', 11, '1182-1186') },
+      { text: '10bb MTT SB 的 limp/shove 分工：limp 极化（弱手 + QQ+ 价值），shove 浓缩（高 equity、好 blocker 的手）——limp 改善的是范围底部的 EV。', sourceRef: L('Limping premiums', 7, '650-654') },
     ],
     thresholds: [],
     selfChecks: [{
@@ -945,6 +957,7 @@ export var CONCEPT_SEEDS = [
     applicability: '通用；draw-heavy 面的防守与下注尺寸判断。',
     contrastExamples: [
       { text: '同一 pot shove：纯 0% 诈唬 → 守 50%；20% equity draw 诈唬 → 守 57%——半诈唬"等效于更小的注"。', sourceRef: L('MDF facing draws', 5, '432-435') },
+      { text: '16bb 面 57% 后手：combo draw 是首选全下——SB 线性策略 = 脆弱顶对 + 高 equity combo draws，瞄准对方 c-bet 范围底部的 air，阻止其无顾忌 c-bet。', sourceRef: L('Shoving draws on the flop', 7, '670-673') },
     ],
     thresholds: [],
     selfChecks: [{
@@ -1079,6 +1092,7 @@ export var CONCEPT_SEEDS = [
     thresholds: [
       { text: '超池价值准入：被跟时 equity 必须领先对方跟注段（书例 A9 落后弃、AT 勉强领先进）。', sourceRef: L('Double overbet diligence', 4, '357-359') },
       { text: '200bb 深码超池的 turn 选择（A95 面）：成对/成抽的 turn（6/9/8）中和进攻方 nut 优势（对方获得反制超池的 nuts）；J turn 保留 nut 优势 → 超池最频。价值侧 = 强顶对+；成抽 turn 上 AQ 类不能超注（会 overplay）。', sourceRef: L('Overbetting the Turn', 11, '1255-1258') },
+      { text: '150bb 深码价值阈值随 runout 弹性（AKT-9-2 砖河）：对方 draw 全灭、己方价值全保留 → 200% 全下的价值阈值可弱至 T9 两对；深码 stack-off 范围本就收窄向强手。', sourceRef: L('Deepstack value shove thresholds', 7, '759-763') },
     ],
     selfChecks: [{
       question: 'HJ vs BB SRP，AK5 面。HJ 应考虑用哪只口袋对超池翻牌？',
@@ -1461,6 +1475,7 @@ export var CONCEPT_SEEDS = [
     applicability: 'chop 面防守；3BP 转牌 probe 应对。',
     contrastExamples: [
       { text: 'UTG 的 probe 构造 = 6x + Ax + 诈唬：QQ/AJ（裸 Ax）可弃，能 outdraw Ax 的手因 implied odds 总是继续。', sourceRef: L('Facing turn probes on 4-straight boards', 9, '981-984') },
+      { text: '5-flush 深码 check-down（150bb）：双方被迫慢打大量价值保中等牌 → 到河牌范围宽且不封顶；多数范围 chop → 策略核心是把对方诈离 chop，河牌 3-bet 价值阈值降到第二大同花。', sourceRef: L('5-Flush deepstack river 3-bets', 7, '754-758') },
     ],
     thresholds: [],
     selfChecks: [{
@@ -1624,4 +1639,10 @@ export var CONCEPT_APPLICATIONS = [
   { id: 'app-btn7-deviation-3', spotId: 'btnvsbb-caller-riverfirst', step: 'deviation',
     text: '你的河牌 probe 面对的是对方的好 pot odds：4-flush 面 BTN 范围仅 21% 同花仍守 67%——被跟范围比直觉宽，probe 的尺寸与诈唬配比按此校准。',
     conceptIds: ['concept-pot-odds', 'concept-block-bet'], sourceRef: L('Defending the BXB line on 4-flush boards', 9, '1005-1007') },
+  { id: 'app-btn6-streets-2', spotId: 'btnvsbb-raiser-riverbet', step: 'streets',
+    text: '深度边界（对照本卡 100bb 基线）：150bb 砖河且对方抽牌全灭时，200% 全下的价值阈值可弱至 T9 两对；深码超池则要求 nut 优势未被转牌中和——同一 spot 换深度即换结构。',
+    conceptIds: ['concept-overbetting', 'concept-thin-value'], sourceRef: L('Deepstack value shove thresholds', 7, '759-763') },
+  { id: 'app-btn2-deviation-3', spotId: 'btnvsbb-caller-facebet', step: 'deviation',
+    text: '深度越深，BB 对 33% 翻牌注 call 越多、raise 越少（50bb: 15.5/48.5 vs 200bb: 12.2/55.7，文章表格直读）——implied odds 放大，但 XR 门槛升到更强 nuts。',
+    conceptIds: ['concept-stack-depth'], sourceRef: L('How stack depth impacts strategy', 11, '1251-1254', '正文核验+文章表格直读') },
 ];
