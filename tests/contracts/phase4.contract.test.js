@@ -26,6 +26,116 @@ const { DecisionRadar } = await import('../../src/modules/decisionRadar.js');
 const { OBSERVATION_VERSION } = await import('../../src/modules/analysisReadModel.js');
 const { GTO_BASELINE_SEEDS, GTO_BASELINE_SEED_VERSION } = await import('../../src/data/gtoBaselineSeed.js');
 const { EXTERNAL_EVIDENCE_SEEDS, EXTERNAL_EVIDENCE_SEED_VERSION } = await import('../../src/data/externalEvidenceSeed.js');
+const { StrategyDesk } = await import('../../src/modules/strategyDesk.js');
+const { StrategyRepo, DossierRepo, HandRepo } = await import('../../src/store/store.js');
+const { Utils } = await import('../../src/utils.js');
+
+function mockStrategyEditor(t) {
+  const elements = new Map();
+  const previousDocument = globalThis.document;
+  t.after(() => { globalThis.document = previousDocument; });
+  globalThis.document = {
+    getElementById(id) {
+      if (!elements.has(id)) {
+        let value = '';
+        elements.set(id, { get value() { return value; }, set value(v) { value = String(v ?? ''); },
+          style: {}, dataset: {}, innerHTML: '', textContent: '', addEventListener() {} });
+      }
+      return elements.get(id);
+    },
+  };
+  t.mock.method(Utils, 'showToast', () => {});
+  t.mock.method(Utils, 'escapeHtml', (s) => String(s ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('"', '&quot;'));
+  t.mock.method(StrategyDesk, 'render', () => {});
+  return document;
+}
+
+// [V7.11.12 新增] Exercise editor round trips, including fields absent from the form.
+test('editing GTO source notes preserves decision and source metadata', (t) => {
+  const doc = mockStrategyEditor(t);
+  const records = structuredClone(GTO_BASELINE_SEEDS);
+  t.mock.method(GtoBaselineRepo, 'getAll', () => records);
+  const save = t.mock.method(GtoBaselineRepo, 'saveAll', () => {});
+  for (const record of records) {
+    const before = structuredClone(record);
+    StrategyDesk.openGtoBaselineEditor(record.id);
+    doc.getElementById('gtoTextureNotes').value = 'edited notes';
+    StrategyDesk.saveGtoBaseline();
+    assert.equal(record.textureNotes, 'edited notes', record.id);
+    for (const key of ['question', 'street', 'scope', 'conditions', 'overall', 'source', 'capturedAt']) {
+      assert.deepEqual(record[key], before[key], record.id + ': ' + key);
+    }
+  }
+  assert.equal(save.mock.callCount(), records.length);
+});
+
+test('editing evidence notes preserves river and contextual scopes', (t) => {
+  const doc = mockStrategyEditor(t);
+  const records = structuredClone(EXTERNAL_EVIDENCE_SEEDS);
+  t.mock.method(EvidencePackRepo, 'getAll', () => records);
+  const save = t.mock.method(EvidencePackRepo, 'saveAll', () => {});
+  for (const record of records) {
+    const before = structuredClone(record.scope);
+    StrategyDesk.editEvidence(record.id);
+    doc.getElementById('evKeyPoints').value = 'edited notes';
+    StrategyDesk.saveEvidence();
+    assert.equal(record.keyPoints, 'edited notes', record.id);
+    assert.deepEqual(record.scope, before ?? null, record.id);
+  }
+  assert.equal(save.mock.callCount(), records.length);
+});
+
+test('strategy references follow the stored decision and board instead of defaulting to cbet', (t) => {
+  const doc = mockStrategyEditor(t);
+  t.mock.method(DecisionRadar, 'scan', () => ({ signals: [] }));
+  t.mock.method(LearningUnitRepo, 'getAll', () => []);
+  t.mock.method(DossierRepo, 'getAll', () => []);
+  t.mock.method(GtoBaselineRepo, 'getAll', () => [
+    { id: 'wrong', scenario: 'BTNvsBB', question: 'cbet', isActive: true, source: { title: 'wrong-cbet-source' } },
+    { id: 'right', scenario: 'BTNvsBB', question: 'facebet', isActive: true, scope: { boardCategories: ['monotone'] }, source: { title: 'right-facebet-source' } },
+    { id: 'other', scenario: 'BTNvsBB', question: 'facebet', isActive: true, scope: { boardCategories: ['dry_low'] }, source: { title: 'wrong-board-source' } },
+  ]);
+  const strategies = [{ id: 's', familyKey: 'BTNvsBB|flop', spotKeys: ['BTNvsBB|flop|9max|monotone|facebet'] }];
+  t.mock.method(StrategyRepo, 'getAll', () => strategies);
+  for (const key of ['BTNvsBB|flop|9max|monotone|facebet', 'BTNvsBB|flop|monotone|facebet']) {
+    strategies[0].spotKeys = [key];
+    StrategyDesk.renderStrategyList();
+    const html = doc.getElementById('strategyList').innerHTML;
+    assert.ok(html.includes('right-facebet-source'));
+    assert.ok(!html.includes('wrong-cbet-source'));
+    assert.ok(!html.includes('wrong-board-source'));
+  }
+  strategies[0].spotKeys = [];
+  StrategyDesk.renderStrategyList();
+  assert.ok(!doc.getElementById('strategyList').innerHTML.includes('wrong-cbet-source'));
+});
+
+test('radar retains signals beyond the display limit for strategy retests', (t) => {
+  const observations = [];
+  for (const scenario of ['BTNvsBB', 'SBvsBB', 'COvsBTN']) {
+    for (const profileKey of ['6max', '9max']) {
+      for (let i = 0; i < 20; i++) observations.push({
+        handId: scenario + profileKey + i, scenario, profileKey, question: 'cbet',
+        boardCategory: i < 8 ? 'monotone' : 'dry_low', didBet: i < 8,
+      });
+    }
+  }
+  const signals = DecisionRadar.buildSignals(observations);
+  const lookup = DecisionRadar.findSignalForStoredSpotKey(signals, 'COvsBTN|flop|9max|dry_low|cbet');
+  assert.ok(lookup.signal, 'a lower-ranked signal still exists for retesting');
+  assert.equal(DecisionRadar.evaluateRetest({ freq: 0, sample: 12 }, lookup.signal).due, false);
+  assert.equal(signals.length, 12);
+  const doc = mockStrategyEditor(t);
+  t.mock.method(DecisionRadar, 'scan', () => ({ signals, stats: { total: 120, attributed: 120 } }));
+  t.mock.method(HandRepo, 'getAll', () => []);
+  t.mock.method(DossierRepo, 'getAll', () => [{ id: 'tracked', signalId: lookup.signal.id }]);
+  t.mock.method(GtoBaselineRepo, 'getAll', () => []);
+  t.mock.method(EvidencePackRepo, 'getAll', () => []);
+  DecisionRadar.renderInto();
+  const html = doc.getElementById('radarBody').innerHTML;
+  assert.equal((html.match(/<article /g) || []).length, DecisionRadar.THRESHOLDS.maxSignals);
+  assert.ok(html.includes(lookup.signal.id), 'tracked signals get display priority before truncation');
+});
 
 test('retest evaluation compares baseline snapshot against current signal', () => {
   assert.equal(DecisionRadar.evaluateRetest(null, null).due, false);

@@ -37,13 +37,17 @@ function _scopeLabel(scope, fallbackScenario, fallbackQuestion, fallbackStreet) 
   return parts.join(' · ');
 }
 
-function _readScope(prefix) {
+function _readScope(prefix, previousScope) {
   var scenario = document.getElementById(prefix + 'Scenario').value;
   var question = document.getElementById(prefix + 'Question').value;
   var boardCategory = document.getElementById(prefix + 'BoardCategory').value;
+  // [V7.11.12 修改] 表单只编辑三个条件；未改选择时保留河牌、情境关系与多牌面范围。
+  var previous = previousScope || {};
+  var previousBoard = Array.isArray(previous.boardCategories) && previous.boardCategories.length === 1 ? previous.boardCategories[0] : '';
+  if (scenario === (previous.scenario || '') && question === (previous.question || '') && boardCategory === previousBoard) return previousScope || null;
   if (!scenario && !question && !boardCategory) return null;
   if (!scenario || !question || !boardCategory) return { incomplete: true };
-  return { scenario: scenario, street: 'flop', question: question, boardCategories: [boardCategory], relation: 'direct' };
+  return Object.assign({ street: 'flop', relation: 'direct' }, previousScope, { scenario: scenario, question: question, boardCategories: [boardCategory] });
 }
 
 function _writeScope(prefix, scope) {
@@ -238,6 +242,9 @@ export var StrategyDesk = {
     document.getElementById('gtoGame').value = conditions.game || '';
     document.getElementById('gtoBetFreq').value = b && b.overall ? b.overall.betFreq : '';
     document.getElementById('gtoCheckFreq').value = b && b.overall ? b.overall.checkFreq : '';
+    // [V7.11.12 修改] 此表单的频率输入仅适用于 C-bet，其他决策保留原始应对数据。
+    document.getElementById('gtoBetFreq').disabled = !!(b && b.question && b.question !== 'cbet');
+    document.getElementById('gtoCheckFreq').disabled = !!(b && b.question && b.question !== 'cbet');
     document.getElementById('gtoTextureNotes').value = b ? b.textureNotes || '' : '';
     document.getElementById('gtoBoardCategory').value = b && b.scope && Array.isArray(b.scope.boardCategories) && b.scope.boardCategories.length === 1 ? b.scope.boardCategories[0] : '';
     document.getElementById('gtoSourceTitle').value = source.title || '';
@@ -262,33 +269,37 @@ export var StrategyDesk = {
     const checkFreq = parseFloat(document.getElementById('gtoCheckFreq').value);
     const sourceTitle = document.getElementById('gtoSourceTitle').value.trim();
     const boardCategory = document.getElementById('gtoBoardCategory').value;
-    const radarScope = boardCategory ? { boardCategories: [boardCategory] } : null;
-    if (isNaN(stackBB) || stackBB <= 0) { Utils.showToast('需要有效筹码（BB）'); return; }
-    if (!sourceTitle) { Utils.showToast('GTO 基线需要来源'); return; }
     const baselines = GtoBaselineRepo.getAll();
     let record = this.editingGtoBaselineId ? baselines.find((x) => x.id === this.editingGtoBaselineId) : null;
+    const oldScope = record && record.scope;
+    const oldBoard = oldScope && Array.isArray(oldScope.boardCategories) && oldScope.boardCategories.length === 1 ? oldScope.boardCategories[0] : '';
+    const radarScope = record && boardCategory === oldBoard ? oldScope
+      : boardCategory ? Object.assign({}, oldScope, { boardCategories: [boardCategory] }) : null;
+    const unchangedUnknownStack = record && (!record.conditions || record.conditions.stackBB == null) && !document.getElementById('gtoStackBB').value.trim();
+    if (!unchangedUnknownStack && (!Number.isFinite(stackBB) || stackBB <= 0)) { Utils.showToast('需要有效筹码（BB）'); return; }
+    if (!sourceTitle) { Utils.showToast('GTO 基线需要来源'); return; }
+    const question = record && record.question || 'cbet';
+    // [V7.11.12 修改] 只覆盖表单可编辑字段，来源核验信息与未显示的条件继续保留。
     const fields = {
       scenario: scenario,
-      street: 'flop',
-      question: 'cbet',
+      street: record && record.street || 'flop',
+      question: question,
       scope: radarScope,
       referenceMode: 'structural',  // [V7.10.5 新增] 直接条件匹配尚未建立前，手工条目同样不作数值对照
-      conditions: {
-        stackBB: stackBB,
+      conditions: Object.assign({ tableSize: '', solver: '手工录入' }, record && record.conditions, {
+        stackBB: unchangedUnknownStack ? record.conditions && record.conditions.stackBB : stackBB,
         game: document.getElementById('gtoGame').value.trim(),
-        tableSize: '',
-        solver: '手工录入',
-      },
-      overall: isNaN(betFreq) ? null : { betFreq: betFreq, checkFreq: isNaN(checkFreq) ? null : checkFreq, sizingSplit: null },
+      }),
+      overall: question !== 'cbet' ? record.overall : isNaN(betFreq) ? null
+        : Object.assign({ sizingSplit: null }, record && record.overall, { betFreq: betFreq, checkFreq: isNaN(checkFreq) ? null : checkFreq }),
       textureNotes: document.getElementById('gtoTextureNotes').value.trim(),
-      source: {
+      source: Object.assign({ publisher: '' }, record && record.source, {
         title: sourceTitle,
         url: document.getElementById('gtoSourceUrl').value.trim(),
-        publisher: '',
         articleDate: document.getElementById('gtoSourceDate').value,
-      },
+      }),
       transferBoundary: document.getElementById('gtoBoundary').value.trim(),
-      capturedAt: Utils.getLocalDate(),
+      capturedAt: record ? record.capturedAt : Utils.getLocalDate(),
     };
     const now = Utils.getLocalDatetime();
     if (record) {
@@ -348,8 +359,16 @@ export var StrategyDesk = {
           ' <button class="btn--mini" data-unit-archive="' + Utils.escapeHtml(u.id) + '">归档</button></div>';
       }).join('');
       // [V7.10.5 修改] 这里同样只展示来源频率，不与当前策略/Spot 做伪精确对照。
-      const scenarioKey = (s.familyKey || '').split('|')[0];
-      const gtoMatches = DecisionRadar.matchGtoBaselines(GtoBaselineRepo.getAll(), scenarioKey, 'cbet');
+      // [V7.11.12 修改] 从已存 Spot 还原决策与牌面；仅有 Family 时没有足够条件自动配资料。
+      const gtoMatches = [];
+      (s.spotKeys || []).forEach((key) => {
+        const parts = key.split('|');
+        if ((parts.length !== 4 && parts.length !== 5) || parts[1] !== 'flop' || s.familyKey !== parts[0] + '|' + parts[1]) return;
+        const signal = { scenario: parts[0], question: parts[parts.length - 1], boardCategory: parts[parts.length - 2] };
+        DecisionRadar.matchGtoBaselines(GtoBaselineRepo.getAll(), signal).forEach((b) => {
+          if (!gtoMatches.some((match) => match.id === b.id)) gtoMatches.push(b);
+        });
+      });
       const gtoHtml = gtoMatches.length
         ? '<div class="finding-card__meta" style="color:#8b949e">🌐 GTO 结构性参考：' + gtoMatches.map((b) => {
           const reference = DecisionRadar.getGtoStructuralReference(b);
@@ -588,13 +607,13 @@ export var StrategyDesk = {
     const title = document.getElementById('evTitle').value.trim();
     if (!title) { Utils.showToast('证据包需要标题'); return; }
     const now = Utils.getLocalDatetime();
-    const radarScope = _readScope('ev');
+    const packs = EvidencePackRepo.getAll();
+    let record = this.editingEvidenceId ? packs.find((p) => p.id === this.editingEvidenceId) : null;
+    const radarScope = _readScope('ev', record && record.scope);
     if (radarScope && radarScope.incomplete) { Utils.showToast('Radar 匹配需同时选择场景、决策和牌面类别'); return; }
     if (document.getElementById('evEvidenceLevel').value === 'conditional' && !radarScope) {
       Utils.showToast('条件匹配证据需标注 Radar 场景、决策和牌面类别'); return;
     }
-    const packs = EvidencePackRepo.getAll();
-    let record = this.editingEvidenceId ? packs.find((p) => p.id === this.editingEvidenceId) : null;
     const fields = {
       title: title,
       sourceType: document.getElementById('evSourceType').value,

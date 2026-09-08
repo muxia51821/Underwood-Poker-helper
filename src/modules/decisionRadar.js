@@ -268,7 +268,8 @@ export var DecisionRadar = {
       if (Math.abs(b.deviationPP) !== Math.abs(a.deviationPP)) return Math.abs(b.deviationPP) - Math.abs(a.deviationPP);
       return b.spotCount - a.spotCount;
     });
-    return signals.slice(0, t.maxSignals);
+    // [V7.11.12 修改] 复测需要完整信号集；展示上限在已建档优先排序后应用。
+    return signals;
   },
 
   // 快照 → 信号（Discover 渲染入口共用同一 snapshot 口径）。
@@ -326,7 +327,7 @@ export var DecisionRadar = {
       var aOpen = self.findDossierForSignal(a, dossiers, hands) ? 1 : 0;
       var bOpen = self.findDossierForSignal(b, dossiers, hands) ? 1 : 0;
       return bOpen - aOpen;
-    });
+    }).slice(0, THRESHOLDS.maxSignals);
     var byFamily = {};
     signals.forEach(function (s) {
       if (!byFamily[s.scenario]) byFamily[s.scenario] = [];
