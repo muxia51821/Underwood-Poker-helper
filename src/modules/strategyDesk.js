@@ -5,6 +5,9 @@ import { Utils } from '../utils.js';
 import { EvidencePackRepo, StrategyRepo, DossierRepo, LearningUnitRepo, GtoBaselineRepo } from '../store/store.js';
 import { Navigation } from './navigation.js';
 import { DecisionRadar } from './decisionRadar.js';  // [V7.10.2 新增] 复测基线快照与判定
+import { OBSERVATION_VERSION } from './analysisReadModel.js';  // [V7.11.14 新增]
+import { getStrategyLearningTarget } from './strategyStudy.js';  // [V7.11.15 新增]
+import { StrategyLibrary } from './strategyLibrary.js';  // [V7.11.15 新增]
 
 var STATUS_LABELS = { research: '研究中', 'candidate-adjustment': '候选调整', maintain: '维持现状' };
 var SOURCE_TYPE_LABELS = { video: '视频', article: '文章', book: '书', course: '课程', solver: 'Solver', mda: 'MDA', community: '社区', personal: '个人观察' };
@@ -96,6 +99,9 @@ export var StrategyDesk = {
       if (row) this.openGtoBaselineEditor(row.dataset.gtoId);
     });
     document.getElementById('strategyList').addEventListener('click', (e) => {
+      // [V7.11.14 新增] Rebaselining requires a deliberate action and retains the old snapshot.
+      const baselineBtn = e.target.closest('[data-strategy-rebaseline]');
+      if (baselineBtn) { e.stopPropagation(); this.rebaselineStrategy(baselineBtn.dataset.strategyRebaseline); return; }
       // [V7.10.2 新增] 生成训练/复测单元
       const unitBtn = e.target.closest('[data-strategy-unit]');
       if (unitBtn) { e.stopPropagation(); this.createLearningUnit(unitBtn.dataset.strategyUnit); return; }
@@ -103,12 +109,7 @@ export var StrategyDesk = {
       const unitQuizBtn = e.target.closest('[data-unit-quiz]');
       if (unitQuizBtn) {
         e.stopPropagation();
-        const unit = LearningUnitRepo.getAll().find((u) => u.id === unitQuizBtn.dataset.unitQuiz);
-        if (unit && unit.quizScenario) {
-          Navigation.goToLearningTarget({ findingId: unit.id, type: 'strategy_quiz', scenario: unit.quizScenario, boardCategory: '', handIds: [] });
-        } else {
-          Utils.showToast('该单元没有可用的 Quiz 场景（仅 BTNvsBB/SBvsBB 翻牌有 GTO 训练数据）');
-        }
+        this.startLearningUnit(unitQuizBtn.dataset.unitQuiz);
         return;
       }
       // [V7.10.2 新增] 归档单元
@@ -315,6 +316,27 @@ export var StrategyDesk = {
     Utils.showToast('GTO 基线已保存');
   },
 
+  // [V7.11.14 新增] Historical baselines remain exportable; cancellation changes nothing.
+  rebaselineStrategy: function (id) {
+    const strategies = StrategyRepo.getAll();
+    const strategy = strategies.find((item) => item.id === id);
+    if (!strategy?.baselineSnapshot || strategy.baselineSnapshot.observationVersion === OBSERVATION_VERSION) return false;
+    const lookup = DecisionRadar.findSignalForStoredSpotKey(DecisionRadar.scan().signals, (strategy.spotKeys || [])[0]);
+    if (!lookup.signal || lookup.ambiguous) {
+      Utils.showToast('当前没有唯一可用的信号；保留旧基线，先核对观察档案与样本。');
+      return false;
+    }
+    if (!confirm('按当前行动归属口径重建复测基线？旧快照会保留，不能把这次口径变化当成策略改善。')) return false;
+    const now = Utils.getLocalDatetime();
+    const updated = { ...strategy,
+      baselineHistory: [...(strategy.baselineHistory || []), { ...strategy.baselineSnapshot }],
+      baselineSnapshot: { freq: lookup.signal.spotFreq, sample: lookup.signal.spotCount, capturedAt: now, observationVersion: OBSERVATION_VERSION },
+      updatedAt: now };
+    StrategyRepo.saveAll(strategies.map((item) => item.id === id ? updated : item));
+    this.render();
+    return true;
+  },
+
   renderStrategyList: function () {
     const strategies = StrategyRepo.getAll().slice().sort(function (a, b) {
       return String(b.updatedAt || '').localeCompare(String(a.updatedAt || ''));
@@ -354,8 +376,9 @@ export var StrategyDesk = {
       }
       const units = unitsByStrategy[s.id] || [];
       const unitsHtml = units.filter((u) => u.status !== 'archived').map((u) => {
-        return '<div>' + (u.type === 'quiz' ? '🎓' : '🔁') + ' ' + Utils.escapeHtml(u.title) +
-          ' <button class="btn--mini" data-unit-quiz="' + Utils.escapeHtml(u.id) + '">去 Quiz</button>' +
+        const target = getStrategyLearningTarget(s);
+        return '<div>' + Utils.escapeHtml(u.title) +
+          ' <button class="btn--mini" data-unit-quiz="' + Utils.escapeHtml(u.id) + '">' + (target.type === 'quiz' ? '练习翻牌频率' : '练习对应主题') + '</button>' +
           ' <button class="btn--mini" data-unit-archive="' + Utils.escapeHtml(u.id) + '">归档</button></div>';
       }).join('');
       // [V7.10.5 修改] 这里同样只展示来源频率，不与当前策略/Spot 做伪精确对照。
@@ -387,6 +410,7 @@ export var StrategyDesk = {
         (gtoHtml ? '<div class="finding-card__meta">' + gtoHtml + '</div>' : '') +
         (unitsHtml ? '<div class="finding-card__meta">' + unitsHtml + '</div>' : '') +
         '<div class="finding-card__actions">' +
+        (s.baselineSnapshot && s.baselineSnapshot.observationVersion !== OBSERVATION_VERSION ? '<button class="btn--mini" data-strategy-rebaseline="' + Utils.escapeHtml(s.id) + '">按当前口径重建基线</button>' : '') +
         '<button class="btn--mini" data-strategy-edit="' + Utils.escapeHtml(s.id) + '">编辑</button>' +
         '<button class="btn--mini" data-strategy-unit="' + Utils.escapeHtml(s.id) + '">生成训练/复测</button>' +
         '<button class="btn--mini btn--danger" data-strategy-delete="' + Utils.escapeHtml(s.id) + '">删除</button>' +
@@ -485,7 +509,8 @@ export var StrategyDesk = {
     // [V7.10.2 新增] 建档快照：该 spot 当前信号频率/样本作为复测基线
     if (!record.baselineSnapshot && (record.spotKeys || []).length) {
       const lookup = DecisionRadar.findSignalForStoredSpotKey(DecisionRadar.scan().signals, record.spotKeys[0]);
-      if (lookup.signal) record.baselineSnapshot = { freq: lookup.signal.spotFreq, sample: lookup.signal.spotCount, capturedAt: now };
+      // [V7.11.14 修改] A saved baseline belongs to a specific attribution version.
+      if (lookup.signal) record.baselineSnapshot = { freq: lookup.signal.spotFreq, sample: lookup.signal.spotCount, capturedAt: now, observationVersion: lookup.signal.observationVersion };
     }
     StrategyRepo.saveAll(strategies);
     this.editingStrategyId = null;
@@ -494,13 +519,12 @@ export var StrategyDesk = {
     Utils.showToast('策略已保存');
   },
 
-  // [V7.10.2 新增] 由策略生成训练/复测单元：Quiz 仅覆盖有 gtoRaw 数据的场景（BTNvsBB/SBvsBB），
-  // 其余 spot 生成 retest 型单元（基线快照对比，见 DecisionRadar.evaluateRetest）。
+  // [V7.11.15 修改] Only flop C-bet nodes use frequency drills; other decisions use topic concepts.
   createLearningUnit: function (strategyId) {
     const s = StrategyRepo.getAll().find((x) => x.id === strategyId);
     if (!s) return;
-    const scenario = (s.familyKey || '').split('|')[0];
-    const quizScenario = ['BTNvsBB', 'SBvsBB'].indexOf(scenario) !== -1 ? scenario : null;
+    const target = getStrategyLearningTarget(s);
+    const quizScenario = target.quizScenario;
     const now = Utils.getLocalDatetime();
     const units = LearningUnitRepo.getAll();
     if (units.some((u) => u.strategyId === strategyId && u.status === 'active')) {
@@ -512,9 +536,10 @@ export var StrategyDesk = {
       strategyId: strategyId,
       familyKey: s.familyKey,
       spotKeys: (s.spotKeys || []).slice(),
-      type: quizScenario ? 'quiz' : 'retest',
-      title: (quizScenario ? '训练 · ' : '复测 · ') + (s.title || s.familyKey),
+      type: target.type,
+      title: (quizScenario ? '训练 · ' : '概念练习 · ') + (s.title || s.familyKey),
       quizScenario: quizScenario,
+      topicId: target.topicId,
       reviewCondition: s.reviewCondition || '',
       status: 'active',
       baselineSnapshot: s.baselineSnapshot || null,
@@ -524,7 +549,18 @@ export var StrategyDesk = {
     });
     LearningUnitRepo.saveAll(units);
     this.render();
-    Utils.showToast(quizScenario ? '已生成 Quiz 训练单元' : '已生成复测单元');
+    Utils.showToast(quizScenario ? '已生成 Quiz 训练单元' : '已生成主题练习单元');
+  },
+
+  // [V7.11.15 新增] Resolve against the current strategy so old river/defense units no longer open C-bet drills.
+  startLearningUnit: function (id) {
+    const unit = LearningUnitRepo.getAll().find((item) => item.id === id);
+    if (!unit) return false;
+    const strategy = StrategyRepo.getAll().find((item) => item.id === unit.strategyId) || unit;
+    const target = getStrategyLearningTarget(strategy);
+    if (target.type !== 'quiz') return StrategyLibrary.practice(target.topicId);
+    return Navigation.goToLearningTarget({ findingId: unit.id, type: 'strategy_quiz', scenario: target.quizScenario,
+      boardCategory: target.boardCategory, handIds: [] });
   },
 
   editStrategy: function (id) {

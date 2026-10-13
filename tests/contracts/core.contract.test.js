@@ -453,17 +453,15 @@ test('flop observations attribute hero actions by scenario flop order', async ()
     // BTNvsBB 加注者：BB 先下注（donk）→ v1 排除
     { id: 'o2', heroPosition: 'BTN', preflopScenario: 'BTNvsBB', boardCategory: 'monotone', actionLineOTF: 'B40-C', pBB: -2 },
     // BTNvsBB 加注者：过牌到底
-    { id: 'o3', heroPosition: 'BTN', preflopScenario: 'BTNvsBB', boardCategory: 'monotone', actionLineOTF: 'X-C', pBB: 1 },
+    { id: 'o3', heroPosition: 'BTN', preflopScenario: 'BTNvsBB', boardCategory: 'monotone', actionLineOTF: 'X-X', pBB: 1 },
     // BTNvsBB 跟注者（先行动，OOP）：过牌后面对 C-bet 弃牌
     { id: 'o4', heroPosition: 'BB', preflopScenario: 'BTNvsBB', boardCategory: 'dryAHigh', actionLineOTF: 'X-B60-F', pBB: -3 },
     // COvsBTN 加注者（先行动，OOP）：直接 C-bet
     { id: 'o5', heroPosition: 'CO', preflopScenario: 'COvsBTN', boardCategory: 'monotone', actionLineOTF: 'B60-C', pBB: 4 },
-    // SBvsBB 加注者（后行动）：BB 过牌后 C-bet
-    { id: 'o11', heroPosition: 'SB', preflopScenario: 'SBvsBB', boardCategory: 'monotone', actionLineOTF: 'X-B60-C', pBB: 4 },
-    // SBvsBB 加注者：BB 先下注 → donk 排除
-    { id: 'o10', heroPosition: 'SB', preflopScenario: 'SBvsBB', boardCategory: 'monotone', actionLineOTF: 'B60-C', pBB: 2 },
-    // SBvsBB 跟注者（BB，先行动）→ 翻牌先行动无"面对下注"，排除
-    { id: 'o6', heroPosition: 'BB', preflopScenario: 'SBvsBB', boardCategory: 'monotone', actionLineOTF: 'X-C', pBB: 0 },
+    // [V7.11.14 修改] Regular tables put SB first; a true heads-up table reverses blind order.
+    { id: 'o11', heroPosition: 'SB', preflopScenario: 'SBvsBB', tableMax: 6, boardCategory: 'monotone', actionLineOTF: 'B60-C', pBB: 4 },
+    { id: 'o10', heroPosition: 'SB', preflopScenario: 'SBvsBB', tableMax: 2, boardCategory: 'monotone', actionLineOTF: 'B60-C', pBB: 2 },
+    { id: 'o6', heroPosition: 'BB', preflopScenario: 'SBvsBB', tableMax: 6, boardCategory: 'monotone', actionLineOTF: 'X-X', pBB: 0 },
     // 场景 other → 排除
     { id: 'o7', heroPosition: 'MP', preflopScenario: 'other', boardCategory: 'monotone', actionLineOTF: 'B60-C', pBB: 2 },
     // 尺寸分桶：低 / 高

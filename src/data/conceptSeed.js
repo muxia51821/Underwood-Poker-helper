@@ -8,7 +8,7 @@
 // 全书 334 课作为同一本参考源：典型 = 本库已提炼条目；全本 = docs/ddog-concept-map.md 附录 A 页码台账。
 // [V7.11.12 新增] 参考源纪律（木下裁决）：只讲牌理，牌例必须典型；对手行为驱动偏离（多 call→少诈唬多价值、多弃→多诈唬；小频率偏差可引起大策略偏移），不做"GTO 鱼"。NevirPoker 为待核验扩展参考源（需木下提供频道/视频链接后逐条核验再入种子，与 GW 博客 URL 同纪律）。
 // 本文件为静态只读知识，直接 import，不入 localStorage。schema 见 docs/concept-seed-schema.md。
-export var CONCEPT_SEED_VERSION = 'v11';
+export var CONCEPT_SEED_VERSION = 'v13';
 
 // sourceRef 简写：DDoG 课程（默认 extraction 正文核验）
 function L(lesson, chapter, readerPages, extraction) {
@@ -502,9 +502,11 @@ export var CONCEPT_SEEDS = [
     id: 'concept-probe',
     title: 'Probe（对手 check-back 后的反击注）',
     cluster: 'range-construction',
-    mechanism: '对手 flop check-back = 自我 cap（他的 range 不含强 trap）。probe 的形态随 turn 对双方分布的改造而切换：brick turn（谁的 range 都没变）→ 极化几何超池（强顶对+ 作价值、抽牌作诈唬）；turn 给对手范围加 nuts（成花/成对/出 A 帮对手 made hands）→ 降尺寸转 depolarized（顶对+ 薄价值）甚至转 check/超池二分。A turn 的常见反直觉：它对 probe 方常是低 EV 牌，但仍用超池——因为那是其价值段（多为同花）最有效率的尺寸。',
+    // [V7.11.14 修改] Range filtering does not rule out traps; sizing conclusions belong to the cited examples.
+    mechanism: 'Check-back 会过滤范围，但不等于没有强牌或陷阱。Probe 要重新比较前街过牌后双方的分布及转牌变化。在书中 HJ vs BB 的砖牌例子里，BB 用极化几何超池；其他成花、成对或 A 转牌例子的价值段和尺寸会变化。不同前置线、牌面或范围不能沿用同一个超池答案。',
+    readingNote: 'Check-back 会过滤范围，但不等于没有强牌或陷阱。原文例子的范围构成不能推广到所有双方过牌的底池。',
     misconception: 'probe = "对手示弱我随便打"。probe 的尺寸和形态必须重算对手 cap 后的分布，而不是沿用 c-bet 习惯。',
-    applicability: '通用；本产品 8 卡中 riverfirst 卡的河牌 probe 为直采场景，turn probe 为同构参考。',
+    applicability: 'Probe 机制可参考；HJ vs BB 转牌、limped pot delayed C-bet 与河牌 probe 分别按原例条件阅读，不相互替代。',
     contrastExamples: [
       { text: '同为 probe：turn brick → 极化几何超池（BB 对 HJ：强顶对+ 价值、抽牌诈唬）；A turn → 超池/check 二分（A 帮对手 top pair，你的价值段只剩同花，小注 depolarized 不再成立）。', sourceRef: L('Depolarized Turn Probes', 11, '1204-1208') },
       { text: 'limped pot 的 delayed c-bet（HU SnG 20bb）：SB 200% 超池极化（顶对+ 价值 + 大量 check back）；AJs 进大尺寸，A4s/T6s/QJ check 实现摊牌价值。', sourceRef: L('Delayed c-betting limped pots', 4, '354-356') },
@@ -516,7 +518,7 @@ export var CONCEPT_SEEDS = [
       question: 'HJ vs BB SRP，flop checks through。BB 在低砖 turn（2/3/4/6）的 probe 形态是？',
       options: ['Linear', 'Merged', 'Polarized', 'Condensed / Depolarized'],
       answer: 'Polarized',
-      answerNote: 'brick 面上 OOP probe 用几何超池 + 极化范围：强顶对+ 作价值、抽牌作诈唬——KJ 都强到可以在 brick 河牌打光。',
+      answerNote: '该 HJ vs BB SRP 教材例子的砖牌转牌采用几何超池与极化范围。这个答案只解释原例，不代表所有 check-back 后的底池都应如此下注。',
       sourceRef: L('Probing turn bricks', 6, '573-576'),
     }],
     relatedSpotIds: ['btnvsbb-caller-riverfirst'],
@@ -1189,18 +1191,20 @@ export var CONCEPT_SEEDS = [
     id: 'concept-rake-impact',
     title: 'Rake 对策略的影响',
     cluster: 'calibration',
-    mechanism: 'rake 结构直接重塑策略：preflop 高 rake（如 GG）→ 4-bet shove 范围消失（Stars 无 preflop rake 的高 cap 结构才有——4-bet shove 靠免 rake 的 fold equity 频繁白赢池）；rake 升高 → 开更少同花连/低对子（postflop EV 被 rake 吃掉）、更多高张（EV 转向收盲）；高 rake 环境 3-bet 更多、call 更少（blocking 3-bet 更有价值）。',
-    misconception: '把不同平台的 solver 解当通用答案。rake 结构不同，同一 spot 的最优解可以完全不同（如 4-bet shove 范围的有无）。',
-    applicability: '通用校准；跨平台对照 GTO 基线时必须核对 rake 结构（与本项目 GG 导入域直接相关）。',
+    // [V7.11.14 修改] Keep model incentives separate from current platform fees and universal action rules.
+    mechanism: '抽水比例、封顶额和收取条件会改变入池及后续行动的激励。书中 6max cash / 100bb 开局模型里，同花连张与低对子等依赖翻后收益的手受到更大影响；不同抽水模型的 4-bet 或跟注结构也可能不同。不能仅凭“高抽水”推出当前平台的全下范围、开局表或固定 3-bet 方向。',
+    readingNote: '书中 p1195–1199 是 6max cash / 100bb 的模型对照。保留抽水改变入池激励的机制，不以该例断言当前平台费率、全下范围或开局表。',
+    misconception: '把教材中的抽水模型当作当前平台费率，或把一个模型的方向当成所有节点的动作规则。',
+    applicability: '比较策略前核对抽水模型；开局例子限定为 6max cash / 100bb，平台现行条件需另行核实。',
     contrastExamples: [
-      { text: '同一 UTG vs BTN 3-bet：Stars 50NL（无 preflop rake）有 4-bet shove 范围；GG（preflop 高 rake）没有——4-bettor 在 GG 无论是否弃牌都要付 rake，shove 激励消失。', sourceRef: L('4-bet shoving in different rake structures', 10, '1084-1086') },
+      { text: '教材 p1084–1086 的 UTG vs BTN 3-bet 抽水模型对照中，标作 Stars 50NL 与 GG 的两个模型具有不同的 4-bet shove 结构。这是原例对照，不是当前平台费率或所有节点范围的声明。', sourceRef: L('4-bet shoving in different rake structures', 10, '1084-1086') },
     ],
     thresholds: [],
     selfChecks: [{
-      question: '当 rake 升高（更高比例/上限）时，开局范围应怎么调整？',
-      options: ['开更多同花连/低对子', '开更多高张手', '开更少同花连/低对子', '开更少高张手'],
+      question: '书中 6max cash / 100bb 开局抽水对照里，哪项描述依赖翻后收益的手受到的影响？',
+      options: ['开更多同花连/低对子', '所有高张无条件增开', '开更少同花连/低对子', '所有手类受影响完全相同'],
       answer: '开更少同花连/低对子',
-      answerNote: '同花连/低对子的 EV 主要来自 postflop——被 rake 吃得最多；高张手靠收盲。所以高 rake → 更少投机手、更多高张（"开更多高张"也成立，书给两个正确项）。',
+      answerNote: '原例里，同花连张与低对子依赖的翻后收益更受抽水影响。这是该开局模型的方向，不是所有高张无条件增开，也不验证当前平台范围。',
       sourceRef: L('Opening in a cash game', 11, '1195-1199'),
     },
       {
@@ -1220,20 +1224,22 @@ export var CONCEPT_SEEDS = [
     id: 'concept-stack-depth',
     title: '筹码深度对策略的影响',
     cluster: 'range-construction',
-    mechanism: '越深：nut advantage 对最优策略影响越大、implied/reverse implied odds 被放大、IP 优势增大。但"premium 手 preflop 价值上升"是谎言——TT-KK/AK 深码 preflop EV 反降（KK 7.42→7.02、QQ 5.2→4.33、JJ 3.51→2.9、AKo 2.52→1.76、AKs 3.24→2.59、AQs 1.75→1.61、AQo 0.95→0.81、TT 2.22→2.06；仅 AA 10.25→11.24 上升，文章表格直读）：深码难 preflop 进钱、大对子 postflop 画牌差。防守侧：BB 对 33% flop bet 越深 call 越多 raise 越少（200bb: 12.2/55.7/32.2 vs 50bb: 15.5/48.5/36.0，文章表格直读）——implied odds 上升但 XR 需要更强 nuts。limped pot BB 的 EQR 随深度上升，25bb 最高。',
-    misconception: '"筹码越深强牌越值钱"。大对子/AK 类 premium 深码反而贬值；真正放大的是 nut advantage 与位置优势。',
-    applicability: '通用；跨深度对照任何 GTO 结论前先检查深度边界（与产品 8 卡的 100bb 语境直接相关）。',
+    // [V7.11.14 修改] Separate three models rather than treating their numbers as one depth law.
+    mechanism: '筹码深度会改变坚果潜力、隐含／反向隐含赔率和位置的作用。书中 BTN 开局 100/200bb 对照里，AA 的 EV 上升，而列出的部分大对子和 AK 的 EV 下降；6max CO vs BB 面对 33% 翻牌注的例子展示另一组防守变化；Spin limped pot 的例子则讨论 EQR。这些不是同一个模型，不能合成“深码强牌都升值或都贬值”的通用规则。',
+    readingNote: '三个例子分别读：p168–170 是 BTN 开局 100/200bb 比较；p1251–1254 是 6max cash CO vs BB 面对 33% 翻牌注；另有 Spin limped pot 例子。深度机制可参考，数字不可合并成通用模型。',
+    misconception: '仅凭深度就认定所有强牌的 EV 同方向变化，或把不同赛制与节点的数字合并成一个深度模型。',
+    applicability: 'BTN 开局、6max CO vs BB 翻牌防守、Spin limped pot 三个例子分开使用；不能直接推出 9max / 200bb 的范围或防守频率。',
     contrastExamples: [
-      { text: '100bb→200bb：AA 的 BTN 开局 EV 10.25→11.24 上升，但 KK 7.42→7.02、QQ 5.2→4.33、AKo 2.52→1.76 全降——"premium 全面升值"是谎言。', sourceRef: L('Effects of stack depth', 2, '168-170', '正文核验+文章表格直读') },
-      { text: 'BB 对 33% flop bet：50bb raise 15.5%/call 48.5%，200bb raise 12.2%/call 55.7%——越深越 call 少 raise。', sourceRef: L('How stack depth impacts strategy', 11, '1251-1254', '正文核验+文章表格直读') },
+      { text: '该 BTN 开局 100bb→200bb 模型：AA EV 10.25→11.24，但 KK 7.42→7.02、QQ 5.2→4.33、AKo 2.52→1.76。不同手类并非全部同方向；数字只属于原例。', sourceRef: L('Effects of stack depth', 2, '168-170', '正文核验+文章表格直读') },
+      { text: '该 6max cash CO vs BB 面对 33% flop bet 模型：50bb raise 15.5%/call 48.5%，200bb raise 12.2%/call 55.7%。这组防守变化不是所有深码节点的频率规则。', sourceRef: L('How stack depth impacts strategy', 11, '1251-1254', '正文核验+文章表格直读') },
       { text: 'limped pot 的 EQR 深度谱（Spin）：BB EQR 从 12bb 的 103.4% 升到 25bb 的 105.8%——总 equity 不变，位置优势随深度放大，IP（BB）实现改善。', sourceRef: L('Equity realization and stack depth', 6, '645-647', '正文核验+文章表格直读') },
     ],
     thresholds: [],
     selfChecks: [{
-      question: '筹码变深时，以下哪个说法是错的？',
-      options: ['nut advantage 对最优策略影响更大', 'implied/reverse implied odds 被放大', 'IP 优势增大', 'premium 手 preflop 价值上升'],
-      answer: 'premium 手 preflop 价值上升',
-      answerNote: '深码下 TT-KK/AK 的 preflop EV 反而下降（难进钱、画牌差）；只有 AA 升值。其余三项都是深码的真实效应。',
+      question: '书中 BTN 开局从 100bb 到 200bb 的对照，能否推出所有 premium 手牌的开局 EV 都上升？',
+      options: ['不能，原例中不同手类变化不同', '能，深码必然让所有强牌升值', '能，所有牌在深码的 EV 相同', '不能，因为原例所有强牌都贬值'],
+      answer: '不能，原例中不同手类变化不同',
+      answerNote: '这个 BTN 开局模型里 AA 的 EV 上升，列出的部分大对子与 AK 下降。它不证明其他位置、赛制或节点中只有 AA 升值，也不能推出当前 9max / 200bb 的范围。',
       sourceRef: L('Effects of stack depth', 2, '168-170'),
     }],
     relatedSpotIds: [],
@@ -1638,22 +1644,23 @@ export var CONCEPT_APPLICATIONS = [
     conceptIds: ['concept-trapping', 'concept-blockers'], sourceRef: L('Trapping the river OOP', 9, '1008-1011') },
   // ===== sbvsbb-raiser-riverdual（SB 河牌决策，下注 + 面对下注）=====
   { id: 'app-sb8-scope-1', spotId: 'sbvsbb-raiser-riverdual', step: 'scope',
-    text: 'B-X-B 线选 jam 河牌 = 选 nut 优势最大化的牌：K 把 AK 变两对且不成对手抽牌；A 面双方顶对相近无优势；Q/J 完成 BTN 太多顺子两对（3BP 场景核验，机制同构）。',
+    text: '相邻书例：OOP 3-bet 底池的 Block-Block-Jam。K 河牌把 AK 变两对且不完成对手听牌；A 面双方顶对相近，Q/J 完成 BTN 更多顺子与两对。练习比较不同河牌的坚果优势，而不是套用本卡 SRP 的全下范围。',
     conceptIds: ['concept-nut-advantage', 'concept-equity-buckets'], sourceRef: L('Block-Block-Jam OOP 3BP', 8, '848-852') },
   { id: 'app-sb8-lines-1', spotId: 'sbvsbb-raiser-riverdual', step: 'lines',
-    text: 'OOP 转牌三尺寸分裂（33/66/130）：block 线价值主体 = second pair，两对+ 走极化大注——小注薄价值、大注极化，同一手类不混线。',
+    text: '前街书例：BvB OOP 转牌的三尺寸模型（33/66/130）。小注主要为 second pair 取薄价值，两对+ 更多进入极化大注。它解释尺寸如何服务不同手类，不是这手河牌的尺寸表。',
     conceptIds: ['concept-block-bet', 'concept-value-bluff-ratio'], sourceRef: L('Splitting the turn OOP BvB', 8, '853-856') },
   { id: 'app-sb8-lines-2', spotId: 'sbvsbb-raiser-riverdual', step: 'lines',
-    text: '低 SPR 的 shove 门槛：vulnerable 成手（JT）可 shove（unblock 对方超张诈唬/弃牌段）；equity 更高的 KJ/QJ 反而 call 更优——弃牌激励是结构变量。',
+    text: '前街书例：Countering Double-Barrels BvB 的低 SPR 节点。脆弱成手 JT 可 shove（不阻挡对方超张诈唬/弃牌段），equity 更高的 KJ/QJ 反而更适合 call。用于理解保护与继续价值的取舍，不是河牌全下门槛。',
     conceptIds: ['concept-thin-value'], sourceRef: L('Countering Double-Barrels BvB', 9, '931-934') },
   { id: 'app-sb8-streets-1', spotId: 'sbvsbb-raiser-riverdual', step: 'streets',
-    text: '成花河牌的过牌陷阱：check 不等于示弱——保留 block 对手 Tx 刺探段的同花设 trap（对手 line 是其刺探被跟的镜像，结构性参考）。',
+    // [V7.11.15 修改] In the source XC-X river example, blocking Tx favors betting rather than trapping.
+    text: '文章例：100bb BvB，SB 翻牌 check-call、转牌双方 check（XC-X），963 两黑桃面走到 2♥、T♠。不阻挡对手 Tx 价值下注的同花更适合留作过牌陷阱；阻挡 Tx 的 Q/J 同花更倾向下注。先核对前置线，再判断 blocker 留住了哪些下注组合。',
     conceptIds: ['concept-trapping'], sourceRef: B('Navigating BvB OOP After Check-Calling the Flop', 'https://blog.gtowizard.com/navigating-bvb-oop-after-check-calling-the-flop/', '2026-04-06') },
   { id: 'app-sb8-deviation-1', spotId: 'sbvsbb-raiser-riverdual', step: 'deviation',
-    text: '面对极小注：pot odds 天文数字，防守率可达 82%——跟注主体是 A-high（牌对全跟但组合少），顶对该尺寸是价值加注（他的顶对大多转牌已开火）。',
+    text: '相邻书例：25bb Spin 河牌面对 10% 级 block 注，BTN 防守 82%，跟注主体是 A-high，顶对用于价值加注。用于练习 pot odds 与剩余范围怎样共同影响防守；82% 不是本卡 cash SRP 的防守目标。',
     conceptIds: ['concept-pot-odds', 'concept-block-bet'], sourceRef: L('Facing block bets on the river', 9, '1023-1026') },
   { id: 'app-sb8-deviation-2', spotId: 'sbvsbb-raiser-riverdual', step: 'deviation',
-    text: '面对大注的强手处理：低 SPR 77 慢打（call EV 142 vs shove 137，文章表格直读）——能后街进钱的手不急于 shove（150bb 3BP 场景，边界注意）。',
+    text: '前街书例：150bb 3-bet 底池面对转牌 double-barrel，77 的 call EV 142、shove EV 137（文章表格直读）。保留后街进钱的机会可能优于立即全下；这里的后街价值不适用于已经没有下一街的河牌。',
     conceptIds: ['concept-trapping'], sourceRef: L('Countering Double-Barrels BvB', 9, '931-934', '正文核验+文章表格直读') },
   { id: 'app-sb8-deviation-3', spotId: 'sbvsbb-raiser-riverdual', step: 'deviation',
     text: '被 raise 时的"纯 bluff catcher" = 价值段与诈唬段之间的手：宽 check-down 面 = 顶对（顺/花/trips 已早开火不在段内）——识别两个阈值是抓诈唬的根本功（500bb HU 场景，机制通用）。',
@@ -1671,7 +1678,8 @@ export var CONCEPT_APPLICATIONS = [
     text: '深度边界（对照本卡 100bb 基线）：150bb 砖河且对方抽牌全灭时，200% 全下的价值阈值可弱至 T9 两对；深码超池则要求 nut 优势未被转牌中和——同一 spot 换深度即换结构。',
     conceptIds: ['concept-overbetting', 'concept-thin-value'], sourceRef: L('Deepstack value shove thresholds', 7, '759-763') },
   { id: 'app-btn2-deviation-3', spotId: 'btnvsbb-caller-facebet', step: 'deviation',
-    text: '深度越深，BB 对 33% 翻牌注 call 越多、raise 越少（50bb: 15.5/48.5 vs 200bb: 12.2/55.7，文章表格直读）——implied odds 放大，但 XR 门槛升到更强 nuts。',
+    // [V7.11.14 修改] This CO-vs-BB example is a depth mechanism, not a BTN-vs-BB frequency prescription.
+    text: '教材的 6max cash CO vs BB、33% 翻牌注模型：50bb raise/call 为 15.5%/48.5%，200bb 为 12.2%/55.7%（文章表格直读）。可参考深度影响的机制，但这是相邻场景，不能作为本卡 BTN vs BB 或 9max / 200bb 的防守频率。',
     conceptIds: ['concept-stack-depth'], sourceRef: L('How stack depth impacts strategy', 11, '1251-1254', '正文核验+文章表格直读') },
   { id: 'app-btn1-lines-3', spotId: 'btnvsbb-raiser-cbet', step: 'lines',
     text: '低连张面（543 类）的 c-bet 尺寸取决于对方有没有 donk 范围：BB 简化策略（从不 donk）时 BTN 只 c-bet 20%——面利 BB 且对方不送权重，c-bet 要收敛。',

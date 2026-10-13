@@ -15,6 +15,7 @@ import { HandPicker } from './handPicker.js';  // [V6.15.0]
 import { Discover } from './discover.js';      // [V7.4.6]
 import { Navigation } from './navigation.js';  // [V7.7.2]
 import { StrategyDesk } from './strategyDesk.js';  // [V7.10.1 新增] Evidence & Strategy
+import { StrategyLibrary } from './strategyLibrary.js';  // [V7.11.13 新增]
 
 export const App = {
           sound: true,
@@ -76,7 +77,8 @@ export const App = {
                   HandPicker.render();
                 }
                 if (name === 'discover') Review.renderDiscover(options);
-                if (name === 'strategy') StrategyDesk.render();  // [V7.9.3 新增]
+                // [V7.11.14 修改] Refresh topic candidates from current hands without touching the personal editor.
+                if (name === 'strategy') { StrategyDesk.render(); StrategyLibrary.select(StrategyLibrary.selectedTopicId); }
                 if (name === 'weekly') {
                   Review.generateWeeklyStats();
                   Review.renderWeeklyReviews();
@@ -101,6 +103,7 @@ export const App = {
             Odds.init();
 
             Review.init();
+            StrategyLibrary.init();
             Discover.init();  // [V7.4.7] 初始化扫描状态
             TiltRescue.init();
             DataSync.init();
@@ -347,7 +350,8 @@ export const App = {
             for (var i = 0; i < maxLen; i++) {
               var u = underBluff[i];
               var o = overBluff[i];
-              rows.push('<tr><td>' + (u ? Utils.escapeHtml(u.line) : '') + '</td><td>' + (u ? Utils.escapeHtml(u.text) : '') + '</td><td>' + (o ? Utils.escapeHtml(o.line) : '') + '</td><td>' + (o ? Utils.escapeHtml(o.text) : '') + '</td></tr>');
+              // [V7.11.13 修改] Legacy notes are hypotheses, not confirmed population advice.
+              rows.push('<tr><td>' + (u ? Utils.escapeHtml(u.line) : '') + '</td><td>' + (u ? '待验证 · ' + Utils.escapeHtml(u.text) : '') + '</td><td>' + (o ? Utils.escapeHtml(o.line) : '') + '</td><td>' + (o ? '待验证 · ' + Utils.escapeHtml(o.text) : '') + '</td></tr>');
             }
             document.getElementById('actionLineBody').innerHTML = rows.join('');
           },

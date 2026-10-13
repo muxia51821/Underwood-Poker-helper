@@ -298,6 +298,10 @@ export var DecisionRadar = {
   // 达成条件：|频率变化| ≥ 15pp，或样本增长 ≥50%，或该 Spot 已不再触发信号（复查是否改善）。
   evaluateRetest: function (baselineSnapshot, signal) {
     if (!baselineSnapshot) return { due: false, reasons: [], current: null };
+    // [V7.11.14 修改] Parser changes are not strategy improvements; preserve but invalidate older baselines.
+    if (baselineSnapshot.observationVersion !== OBSERVATION_VERSION) {
+      return { due: true, reasons: ['观察口径已更新，旧基线不可比较；需按当前口径重新建档'], current: null };
+    }
     if (!signal) return { due: true, reasons: ['该 Spot 当前不再触发信号——复查是否已改善'], current: null };
     var reasons = [];
     var dFreq = signal.spotFreq - baselineSnapshot.freq;

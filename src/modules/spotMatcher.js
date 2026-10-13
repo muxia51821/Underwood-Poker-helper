@@ -2,15 +2,9 @@
 // 口径与 Decision Radar 的观察派生同源（启发式归属）：desc 行动 token 不带玩家名，
 // 两人池按位置交替归属（OOP 先动）；token >3 且不含 R 视作多人池噪声不识别。
 // 河牌惊悚/空白为启发式二分：完成 3 同花或 3 连张窗口=惊悚。识别结果仅供牌理参考展示，不写回手牌数据。
-import { normalizeLearningHand } from './analysisReadModel.js';
+import { normalizeLearningHand, getPostflopOrder, deriveFlopDecision } from './analysisReadModel.js';
 
-export var SPOT_MATCHER_VERSION = 1;
-
-var SCENARIO_ORDER = {
-  BTNvsBB: { raiser: 'BTN', caller: 'BB', first: 'BB' },
-  SBvsBB: { raiser: 'SB', caller: 'BB', first: 'BB' },
-  COvsBTN: { raiser: 'CO', caller: 'BTN', first: 'CO' },
-};
+export var SPOT_MATCHER_VERSION = 2;
 
 var RANK_ORDER = '23456789TJQKA';
 
@@ -18,7 +12,7 @@ function lineTokens(line) {
   return String(line || '').split('-').filter(function (t) { return /^[BCXFR]/.test(t); });
 }
 
-function streetTwoWay(line) {
+export function streetTwoWay(line) {
   var tokens = lineTokens(line);
   if (!tokens.length || tokens.length > 5) return null;
   if (tokens.length > 3 && !tokens.some(function (t) { return t.charAt(0).toUpperCase() === 'R'; })) return null;
@@ -91,10 +85,11 @@ function boardCardsFromDesc(desc) {
  */
 export function matchHandSpot(hand) {
   var h = normalizeLearningHand(hand);
-  var order = SCENARIO_ORDER[h.preflopScenario];
+  var order = getPostflopOrder(h);
   if (!order) return null;
-  if (h.heroPosition !== order.raiser && h.heroPosition !== order.caller) return null;
-  var role = h.heroPosition === order.raiser ? 'raiser' : 'caller';
+  var positions = h.preflopScenario.split('vs');
+  if (!positions.includes(h.heroPosition)) return null;
+  var role = h.heroPosition === positions[0] ? 'raiser' : 'caller';
   var heroFirst = h.heroPosition === order.first;
 
   var otf = streetTwoWay(h.actionLineOTF);
@@ -135,23 +130,10 @@ export function matchHandSpot(hand) {
   // 翻牌 spot（与 Radar 五 spot 对齐；到达河牌但未命中河牌卡的不回落翻牌卡）
   var ottEarly = streetTwoWay(h.actionLineOTT);
   if (ottEarly) return null;  // 打过转牌的手牌不做翻牌牌理参考（复盘重点是当前街）
-  var flopTokens = actionsAt(otf, heroFirst);
-  var question = null;
-  var heroToken = null;
-  var bet = function (x) { return x === 'B' || x === 'R'; };
-  if (role === 'raiser') {
-    if (heroFirst) { heroToken = otf[0]; question = 'cbet'; }
-    else if (flopTokens.opp.length && flopTokens.opp[0] === 'X' && !bet(flopTokens.opp[0])) { heroToken = otf[1]; question = 'cbet'; }
-    else return null;
-  } else {
-    if (heroFirst) return null;  // SBvsBB 的 BB 先行动无"面对下注"（与 Radar 口径一致）
-    if (!flopTokens.opp.length || !bet(flopTokens.opp[0])) return null;
-    heroToken = otf[1];
-    question = 'facebet';
-  }
-  if (!heroToken) return null;
-  var action = heroToken.charAt(0).toUpperCase();
-  if (action !== 'B' && action !== 'C' && action !== 'X' && action !== 'F' && action !== 'R') return null;
+  // [V7.11.14 修改] Share checked-then-faced-bet attribution with Radar instead of dropping OOP callers.
+  var decision = deriveFlopDecision(h);
+  if (decision.excluded) return null;
+  var question = decision.question;
   var spotKey = h.preflopScenario.toLowerCase() + '-' + role + '-' + question;
   return { spotId: spotKey, street: 'flop', scenario: h.preflopScenario, role: role, question: question, line: null, riverType: null };
 }

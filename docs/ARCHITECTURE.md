@@ -56,6 +56,8 @@ src/
     sessionClosure.js # [V7.9.1 新增] 每场收尾领域模块（Mark 时间匹配 + 候选手牌 + 收尾记录）
     decisionRadar.js # [V7.10.7 修改] Spot 信号 + Dossier；同类牌面 GTO 优先匹配、严格 MDA 条件匹配
     strategyDesk.js  # [V7.10.7 修改] Evidence & Strategy（证据包 + 策略修订 + Radar scope 录入）
+    strategyLibrary.js # [V7.11.14 修改] 策略主题目录；源码出处/边界/待证经验，仅读 HandRepo；候选手牌跳转与主题概念自测，不写个人策略
+    strategyStudy.js # [V7.11.15 修改] 纯函数 getTopicHandReferences / getStrategyLearningTarget；行动归属、主题候选、策略训练路由与位置关系
     handReplay.js    # [V7.10.0 新增] 手牌可视化回放（只读派生层：desc 解析 + 逐街视图，零 store import）
     spotMatcher.js   # [V7.11.0 新增] 单手牌 spot 识别（两人池位置交替归属 + 多人池噪声排除 + 河牌惊悚/空白启发式；零 store import）
     pokerLogic.js    # [V7.11.2 修改] 复盘牌理参考渲染：四步导航 + 应用要点（出处行）+ 概念卡（误解/对比例/阈值/自测折叠）；esc 真转义 + href 协议白名单（仅 http/https）
@@ -64,9 +66,10 @@ src/
   data/
     srpData.js       # GTO 策略速查表（从 gtoRaw 自动生成，import Utils + gtoRaw）
     actionLines.js   # underBluff + overBluff 行动线表
+    strategyFramework.js # [V7.11.14 修改] STRATEGY_TOPICS / STRATEGY_HYPOTHESES；引用概念、来源与场景；阅读限定与自测以 conceptSeed.js 为唯一正文源
     gtoBaselineSeed.js # [V7.10.8 修改] GTO 结构性参考种子 v4：按 Radar spot（scenario+question+boardCategory+sizingContext）落位 17 条；数字标注「正文核验/文章表格直读」；gate pa_gto_baseline_seed_v4，未编辑行按 seedRevision 升级
     externalEvidenceSeed.js # [V7.10.9 修改] 外部证据种子 v5：16 条（solver/mda/article/community/video，evidenceLevel 三级 + Radar scope）；含 4 条 street:'river' 河牌证据（由 matchEvidenceForSignal 的 street 过滤保证不进翻牌信号）
-    pokerLogicSeed.js # [V7.11.2 修改] 复盘牌理参考种子 v3：8 条 spot 卡（翻牌 5 + 河牌 3），四步导航 + applicationIds（指向 CONCEPT_APPLICATIONS）+ conceptIds + evidenceRefs；v1 自写叙述字段已移除（契约测试防回归）
+    pokerLogicSeed.js # [V7.11.15 修改] 复盘牌理参考种子：四步导航 + applicationIds + conceptIds + evidenceRefs；河牌前置线与相邻书例的条件保留在对应条目
     conceptSeed.js   # [V7.11.5 修改] 原子概念种子 v5：52 条概念（机制/误解/边界 + ⚖对比例 + 📐阈值 + ❓selfCheck 自测）+ CONCEPT_APPLICATIONS 45 条 spot×四步应用；主出处 DDoG 课程（页码+提取方式标注），静态 import 不入 localStorage
     strategy/
       gtoBaseline.js # L1 极端阈值自动编译（>90%/<5%）+ getGTOReference() + GTO_LEGACY_SCOPE
@@ -233,6 +236,12 @@ IndexedDB: `pa_store` v6, 12 ObjectStores (`handReviews`/`sessions`/`weeklyRevie
 // [V7.9.2 新增] dossiers: [{ id, signalId（确定性锚 radar|{scenario}|flop|{profileKey}|...）, spotKey, profileKey, title, status 'open'|'checking'|'resolved'|'maintain', hypothesis, counterexamples, nextSteps, sampleHandIds[], observationVersion, createdAt, updatedAt }]
 
 ## UI Navigation
+
+策略主题中的手牌只表示复盘候选，不表示来源条件已完全匹配或已成为支持／反例。候选规则以 `src/modules/strategyStudy.js` 的 `getTopicHandReferences` 为准；当前不自动识别锦标赛分支或完整有效筹码档案。主题自测复用已有概念题目 ID、掌握度与错题存储，仅临时限制题目范围。
+
+策略训练通过 `getStrategyLearningTarget` 按父策略的街与 Spot 问题动态路由。明确的翻牌 C-bet 节点（或未限定节点的既有翻牌 Family）才进入频率练习，其余进入相应主题概念自测；精确节点保留牌面筛选。新训练单元的 `topicId` 是可选补充字段，旧单元不回写、不迁移，导出／导入继续保留完整对象。
+
+翻后行动顺序由 `analysisReadModel.js` 的 `getPostflopOrder` 统一定义，`deriveFlopDecision` 同时供 Radar 与牌理卡使用；普通桌与真实两人桌分开，无法确定 SB/BB 顺序时排除。策略 `baselineSnapshot.observationVersion` 与当前观察版本不同（含旧记录缺失版本）时不可做数值复测；用户确认重建后，旧快照追加到 `baselineHistory`。可选字段无需迁移，导出／导入沿用策略对象合并；取消、重复重建或无唯一信号时不改记录。
 
 ```
 Timer ──── Odds ──── Review ──────────────────────────────────────────

@@ -589,6 +589,9 @@ OTR河牌 牌面：    行动：</textarea
               </details>
               <details class="hand-extended-field" id="actionLineDetails" style="font-size: 0.75em; margin-top: 8px">
                 <summary style="color: #94a3b8; cursor: pointer">行动线速查</summary>
+                <!-- [V7.11.13 新增] Preserve the notes while showing their evidence status at the old entry. -->
+                <p class="text-muted">原行动线笔记尚未验证，缺少来源与样本，不能直接当作对手倾向。</p>
+                <button type="button" class="btn--mini" data-strategy-topic="adjustment">查看策略体系与待证经验</button>
                 <table
                   class="srp-table"
                   id="actionLineTable"
@@ -597,18 +600,18 @@ OTR河牌 牌面：    行动：</textarea
                   <thead>
                     <tr>
                       <th>行动线</th>
-                      <th>诈唬不足</th>
+                      <th>诈唬不足假设</th>
                       <th>行动线</th>
-                      <th>诈唬过度</th>
+                      <th>诈唬过度假设</th>
                     </tr>
                   </thead>
                   <tbody id="actionLineBody"></tbody>
                 </table>
               </details>
-              <details class="hand-extended-field" id="posAdviceDetails" style="font-size:0.75em;margin-top:8px">
+              <details class="hand-extended-field" id="posAdviceDetails" style="margin-top:8px">
                 <summary style="color:#94a3b8;cursor:pointer">位置对抗速查</summary>
                 <div class="pos-advice-group" id="posAdviceGroup" style="margin:8px 0;display:flex;flex-wrap:wrap;gap:4px"></div>
-                <div id="posAdviceText" style="color:#cbd5e1;line-height:1.5;font-size:0.95em">请选择对抗类型查看策略要点。</div>
+                <div id="posAdviceText" style="color:#cbd5e1;line-height:1.65">选择对抗类型，核对位置并进入对应阅读。</div>
               </details>
               <label class="field hand-mistake-label">错误类型 </label>
               <div class="toggle-group" id="handMistakeGroup">
@@ -971,6 +974,17 @@ OTR河牌 牌面：    行动：</textarea
             </div>
           </div>
           <div id="subStrategy" class="sub-panel">
+            <!-- [V7.11.13 新增] Shared knowledge stays separate from personal strategy edits. -->
+            <section class="card strategy-library" id="strategyLibrary" aria-labelledby="strategyLibraryTitle">
+              <h2 id="strategyLibraryTitle">策略体系</h2>
+              <button type="button" class="btn--mini" data-library-personal>前往个人策略编辑</button>
+              <p class="strategy-library__intro">从已有策略理解出发，对照教材、文章与待验证经验。主线 9max / 200bb cash，次线 6max / 100bb。</p>
+              <p class="strategy-library__source">这是只读参考，不代表你已经掌握，也不会自动写入个人策略。文章需联网；教材页码与内容可离线阅读。</p>
+              <div class="strategy-library__layout">
+                <nav id="strategyTopicNav" aria-label="策略主题"></nav>
+                <article id="strategyTopicBody" aria-labelledby="strategyTopicTitle"></article>
+              </div>
+            </section>
             <!-- [V7.9.3 新增] Phase 3 Evidence & Strategy -->
             <div class="card strategy-master-pane">
               <div class="card__title">策略修订</div>
