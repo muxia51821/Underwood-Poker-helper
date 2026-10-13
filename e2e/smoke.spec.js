@@ -889,5 +889,9 @@ test('手牌复盘显示牌理参考卡片', async ({ page }) => {
   await expect(logicBox).toContainText('范围合法性');
   await expect(logicBox).toContainText('机制参照');
   await expect(logicBox).toContainText('边界');
+  // [V7.11.13 新增] A real imported hand can open its corresponding knowledge topic.
+  await logicBox.locator('[data-strategy-topic="river"]').click();
+  await expect(page.locator('#strategyTopicTitle')).toHaveText('河牌价值、诈唬与抓诈');
+  await expect(page.locator('#subStrategy')).toHaveClass(/is-visible/);
   expect(getRealErrors(errors)).toEqual([]);
 });

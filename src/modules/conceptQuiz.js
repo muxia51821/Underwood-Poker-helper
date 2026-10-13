@@ -8,7 +8,7 @@
 import { Utils } from '../utils.js';
 import { CONCEPT_SEEDS } from '../data/conceptSeed.js';
 
-export var CONCEPT_QUIZ_VERSION = 3;
+export var CONCEPT_QUIZ_VERSION = 4;
 
 var MASTERY_KEY = 'pa_concept_quiz_mastery';
 var ERRORS_KEY = 'pa_concept_quiz_errors';
@@ -42,21 +42,26 @@ function _saveErrors(list) {
 }
 
 export var ConceptQuiz = {
+  // [V7.11.14 新增] Topic scope is transient; existing mastery and errors keep their original keys.
+  _scopeTitle: '', _items: [], _queue: [], _pos: 0, _mode: 'all', _el: null, _stage: null,
   // 题库：确定性排序（cluster + id），每题 = 概念种子的 selfCheck
-  getItems: function () {
+  // [V7.11.9 修改] selfChecks 数组展平：首题 id = 概念 id（兼容旧掌握度/错题数据），第二题起 = 概念id#2
+  getItems: function (conceptIds) {
     return CONCEPT_SEEDS
-      .filter(function (c) { return c.selfCheck && c.selfCheck.question; })
-      .map(function (c) {
-        return {
-          id: c.id,
-          title: c.title,
-          cluster: c.cluster,
-          question: c.selfCheck.question,
-          options: c.selfCheck.options,
-          answer: c.selfCheck.answer,
-          answerNote: c.selfCheck.answerNote,
-          sourceRef: c.selfCheck.sourceRef,
-        };
+      .filter(function (c) { return !Array.isArray(conceptIds) || conceptIds.includes(c.id); })
+      .flatMap(function (c) {
+        return (c.selfChecks || []).map(function (sc, i) {
+          return {
+            id: i === 0 ? c.id : c.id + '#' + (i + 1),
+            title: c.title,
+            cluster: c.cluster,
+            question: sc.question,
+            options: sc.options,
+            answer: sc.answer,
+            answerNote: sc.answerNote,
+            sourceRef: sc.sourceRef,
+          };
+        });
       })
       .sort(function (a, b) { return (a.cluster + '|' + a.id).localeCompare(b.cluster + '|' + b.id); });
   },
@@ -92,18 +97,22 @@ export var ConceptQuiz = {
   },
 
   // 交互式训练器：单题作答 → 即时反馈 → 掌握度/错题落库 → 下一题
-  renderInto: function (containerId) {
+  renderInto: function (containerId, options = {}) {
     var el = document.getElementById(containerId);
     if (!el) return;
-    var items = this.getItems();
+    var items = this.getItems(options.conceptIds);
+    this._scopeTitle = options.title || '';
     var countEl = document.getElementById('conceptQuizCount');
     if (countEl) countEl.textContent = '(' + items.length + ' 题)';
     this._items = items;
     this._el = el;
     el.innerHTML =
+      (this._scopeTitle ? '<p>当前主题：' + esc(this._scopeTitle) + '</p>' +
+        (options.topicId ? '<button type="button" class="btn--mini" data-strategy-topic="' + esc(options.topicId) + '">返回策略主题</button> ' : '') +
+        '<button type="button" id="conceptQuizWholeBtn" class="btn--mini">返回全部题库</button>' : '') +
       '<div style="color:#8b949e;font-size:0.75em;margin-bottom:6px">题目提炼自 Daily Dose of GTO 对应课程；先自己作答，再看判定与解析。答错的题进入错题集，答对后销账。掌握度与错题保存在本地。</div>' +
       '<div style="margin-bottom:6px">' +
-      '<button id="conceptQuizAllBtn" class="btn--mini">练习全部</button> ' +
+      '<button id="conceptQuizAllBtn" class="btn--mini">' + (this._scopeTitle ? '练习本主题' : '练习全部') + '</button> ' +
       '<button id="conceptQuizRedoBtn" class="btn--mini">重做错题 (<span id="conceptQuizRedoCount">0</span>)</button> ' +
       '<button id="conceptQuizReset" class="btn--mini">重置掌握度</button>' +
       '</div>' +
@@ -115,6 +124,11 @@ export var ConceptQuiz = {
       '</details>';
     this._stage = el.querySelector('#conceptQuizStage');
     var self = this;
+    if (this._scopeTitle) {
+      el.querySelector('#conceptQuizWholeBtn').addEventListener('click', function () { self.renderInto(containerId); });
+      // [V7.11.14 修改] Existing button display rules override the browser's hidden attribute.
+      el.querySelector('#conceptQuizReset').style.display = 'none';
+    }
     el.querySelector('#conceptQuizAllBtn').addEventListener('click', function () { self._start('all'); });
     el.querySelector('#conceptQuizRedoBtn').addEventListener('click', function () { self._start('redo'); });
     el.querySelector('#conceptQuizReset').addEventListener('click', function () { self.resetMastery(); });
@@ -123,9 +137,9 @@ export var ConceptQuiz = {
   },
 
   _start: function (mode) {
-    var errs = this.getErrors();
+    var errs = this._scopedErrors();
     if (mode === 'redo') {
-      if (!errs.length) { Utils.showToast && Utils.showToast('没有错题——全部掌握！'); return; }
+      if (!errs.length) { Utils.showToast && Utils.showToast('当前题库没有错题记录'); return; }
       var errIds = {};
       errs.forEach(function (e) { errIds[e.id] = true; });
       this._queue = this._items.filter(function (it) { return errIds[it.id]; });
@@ -206,16 +220,21 @@ export var ConceptQuiz = {
   },
 
   // [V7.11.6 新增] 错题集视图：清单 + 计数 + 清空按钮可见性
+  // [V7.11.14 新增] Topic practice neither exposes nor clears unrelated error records.
+  _scopedErrors: function () {
+    var ids = new Set(this._items.map(function (item) { return item.id; }));
+    return this.getErrors().filter(function (error) { return ids.has(error.id); });
+  },
   _refreshErrorBook: function () {
     if (!this._el) return;
-    var errs = this.getErrors();
+    var errs = this._scopedErrors();
     var countEl = this._el.querySelector('#conceptQuizErrorCount');
     if (countEl) countEl.textContent = '(' + errs.length + ')';
     var redoEl = this._el.querySelector('#conceptQuizRedoCount');
     if (redoEl) redoEl.textContent = String(errs.length);
     var listEl = this._el.querySelector('#conceptQuizErrorList');
     var clearBtn = this._el.querySelector('#conceptQuizErrorClear');
-    if (clearBtn) clearBtn.style.display = errs.length ? 'inline-block' : 'none';
+    if (clearBtn) clearBtn.style.display = errs.length && !this._scopeTitle ? 'inline-block' : 'none';
     if (!listEl) return;
     if (!errs.length) {
       listEl.innerHTML = '<div style="color:#8b949e;font-size:0.78em">暂无错题——答错的题会出现在这里，答对后自动销账。</div>';
@@ -243,11 +262,11 @@ export var ConceptQuiz = {
       if (r) { asked += r.asked; correct += r.correct; }
     });
     var pct = asked ? Math.round((correct / asked) * 100) : 0;
-    var errs = this.getErrors();
+    var errs = this._scopedErrors();
     var self = this;
     var redoLine = this._mode === 'redo'
       ? '<div style="margin-top:2px;color:#c8ccd0;font-size:0.8em">重做后剩余错题 ' + errs.length + ' 道</div>'
-      : (errs.length ? '<div style="margin-top:2px;color:#c98f8f;font-size:0.8em">本轮新增错题 ' + errs.length + ' 道——可在「重做错题」中巩固</div>' : '<div style="margin-top:2px;color:#9fd49f;font-size:0.8em">本轮零错题！</div>');
+      : (errs.length ? '<div style="margin-top:2px;color:#c98f8f;font-size:0.8em">当前题库错题记录 ' + errs.length + ' 道——可在「重做错题」中巩固</div>' : '<div style="margin-top:2px;color:#9fd49f;font-size:0.8em">当前题库暂无错题记录</div>');
     this._stage.innerHTML =
       '<div style="border:1px solid #1c2f4a;border-radius:6px;padding:10px;background:#0a1524;text-align:center">' +
       '<div style="color:#d4a853;font-size:0.9em;font-weight:bold">本轮完成</div>' +

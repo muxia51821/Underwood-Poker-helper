@@ -254,3 +254,46 @@ PDF 页面渲染 PNG（pymupdf, 150dpi）逐张人工核验：
 新增提炼课程：CH6 Symmetrical Distributions(541-544)、Polarized Distributions(545-548)、Guess the line! #1(549-553)、Guess the stack depth(558-560)、The staircase distribution(609-613)、The no-bluff shove(614-617)、The no-nut shove(618-621)、Gutshot performance(641-644)、Can both ranges underperform(633-636)、Realizing the best turn cards(637-640)；CH9 Facing turn probes on 4-straight boards(981-984)、Defending the BXB line on 4-flush boards(1005-1007)、Bluffcatching vs deep stack triple-barrels(977-980)、Defending vs huge overbets(993-996)。
 
 累计约 131 课已精读（占全书 ~39%），概念库 52 条（自测 40 道）、spot 应用 45 条。Equity Distribution Graph 从占位转正，四大 equity 分析技术在概念库中全部就位（Buckets/Morphology/Distribution Graphs/EQR）。
+
+## 12. V7.11.8 补充台账（批次 A：CH11 收尾，概念库 53 条）
+
+新增提炼课程：CH1 Understanding variance(40-42)；CH11 Evaluating cold-called flop EQR(1168-1172)、Overperformance(1238-1241)、The Double-Plateau Distribution(1234-1237)、Defending against polar turn barrels(1191-1194)、Hero calling triple barrels in 3BP(1209-1212)、Bluff-Catching Triple Barrels(1262-1266)、Shortstack Triple Barrel Math(1247-1250)、Constructing Shortstack Turn Shoves(1267-1271)、Trapping the Turn OOP(1276-1280)、Overbetting the Turn(1255-1258)、Countering Value-Heavy 3-bets(1259-1261)、HU cash shortstack limps(1182-1186)、Final Table on the BTN(1217-1220)。
+
+9 课"已读未提炼"处置完成：8 课以正式 sourceRef 对比条目补标（Using filters/Understanding Range Shapes 原有行内引用维持）、Probing OOP on Ace high boards 新增 probe 对比。Taking your shot 归个人 OS 域待办。累计精读 145 课（约全书 43%），概念库 53 条、自测 53 道、应用 45 条。
+
+## 13. V7.11.9 补充台账（批次 B：多题制，题库 68 题）
+
+新增全文精读课程（CH2 首页级→全文升级，18 课）：Guess the hand(76-78)、Which set has the most EV?(79-82)、Over-realizing equity(83-85)、Rangebetting UTG(93-96)、Valuing hands on monotone flops(104-106)、What does EV really mean?(107-109)、Fundamental laws in poker(121-124)、Range vs Range(129-131)、Perfect polarity(132-135)、Check-raise barreling(136-138)、When to donk the turn?(139-142)、Calculating Expected Value(147-149)、Scared underpairs(153-156)、Angry underpairs(157-159)、Prisoners dilemma(160-163)、Infinite quads(171-173)、What's the difference?(177-179)、Explosive flops(180-184)。
+
+Schema v8：selfCheck 单题 → selfChecks 数组。15 道第二题挂靠：equity-realization（987 面 A6s 最高 EQR）、range-bet（JT9）、mdf-boundary（pot odds 唯一恒真定律）、hand-in-vacuum（对方不打固定策略）、value-bluff-ratio（quads 也 range-check）、mixed-strategies（双目的）、equity（EV 相对弃牌、98.91bb）、board-distribution-shapes（632r 最炸池=双方 EV 接近）、backdoor-equity（22 带花 out 更干净）、check-raise-construction（转 3 顺子最多）、donk-bet（75% 线底对失衡）、thin-value（EV 手算 4.95<7）、blockers（JJ set 最能榨值）、nut-advantage（AK9 被 QJ 否定 nut 优势）、rake-impact（50NL flat/500NL raise 弱占优）。对比 +4：monotone 实现规律、弃牌权益不均质、几何式 54%×3、短码 TT shove（批次 A 已加）。题库 68 题、累计精读 163 课（约全书 49%）。Guess the hand 一课留存未用（11-outs 手牌推理题，单选格式不适配）。
+
+## 14. V7.11.10 补充台账（批次 C：CH7 深度维度，概念库 53 条）
+
+新增全文精读课程：CH7 Limping premiums(650-654)、Building short-stack turn shoves(659-662)、Shoving draws on the flop(670-673)、Trapping the turn BvB(708-711)、So many flush draws to choose from!(732-735)、Static bluff-catchers in deep 3BP(741-744)、5-Flush deepstack river 3-bets(754-758)、Deepstack value shove thresholds(759-763)、Deepstack triple barrel math(764-767)。
+
+产出：+9 对比（挂 implied-odds ×2/thin-value/mdf-draws/trapping/blockers/bluff-catching/4straight-chop-defense/overbetting）+ alpha-mdf 第二题（200bb 三街连乘计算：18%/25%）+ spot 应用 2 条（btn6 深度阈值弹性、btn2 深度应对谱 12.2/55.7 vs 15.5/48.5）。深度维度从 1/30 提升到 10/30。累计精读 172 课（约全书 52%），概念库 53 条、应用 47 条、自测 54 道（69 题库含 alpha-mdf 第二题——与 batch B 合计）。
+
+更正：题库计数——batch B 后题库 68（53+15），batch C 新增 alpha-mdf 第二题 → 69。此前第 13 节的"题库 68 题"为 batch B 时点数。
+
+## 15. V7.11.11 台账（批次 D 场景课 + 整体质量复查）
+
+新增全文精读课程：CH4 C-Betting low connected boards(330-333)；CH10 Finding thin value in checked down pots(1133-1136)、It's a chop, right?!(1037-1040)；CH3 Blocking the missed flush draw(278-280)、Belligerent Big Blind(247-249)。
+
+产出：+1 对比（concept-cbet-3bp：A♥K♥Q♦ 单花 3BP 的 blocker 反转超池例外）+ 3 条 spot 应用（app-btn1-lines-3 低连张面 20% c-bet 条件、app-sb8-lines-3 check-down 薄价值 Q-high 65-70%、app-sb8-streets-2 chop 面 rake 博弈 50NL 全下/500NL 双 check）。Blocking the missed flush draw 的"不持 block 诈唬的花色"原则已被 bluff-catching 的 unblock-bluffs 对比覆盖，不入种子（避免重复，台账留痕）。
+
+**整体质量复查结果（2026-09-01）**：
+1. 遗留标注：种子内「图像复核（留待）」清零；头部注释更新为新数字"当批核验"纪律。
+2. 课名一致性：全量 161 个 DDoG sourceRef 与书签比对，修复最后一处笔误（What's the point of mixing?）——现零不匹配。
+3. 数值抽样回验：渲染 4 页（阅读器 p41/p88/p149/p765）视觉核对——方差 70%/95%、黄金比例 1.618/38%、EV 7bb vs 4.95bb、同花 25%（图 25.9%）全部与种子一致。
+4. Schema 一致性：契约测试 64 项全绿（概念 53 条、应用 50 条、题库 69 题、id 唯一、出处必填、引用可解析、每格至少 1 应用）。
+5. 累计精读 177 课（约全书 53%）；剩余未读 148 课主要为 CH3/CH9 未点选场景课与 CH1 软技能（个人 OS 域待办）。
+
+## 16. V7.11.12 台账（教学纪律落地 + NevirPoker 登记）
+
+**木下教学裁决（2026-09-01，种子头部注释 + 本节双重记录）**：
+1. 不做"GTO 鱼"——GTO 频率是基线与止损线，不是实战目标；对手行为的偏离方向才是决策输入。
+2. 偏离方向规则：对方多 call（哪怕微偏）→ 少诈唬、价值段变肥；对方多弃牌 → 多诈唬；极小的对手频率偏差可引起自己策略的巨大偏移。
+3. 只讲牌理；牌例必须典型（canonical case 才入种子）。
+4. NevirPoker 登记为**待核验扩展参考源**——需木下提供频道/视频链接与内容定位，逐条核验后才可入 `relatedSources`（与 GW 博客 URL 同纪律：不发明链接）。
+
+产出：concept-exploit-adjustments（calibration 簇）——机制=对手模型→偏离方向循环；误解=GTO 鱼；对比 3 条复用已读课程（value-heavy/trappy/under-bluff）；自测 1 道（微偏多 call → 诈唬变少价值变肥）。概念库 54 条、题库 70 题。剥削/偏离语言概念覆盖 10/54（原 9/53，缺口补上：对手建模→偏离方向首次成为一等概念）。

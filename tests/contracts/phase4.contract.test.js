@@ -3,6 +3,82 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { GGParser } from '../../src/parsers/ggParser.js';
+import { Utils } from '../../src/utils.js';
+import { STRATEGY_TOPICS, STRATEGY_HYPOTHESES, resolveTopic, resolveFrameworkSource, topicForSpot } from '../../src/data/strategyFramework.js';
+import { getTopicHandReferences, getStrategyLearningTarget, POSITION_REFERENCES } from '../../src/modules/strategyStudy.js';
+
+// [V7.11.15 新增] Exercise the stored strategy-to-learning path, not just the new topic button.
+function strategyLearningRegression(t) {
+  let units = [];
+  const strategies = [
+    { id: 'river-study', familyKey: 'BTNvsBB|river', title: 'River reasoning', spotKeys: [] },
+    { id: 'defense-study', familyKey: 'BTNvsBB|flop', title: 'Facing a bet', spotKeys: ['BTNvsBB|flop|9max|dryAHigh|facebet'] },
+    { id: 'flop-study', familyKey: 'BTNvsBB|flop', title: 'Cbet', spotKeys: ['BTNvsBB|flop|9max|monotone|cbet'] },
+  ];
+  t.mock.method(StrategyRepo, 'getAll', () => strategies);
+  t.mock.method(LearningUnitRepo, 'getAll', () => units);
+  t.mock.method(LearningUnitRepo, 'saveAll', (rows) => { units = rows; });
+  t.mock.method(StrategyDesk, 'render', () => {});
+  t.mock.method(Utils, 'showToast', () => {});
+  for (const strategy of strategies) StrategyDesk.createLearningUnit(strategy.id);
+  assert.equal(units.find((u) => u.strategyId === 'river-study').quizScenario, null);
+  assert.equal(units.find((u) => u.strategyId === 'river-study').topicId, 'river');
+  assert.equal(units.find((u) => u.strategyId === 'defense-study').topicId, 'defense');
+  assert.equal(units.find((u) => u.strategyId === 'flop-study').quizScenario, 'BTNvsBB');
+  const data = Store.exportAll();
+  assert.equal(data.learningUnits.find((u) => u.strategyId === 'river-study').topicId, 'river');
+}
+
+// [V7.11.13 新增] Topic coverage and provenance must not depend on browser seed storage.
+test('strategy framework covers each concept and action-line hypothesis without modifying seeds', async () => {
+  const { CONCEPT_SEEDS } = await import('../../src/data/conceptSeed.js');
+  const { POKER_LOGIC_SEEDS } = await import('../../src/data/pokerLogicSeed.js');
+  const { underBluff, overBluff } = await import('../../src/data/actionLines.js');
+  const snapshot = JSON.stringify([CONCEPT_SEEDS, POKER_LOGIC_SEEDS, underBluff, overBluff]);
+  const ids = STRATEGY_TOPICS.flatMap((topic) => topic.conceptIds);
+  assert.equal(new Set(ids).size, ids.length);
+  assert.deepEqual(new Set(ids), new Set(CONCEPT_SEEDS.map((c) => c.id)));
+  for (const topic of STRATEGY_TOPICS) {
+    const model = resolveTopic(topic.id);
+    assert.ok(model.concepts.every(Boolean));
+    assert.ok(model.sources.every((source) => source && source.conditions && source.boundary && safeSourceUrl(source.url)));
+    assert.ok(model.summary && model.boundary);
+  }
+  for (const spot of POKER_LOGIC_SEEDS) assert.ok(resolveTopic(topicForSpot(spot.id)));
+  assert.equal(topicForSpot('btnvsbb-caller-facebet'), 'defense');
+  assert.equal(topicForSpot('sbvsbb-raiser-riverdual'), 'river');
+  assert.equal(topicForSpot('unknown'), null);
+  assert.equal(resolveTopic('unknown'), null);
+  assert.equal(resolveFrameworkSource('unknown'), null);
+  assert.deepEqual(STRATEGY_HYPOTHESES.map((h) => h.line), [...underBluff, ...overBluff].map((h) => h.line));
+  assert.ok(STRATEGY_HYPOTHESES.every((h) => h.status === 'unverified' && resolveTopic(h.topicId) && h.assessment !== '尚未完成来源对照。'));
+  assert.equal(STRATEGY_HYPOTHESES.find((h) => h.line === '3OA-Bs-XX-Bs-m').status, 'unverified');
+  assert.equal(JSON.stringify([CONCEPT_SEEDS, POKER_LOGIC_SEEDS, underBluff, overBluff]), snapshot);
+});
+
+test('strategy library keeps source links safe and scopes uncertain textbook readings', (t) => {
+  const previousDocument = globalThis.document;
+  const elements = new Map();
+  t.after(() => { globalThis.document = previousDocument; });
+  globalThis.document = { getElementById(id) {
+    if (!elements.has(id)) elements.set(id, { innerHTML: '', focus() {} });
+    return elements.get(id);
+  } };
+  t.mock.method(Utils, 'escapeHtml', (s) => String(s).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;'));
+  for (const url of ['javascript:alert(1)', 'data:text/html,test', 'file:///private.pdf', 'invalid']) assert.equal(safeSourceUrl(url), '');
+  assert.equal(safeSourceUrl('https://example.com/'), 'https://example.com/');
+  StrategyLibrary.select('preflop');
+  let html = document.getElementById('strategyTopicBody').innerHTML;
+  assert.ok(html.includes('三个例子分别读'));
+  assert.ok(!html.includes('premium 手 preflop 价值上升'));
+  assert.ok(html.includes('阅读器页 168-170'));
+  StrategyLibrary.select('turn');
+  html = document.getElementById('strategyTopicBody').innerHTML;
+  assert.ok(html.includes('不等于没有强牌或陷阱'));
+  assert.ok(html.includes('未经验证'));
+  assert.ok(!html.includes('他的 range 不含强 trap'));
+  assert.ok(!html.includes('data-strategy-edit'));
+});
 
 function createLocalStorage() {
   const values = new Map();
@@ -21,24 +97,252 @@ const localStorage = createLocalStorage();
 globalThis.localStorage = localStorage;
 globalThis.window = { addEventListener() {} };
 
+const { safeSourceUrl, StrategyLibrary } = await import('../../src/modules/strategyLibrary.js');
+
 const { Store, initStorage, LearningUnitRepo, OpponentNoteRepo, EvidencePackRepo, GtoBaselineRepo } = await import('../../src/store/store.js');
 const { DecisionRadar } = await import('../../src/modules/decisionRadar.js');
-const { OBSERVATION_VERSION } = await import('../../src/modules/analysisReadModel.js');
+const { OBSERVATION_VERSION, buildFlopObservations } = await import('../../src/modules/analysisReadModel.js');
 const { GTO_BASELINE_SEEDS, GTO_BASELINE_SEED_VERSION } = await import('../../src/data/gtoBaselineSeed.js');
 const { EXTERNAL_EVIDENCE_SEEDS, EXTERNAL_EVIDENCE_SEED_VERSION } = await import('../../src/data/externalEvidenceSeed.js');
+const { StrategyDesk } = await import('../../src/modules/strategyDesk.js');
+const { StrategyRepo, DossierRepo, HandRepo } = await import('../../src/store/store.js');
+test('strategy learning follows the street and decision instead of the scenario alone', strategyLearningRegression);
+
+// [V7.11.15 新增] Parse complete synthetic histories before asserting ownership; labels alone cannot prove the parser path.
+test('parsed nine-seat histories preserve hero decisions through observations and study links', () => {
+  const cases = [
+    { scenario: 'SBvsBB', heroSeat: 2, actions: ['SB: bets $0.10', 'BB: calls $0.10'], action: 'bet', topic: 'flop' },
+    { scenario: 'SBvsBB', heroSeat: 2, actions: ['SB: checks', 'BB: bets $0.10', 'SB: calls $0.10'], action: 'check', topic: 'flop' },
+    { scenario: 'SBvsBB', heroSeat: 3, actions: ['SB: bets $0.10', 'BB: calls $0.10'], action: 'call', topic: 'defense' },
+    { scenario: 'SBvsBB', heroSeat: 3, actions: ['SB: bets $0.10', 'BB: folds'], action: 'fold', topic: 'defense' },
+    { scenario: 'BTNvsBB', heroSeat: 1, actions: ['BB: checks', 'BTN: bets $0.10', 'BB: calls $0.10'], action: 'bet', topic: 'flop' },
+    { scenario: 'BTNvsBB', heroSeat: 3, actions: ['BB: checks', 'BTN: bets $0.10', 'BB: calls $0.10'], action: 'call', topic: 'defense' },
+  ];
+  for (const [index, sample] of cases.entries()) {
+    const names = ['BTN', 'SB', 'BB', 'P4', 'P5', 'P6', 'P7', 'P8', 'P9'];
+    const hero = names[sample.heroSeat - 1];
+    const [opener] = sample.scenario.split('vs');
+    const folded = sample.actions.at(-1).endsWith('folds');
+    const order = opener === 'SB' ? ['SB', 'BB'] : ['BB', 'BTN'];
+    const pot = folded ? '0.30' : opener === 'SB' ? '0.50' : '0.52';
+    const block = [
+      `Poker Hand #SYNTH${index}: Hold'em No Limit ($0.02/$0.05) - 2026/10/08 20:00:00`,
+      "Table 'Synthetic' 9-max Seat #1 is the button",
+      ...names.map((name, i) => `Seat ${i + 1}: ${name === hero ? 'Hero' : name} ($10.00 in chips)`),
+      'SB: posts small blind $0.02', 'BB: posts big blind $0.05',
+      '*** HOLE CARDS ***', `Dealt to ${hero} [As Kd]`,
+      ...names.slice(3).map((name) => `${name}: folds`),
+      ...(opener === 'SB' ? ['BTN: folds'] : []),
+      `${opener}: raises $${opener === 'SB' ? '0.13' : '0.10'} to $0.15`,
+      ...(opener === 'BTN' ? ['SB: folds'] : []), 'BB: calls $0.10',
+      '*** FLOP *** [Ah 7c 2d]', ...sample.actions,
+      ...(folded ? ['Uncalled bet ($0.10) returned to ' + opener] : [
+        '*** TURN *** [Ah 7c 2d] [4s]', ...order.map((name) => name + ': checks'),
+        '*** RIVER *** [Ah 7c 2d 4s] [8h]', ...order.map((name) => name + ': checks'),
+        '*** SHOWDOWN ***', 'Hero: shows [As Kd] (a pair of Aces)',
+      ]),
+      (folded ? opener : 'Hero') + ' collected $' + pot + ' from pot',
+      '*** SUMMARY ***', 'Total pot $' + pot + ' | Rake $0',
+      'Board [Ah 7c 2d' + (folded ? '' : ' 4s 8h') + ']',
+    ].join('\n').replaceAll(hero + ':', 'Hero:').replace('Dealt to ' + hero, 'Dealt to Hero');
+    const [hand] = GGParser.parse(block);
+    assert.ok(hand, 'parsed sample ' + index);
+    assert.equal(hand.tableMax, 9);
+    assert.equal(hand.heroPosition, hero);
+    assert.equal(hand.preflopScenario, sample.scenario);
+    hand.id = 'imported-' + hand.ggId;
+    const result = buildFlopObservations([hand]);
+    assert.equal(result.observations.length, 1, 'sample ' + index);
+    assert.equal(result.observations[0].actionClass, sample.action, 'sample ' + index);
+    assert.equal(getTopicHandReferences(sample.topic, [hand], '9max').length, 1);
+  }
+});
+
+test('legacy learning units route from their parent without rewriting stored records', (t) => {
+  const strategy = { id: 'legacy-river', familyKey: 'BTNvsBB|river', spotKeys: [] };
+  const unit = { id: 'old-quiz', strategyId: strategy.id, familyKey: strategy.familyKey, type: 'quiz', quizScenario: 'BTNvsBB' };
+  const before = JSON.stringify(unit);
+  t.mock.method(StrategyRepo, 'getAll', () => [strategy]);
+  t.mock.method(LearningUnitRepo, 'getAll', () => [unit]);
+  let opened;
+  t.mock.method(StrategyLibrary, 'practice', (id) => { opened = id; return true; });
+  assert.equal(StrategyDesk.startLearningUnit(unit.id), true);
+  assert.equal(opened, 'river');
+  assert.equal(JSON.stringify(unit), before);
+  assert.equal(StrategyDesk.startLearningUnit('missing'), false);
+});
+
+test('learning destinations retain exact board filters and distinguish decision questions', () => {
+  for (const key of ['BTNvsBB|flop|monotone|cbet', 'BTNvsBB|flop|9max|monotone|cbet']) {
+    const target = getStrategyLearningTarget({ familyKey: 'BTNvsBB|flop', spotKeys: [key] });
+    assert.equal(target.boardCategory, 'monotone');
+    assert.equal(target.quizScenario, 'BTNvsBB');
+  }
+  assert.equal(getStrategyLearningTarget({ familyKey: 'SBvsBB|flop', spotKeys: ['SBvsBB|flop|dryAHigh|facebet'] }).topicId, 'defense');
+  assert.equal(getStrategyLearningTarget({ familyKey: 'SBvsBB|turn' }).topicId, 'turn');
+  assert.equal(getStrategyLearningTarget({ familyKey: 'COvsBTN|flop' }).quizScenario, null);
+  assert.equal(getStrategyLearningTarget({ familyKey: 'BTNvsBB|flop' }).boardCategory, '');
+  assert.deepEqual(POSITION_REFERENCES.UTGvsBB, { opener: 'UTG', defender: 'BB', ip: 'UTG', oop: 'BB' });
+  assert.equal(POSITION_REFERENCES.SBvsBTN.opener, 'BTN');
+  assert.equal(POSITION_REFERENCES.SBvsBB.ip, 'BB');
+});
+
+function mockStrategyEditor(t) {
+  const elements = new Map();
+  const previousDocument = globalThis.document;
+  t.after(() => { globalThis.document = previousDocument; });
+  globalThis.document = {
+    getElementById(id) {
+      if (!elements.has(id)) {
+        let value = '';
+        elements.set(id, { get value() { return value; }, set value(v) { value = String(v ?? ''); },
+          style: {}, dataset: {}, innerHTML: '', textContent: '', addEventListener() {} });
+      }
+      return elements.get(id);
+    },
+  };
+  t.mock.method(Utils, 'showToast', () => {});
+  t.mock.method(Utils, 'escapeHtml', (s) => String(s ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('"', '&quot;'));
+  t.mock.method(StrategyDesk, 'render', () => {});
+  return document;
+}
+
+// [V7.11.12 新增] Exercise editor round trips, including fields absent from the form.
+test('editing GTO source notes preserves decision and source metadata', (t) => {
+  const doc = mockStrategyEditor(t);
+  const records = structuredClone(GTO_BASELINE_SEEDS);
+  t.mock.method(GtoBaselineRepo, 'getAll', () => records);
+  const save = t.mock.method(GtoBaselineRepo, 'saveAll', () => {});
+  for (const record of records) {
+    const before = structuredClone(record);
+    StrategyDesk.openGtoBaselineEditor(record.id);
+    doc.getElementById('gtoTextureNotes').value = 'edited notes';
+    StrategyDesk.saveGtoBaseline();
+    assert.equal(record.textureNotes, 'edited notes', record.id);
+    for (const key of ['question', 'street', 'scope', 'conditions', 'overall', 'source', 'capturedAt']) {
+      assert.deepEqual(record[key], before[key], record.id + ': ' + key);
+    }
+  }
+  assert.equal(save.mock.callCount(), records.length);
+});
+
+test('editing evidence notes preserves river and contextual scopes', (t) => {
+  const doc = mockStrategyEditor(t);
+  const records = structuredClone(EXTERNAL_EVIDENCE_SEEDS);
+  t.mock.method(EvidencePackRepo, 'getAll', () => records);
+  const save = t.mock.method(EvidencePackRepo, 'saveAll', () => {});
+  for (const record of records) {
+    const before = structuredClone(record.scope);
+    StrategyDesk.editEvidence(record.id);
+    doc.getElementById('evKeyPoints').value = 'edited notes';
+    StrategyDesk.saveEvidence();
+    assert.equal(record.keyPoints, 'edited notes', record.id);
+    assert.deepEqual(record.scope, before ?? null, record.id);
+  }
+  assert.equal(save.mock.callCount(), records.length);
+});
+
+test('strategy references follow the stored decision and board instead of defaulting to cbet', (t) => {
+  const doc = mockStrategyEditor(t);
+  t.mock.method(DecisionRadar, 'scan', () => ({ signals: [] }));
+  t.mock.method(LearningUnitRepo, 'getAll', () => []);
+  t.mock.method(DossierRepo, 'getAll', () => []);
+  t.mock.method(GtoBaselineRepo, 'getAll', () => [
+    { id: 'wrong', scenario: 'BTNvsBB', question: 'cbet', isActive: true, source: { title: 'wrong-cbet-source' } },
+    { id: 'right', scenario: 'BTNvsBB', question: 'facebet', isActive: true, scope: { boardCategories: ['monotone'] }, source: { title: 'right-facebet-source' } },
+    { id: 'other', scenario: 'BTNvsBB', question: 'facebet', isActive: true, scope: { boardCategories: ['dry_low'] }, source: { title: 'wrong-board-source' } },
+  ]);
+  const strategies = [{ id: 's', familyKey: 'BTNvsBB|flop', spotKeys: ['BTNvsBB|flop|9max|monotone|facebet'] }];
+  t.mock.method(StrategyRepo, 'getAll', () => strategies);
+  for (const key of ['BTNvsBB|flop|9max|monotone|facebet', 'BTNvsBB|flop|monotone|facebet']) {
+    strategies[0].spotKeys = [key];
+    StrategyDesk.renderStrategyList();
+    const html = doc.getElementById('strategyList').innerHTML;
+    assert.ok(html.includes('right-facebet-source'));
+    assert.ok(!html.includes('wrong-cbet-source'));
+    assert.ok(!html.includes('wrong-board-source'));
+  }
+  strategies[0].spotKeys = [];
+  StrategyDesk.renderStrategyList();
+  assert.ok(!doc.getElementById('strategyList').innerHTML.includes('wrong-cbet-source'));
+});
+
+test('radar retains signals beyond the display limit for strategy retests', (t) => {
+  const observations = [];
+  for (const scenario of ['BTNvsBB', 'SBvsBB', 'COvsBTN']) {
+    for (const profileKey of ['6max', '9max']) {
+      for (let i = 0; i < 20; i++) observations.push({
+        handId: scenario + profileKey + i, scenario, profileKey, question: 'cbet',
+        boardCategory: i < 8 ? 'monotone' : 'dry_low', didBet: i < 8,
+      });
+    }
+  }
+  const signals = DecisionRadar.buildSignals(observations);
+  const lookup = DecisionRadar.findSignalForStoredSpotKey(signals, 'COvsBTN|flop|9max|dry_low|cbet');
+  assert.ok(lookup.signal, 'a lower-ranked signal still exists for retesting');
+  assert.equal(DecisionRadar.evaluateRetest({ observationVersion: OBSERVATION_VERSION, freq: 0, sample: 12 }, lookup.signal).due, false);
+  assert.equal(signals.length, 12);
+  const doc = mockStrategyEditor(t);
+  t.mock.method(DecisionRadar, 'scan', () => ({ signals, stats: { total: 120, attributed: 120 } }));
+  t.mock.method(HandRepo, 'getAll', () => []);
+  t.mock.method(DossierRepo, 'getAll', () => [{ id: 'tracked', signalId: lookup.signal.id }]);
+  t.mock.method(GtoBaselineRepo, 'getAll', () => []);
+  t.mock.method(EvidencePackRepo, 'getAll', () => []);
+  DecisionRadar.renderInto();
+  const html = doc.getElementById('radarBody').innerHTML;
+  assert.equal((html.match(/<article /g) || []).length, DecisionRadar.THRESHOLDS.maxSignals);
+  assert.ok(html.includes(lookup.signal.id), 'tracked signals get display priority before truncation');
+});
 
 test('retest evaluation compares baseline snapshot against current signal', () => {
   assert.equal(DecisionRadar.evaluateRetest(null, null).due, false);
-  const goneResult = DecisionRadar.evaluateRetest({ freq: 80, sample: 10, capturedAt: '2026-08-01' }, null);
+  const goneResult = DecisionRadar.evaluateRetest({ observationVersion: OBSERVATION_VERSION, freq: 80, sample: 10, capturedAt: '2026-08-01' }, null);
   assert.equal(goneResult.due, true);  // 信号消失 → 复查是否已改善
-  const freqDue = DecisionRadar.evaluateRetest({ freq: 80, sample: 10, capturedAt: '2026-08-01' }, { spotFreq: 60, spotCount: 12 });
+  const freqDue = DecisionRadar.evaluateRetest({ observationVersion: OBSERVATION_VERSION, freq: 80, sample: 10, capturedAt: '2026-08-01' }, { spotFreq: 60, spotCount: 12 });
   assert.equal(freqDue.due, true);
   assert.ok(freqDue.reasons[0].includes('频率'));
-  const sampleDue = DecisionRadar.evaluateRetest({ freq: 80, sample: 10, capturedAt: '2026-08-01' }, { spotFreq: 82, spotCount: 16 });
+  const sampleDue = DecisionRadar.evaluateRetest({ observationVersion: OBSERVATION_VERSION, freq: 80, sample: 10, capturedAt: '2026-08-01' }, { spotFreq: 82, spotCount: 16 });
   assert.equal(sampleDue.due, true);
   assert.ok(sampleDue.reasons[0].includes('样本'));
-  const same = DecisionRadar.evaluateRetest({ freq: 80, sample: 10, capturedAt: '2026-08-01' }, { spotFreq: 82, spotCount: 12 });
+  const same = DecisionRadar.evaluateRetest({ observationVersion: OBSERVATION_VERSION, freq: 80, sample: 10, capturedAt: '2026-08-01' }, { spotFreq: 82, spotCount: 12 });
   assert.equal(same.due, false);
+  const stale = DecisionRadar.evaluateRetest({ freq: 80, sample: 10 }, null);
+  assert.equal(stale.due, true);
+  assert.ok(stale.reasons.join('').includes('旧基线'));
+  assert.ok(!stale.reasons.join('').includes('已改善'));
+});
+
+test('rebaselining is explicit, preserves old snapshots and survives export/import', (t) => {
+  const oldConfirm = globalThis.confirm;
+  t.after(() => { globalThis.confirm = oldConfirm; });
+  const oldSnapshot = { freq: 80, sample: 10, capturedAt: '2026-08-01' };
+  const record = { id: 'rebaseline', statement: 'Keep my strategy', spotKeys: ['BTNvsBB|flop|9max|dryAHigh|cbet'], baselineSnapshot: oldSnapshot };
+  let records = [record];
+  t.mock.method(StrategyRepo, 'getAll', () => records);
+  t.mock.method(StrategyRepo, 'saveAll', (value) => { records = value; });
+  t.mock.method(StrategyDesk, 'render', () => {});
+  t.mock.method(Utils, 'showToast', () => {});
+  const signal = { spotKey: record.spotKeys[0], spotFreq: 55, spotCount: 20, observationVersion: OBSERVATION_VERSION };
+  let signals = [];
+  t.mock.method(DecisionRadar, 'scan', () => ({ signals }));
+  assert.equal(StrategyDesk.rebaselineStrategy(record.id), false);
+  assert.equal(records[0], record);
+  signals = [signal];
+  globalThis.confirm = () => false;
+  assert.equal(StrategyDesk.rebaselineStrategy(record.id), false);
+  assert.equal(records[0], record);
+  globalThis.confirm = () => true;
+  assert.equal(StrategyDesk.rebaselineStrategy(record.id), true);
+  assert.deepEqual(records[0].baselineHistory, [oldSnapshot]);
+  assert.equal(records[0].baselineSnapshot.observationVersion, OBSERVATION_VERSION);
+  assert.equal(records[0].statement, record.statement);
+  assert.equal(StrategyDesk.rebaselineStrategy(record.id), false);
+  const saved = Store.exportAll().strategyRevisions.find((item) => item.id === record.id);
+  assert.deepEqual(saved.baselineHistory, [oldSnapshot]);
+  const imported = structuredClone(saved);
+  imported.id = 'rebaseline-imported';
+  Store.importAll({ strategyRevisions: [imported] });
+  assert.deepEqual(records.find((item) => item.id === imported.id).baselineHistory, [oldSnapshot]);
 });
 
 test('learning units and opponent notes persist through export/import merge', async () => {
@@ -250,6 +554,18 @@ test('v7.10.9 river evidence seeds stay off flop signals', () => {
 const { matchHandSpot, riverThreat, SPOT_MATCHER_VERSION } = await import('../../src/modules/spotMatcher.js');
 const { POKER_LOGIC_SEEDS, POKER_LOGIC_SEED_VERSION } = await import('../../src/data/pokerLogicSeed.js');
 const { CONCEPT_SEEDS, CONCEPT_SEED_VERSION, CONCEPT_APPLICATIONS } = await import('../../src/data/conceptSeed.js');
+
+test('river applications retain their example lines and correct blocker direction', () => {
+  const text = (id) => CONCEPT_APPLICATIONS.find((app) => app.id === id).text;
+  assert.match(text('app-sb8-streets-1'), /XC-X/);
+  assert.match(text('app-sb8-streets-1'), /不阻挡.*Tx/);
+  assert.match(text('app-sb8-streets-1'), /阻挡.*Tx.*更倾向下注/);
+  assert.match(text('app-sb8-lines-1'), /转牌/);
+  assert.match(text('app-sb8-deviation-1'), /25bb Spin/);
+  const river = POKER_LOGIC_SEEDS.find((seed) => seed.id === 'sbvsbb-raiser-riverdual');
+  assert.ok(!river.steps.lines.note.includes('下注以小注为主'));
+  assert.ok(!river.boundary.includes('镜像同构'));
+});
 const { ConceptQuiz, CONCEPT_QUIZ_VERSION } = await import('../../src/modules/conceptQuiz.js');
 const { PokerLogic } = await import('../../src/modules/pokerLogic.js');
 const { GTO_BASELINE_SEEDS: LOGIC_GTO_SEEDS } = await import('../../src/data/gtoBaselineSeed.js');
@@ -262,8 +578,79 @@ function syntheticHand(overrides) {
   }, overrides);
 }
 
+// [V7.11.14 新增] Regression inputs reproduce actor attribution and source-scope conflicts.
+test('postflop attribution distinguishes regular blind battles from heads-up tables', async () => {
+  const { buildFlopObservations } = await import('../../src/modules/analysisReadModel.js');
+  for (const tableMax of [6, 9]) {
+    const sb = syntheticHand({ tableMax, preflopScenario: 'SBvsBB', heroPosition: 'SB', actionLineOTF: 'B40-C' });
+    assert.equal(matchHandSpot(sb)?.spotId, 'sbvsbb-raiser-cbet');
+    assert.equal(buildFlopObservations([sb]).observations[0]?.didBet, true);
+    const checked = { ...sb, actionLineOTF: 'X-B40-C' };
+    assert.equal(buildFlopObservations([checked]).observations[0]?.actionClass, 'check');
+    assert.equal(matchHandSpot({ ...sb, heroPosition: 'BB' })?.spotId, 'sbvsbb-caller-facebet');
+    const bb = syntheticHand({ tableMax, heroPosition: 'BB', actionLineOTF: 'X-B33-C' });
+    assert.equal(matchHandSpot(bb)?.spotId, 'btnvsbb-caller-facebet');
+    assert.equal(buildFlopObservations([bb]).observations[0]?.actionClass, 'call');
+  }
+  const hu = syntheticHand({ tableMax: 2, preflopScenario: 'SBvsBB', heroPosition: 'SB', actionLineOTF: 'X-B40-C' });
+  assert.equal(buildFlopObservations([hu]).observations[0]?.didBet, true);
+  const unknown = { ...hu, tableMax: 0 };
+  assert.equal(matchHandSpot(unknown), null);
+  assert.equal(buildFlopObservations([unknown]).observations.length, 0);
+  assert.equal(buildFlopObservations([syntheticHand({ heroPosition: 'BB', actionLineOTF: 'X-X-B40-C-F' })]).observations.length, 0);
+});
+
+test('textbook scope is canonical across reading, logic cards and quizzes', () => {
+  const depth = CONCEPT_SEEDS.find((c) => c.id === 'concept-stack-depth');
+  assert.ok(depth.mechanism.includes('BTN 开局'));
+  assert.ok(depth.applicability.includes('Spin'));
+  assert.ok(ConceptQuiz.getItems().find((q) => q.id === depth.id).question.includes('BTN'));
+  assert.ok(!CONCEPT_SEEDS.find((c) => c.id === 'concept-probe').mechanism.includes('不含强 trap'));
+  assert.ok(!CONCEPT_SEEDS.find((c) => c.id === 'concept-rake-impact').mechanism.includes('如 GG'));
+});
+
+test('topic hand candidates include later streets without guessing evidence or mutating records', () => {
+  const hands = [
+    syntheticHand({ id: 'def-9', date: '2026-10-08', tableMax: 9, heroPosition: 'BB', actionLineOTF: 'X-B33-C', actionLineOTT: 'X-X', actionLineOTR: 'B40-C', pBB: -10 }),
+    syntheticHand({ id: 'def-6', date: '2026-10-07', tableMax: 6, heroPosition: 'BB', actionLineOTF: 'X-B33-F', pBB: 10 }),
+    syntheticHand({ id: 'sb', tableMax: 9, preflopScenario: 'SBvsBB', heroPosition: 'SB', actionLineOTF: 'B33-C' }),
+    syntheticHand({ id: 'unknown', tableMax: 0, preflopScenario: 'SBvsBB', heroPosition: 'SB', actionLineOTF: 'B33-C' }),
+    syntheticHand({ id: 'multi', heroPosition: 'BB', actionLineOTF: 'X-X-B33-C-F' }),
+    null,
+  ];
+  const snapshot = JSON.stringify(hands);
+  const refs = getTopicHandReferences('defense', hands);
+  assert.deepEqual(refs.map((h) => h.id), ['def-9', 'def-6']);
+  assert.deepEqual(getTopicHandReferences('defense', hands, '9max').map((h) => h.id), ['def-9']);
+  assert.deepEqual(getTopicHandReferences('turn', hands).map((h) => h.id), ['def-9']);
+  assert.deepEqual(getTopicHandReferences('flop', hands).map((h) => h.id), ['sb']);
+  assert.ok(refs.every((h) => h.relation === 'candidate' && !('pBB' in h)));
+  assert.deepEqual(getTopicHandReferences('unknown', hands), []);
+  assert.deepEqual(getTopicHandReferences('special', hands), []);
+  assert.equal(JSON.stringify(hands), snapshot);
+});
+
+test('topic quizzes filter concepts and wrong-answer views while preserving unrelated progress', () => {
+  const ids = resolveTopic('preflop').conceptIds;
+  const snapshot = JSON.stringify(ConceptQuiz.getMastery());
+  const scopeItems = ConceptQuiz.getItems(ids);
+  assert.ok(scopeItems.length > 0);
+  assert.ok(scopeItems.every((q) => ids.includes(q.id.split('#')[0])));
+  assert.deepEqual(ConceptQuiz.getItems([]), []);
+  const savedItems = ConceptQuiz._items;
+  const savedErrors = localStorage.getItem('pa_concept_quiz_errors');
+  ConceptQuiz.recordError('concept-stack-depth', 'old-answer');
+  ConceptQuiz.recordError('concept-probe', 'other-topic-answer');
+  ConceptQuiz._items = scopeItems;
+  assert.deepEqual(ConceptQuiz._scopedErrors().map((e) => e.id), ['concept-stack-depth']);
+  ConceptQuiz._items = savedItems;
+  assert.equal(JSON.stringify(ConceptQuiz.getMastery()), snapshot);
+  if (savedErrors === null) localStorage.removeItem('pa_concept_quiz_errors');
+  else localStorage.setItem('pa_concept_quiz_errors', savedErrors);
+});
+
 test('v7.11.0 spot matcher routes hands to logic cards by role and street', () => {
-  assert.equal(SPOT_MATCHER_VERSION, 1);
+  assert.equal(SPOT_MATCHER_VERSION, 2);
 
   // 翻牌：BTN cbet（BB check 后 BTN 下注、BB 跟注）
   const flopCbet = syntheticHand({ actionLineOTF: 'X-B60-C' });
@@ -298,8 +685,8 @@ test('v7.11.0 spot matcher routes hands to logic cards by role and street', () =
   // 河牌：SB cbet 被跟、转牌双过、河牌 BB 反打 SB 应对（facebet）
   const riverDual = syntheticHand({
     preflopScenario: 'SBvsBB', heroPosition: 'SB',
-    actionLineOTF: 'X-B33-C', actionLineOTT: 'X-X', actionLineOTR: 'B40-C',
-    desc: 'OTF翻牌 Kh 9d 3c    行动：X B33 C\nOTT转牌 6s    行动：X X\nOTR河牌 2h    行动：B40 C',
+    actionLineOTF: 'B33-C', actionLineOTT: 'X-X', actionLineOTR: 'X-B40-C',
+    desc: 'OTF翻牌 Kh 9d 3c    行动：B33 C\nOTT转牌 6s    行动：X X\nOTR河牌 2h    行动：X B40 C',
   });
   const m3 = matchHandSpot(riverDual);
   assert.equal(m3.spotId, 'sbvsbb-raiser-riverdual');
@@ -321,7 +708,7 @@ test('v7.11.0 spot matcher routes hands to logic cards by role and street', () =
 });
 
 test('v7.11.4 poker logic seeds assemble from resolvable applications, concepts and evidence', () => {
-  assert.equal(POKER_LOGIC_SEED_VERSION, 'v3');
+  assert.equal(POKER_LOGIC_SEED_VERSION, 'v4');
   assert.equal(POKER_LOGIC_SEEDS.length, 8);
   const ids = POKER_LOGIC_SEEDS.map((s) => s.id);
   assert.equal(new Set(ids).size, ids.length);
@@ -360,9 +747,9 @@ test('v7.11.4 poker logic seeds assemble from resolvable applications, concepts 
   assert.equal(POKER_LOGIC_SEEDS.filter((s) => s.street === 'flop').length, 5);
 });
 
-test('v7.11.5 concept seeds carry teaching dimensions with source discipline', () => {
-  assert.equal(CONCEPT_SEED_VERSION, 'v5');
-  assert.equal(CONCEPT_SEEDS.length, 52);
+test('v7.11.10 concept seeds carry teaching dimensions with source discipline', () => {
+  assert.equal(CONCEPT_SEED_VERSION, 'v13');
+  assert.equal(CONCEPT_SEEDS.length, 54);
   const ids = CONCEPT_SEEDS.map((c) => c.id);
   assert.equal(new Set(ids).size, ids.length, 'concept ids must be unique');
   const cardIds = new Set(POKER_LOGIC_SEEDS.map((s) => s.id));
@@ -390,11 +777,14 @@ test('v7.11.5 concept seeds carry teaching dimensions with source discipline', (
       assert.ok(t.text, c.id + ' threshold ' + i + ' needs text');
       if (t.sourceRef) assert.ok(hasSource(t.sourceRef), c.id + ' threshold ' + i + ' sourceRef malformed');
     });
-    if (c.selfCheck) {
-      assert.ok(c.selfCheck.question, c.id + ' selfCheck needs question');
-      assert.ok(Array.isArray(c.selfCheck.options) && c.selfCheck.options.length >= 2, c.id + ' selfCheck needs options');
-      assert.ok((c.selfCheck.options || []).includes(c.selfCheck.answer), c.id + ' selfCheck answer must be one of options');
-      assert.ok(hasSource(c.selfCheck.sourceRef), c.id + ' selfCheck needs sourceRef');
+    if (c.selfChecks) {
+      assert.ok(Array.isArray(c.selfChecks) && c.selfChecks.length >= 1, c.id + ' selfChecks needs array');
+      c.selfChecks.forEach((sc, si) => {
+        assert.ok(sc.question, c.id + ' selfCheck ' + si + ' needs question');
+        assert.ok(Array.isArray(sc.options) && sc.options.length >= 2, c.id + ' selfCheck ' + si + ' needs options');
+        assert.ok((sc.options || []).includes(sc.answer), c.id + ' selfCheck ' + si + ' answer must be one of options');
+        assert.ok(hasSource(sc.sourceRef), c.id + ' selfCheck ' + si + ' needs sourceRef');
+      });
     }
     c.relatedSpotIds.forEach((sid) => assert.ok(cardIds.has(sid), c.id + ' references unknown spot ' + sid));
     c.relatedConceptIds.forEach((rid) => assert.ok(ids.includes(rid), c.id + ' references unknown related concept ' + rid));
@@ -406,7 +796,7 @@ test('v7.11.5 concept seeds carry teaching dimensions with source discipline', (
     'equity distribution vocabulary required',
   );
   // 教学维度覆盖广度：自测题与对比例是主要形态，至少 2/3 的概念具备其一
-  const withTeaching = CONCEPT_SEEDS.filter((c) => c.selfCheck || (c.contrastExamples || []).length).length;
+  const withTeaching = CONCEPT_SEEDS.filter((c) => (c.selfChecks || []).length || (c.contrastExamples || []).length).length;
   assert.ok(withTeaching >= Math.ceil(CONCEPT_SEEDS.length * 2 / 3), 'teaching dimensions must cover most concepts');
 });
 
@@ -438,11 +828,11 @@ test('v7.11.2 spot applications are spot-scoped with provenance', () => {
   });
 });
 
-test('v7.11.5 concept quiz items derive from selfCheck with valid answers', () => {
-  assert.equal(CONCEPT_QUIZ_VERSION, 3);
+test('v7.11.10 concept quiz items derive from selfChecks with valid answers', () => {
+  assert.equal(CONCEPT_QUIZ_VERSION, 4);
   const items = ConceptQuiz.getItems();
-  const selfCheckCount = CONCEPT_SEEDS.filter((c) => c.selfCheck && c.selfCheck.question).length;
-  assert.equal(items.length, selfCheckCount, 'one quiz item per selfCheck-bearing concept');
+  const flatCount = CONCEPT_SEEDS.reduce((n, c) => n + (c.selfChecks || []).length, 0);
+  assert.equal(items.length, flatCount, 'one quiz item per selfCheck entry (flattened)');
   assert.ok(items.length >= 10, 'quiz bank must be non-trivial');
   items.forEach((it) => {
     assert.ok(it.question, it.id + ' needs question');
@@ -457,7 +847,7 @@ test('v7.11.5 concept quiz items derive from selfCheck with valid answers', () =
 });
 
 test('v7.11.6 concept quiz error book records, dedupes and clears', () => {
-  assert.equal(CONCEPT_QUIZ_VERSION, 3);
+  assert.equal(CONCEPT_QUIZ_VERSION, 4);
   ConceptQuiz.clearErrors();
   const items = ConceptQuiz.getItems();
   const it = items[0];

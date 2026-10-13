@@ -268,7 +268,8 @@ export var DecisionRadar = {
       if (Math.abs(b.deviationPP) !== Math.abs(a.deviationPP)) return Math.abs(b.deviationPP) - Math.abs(a.deviationPP);
       return b.spotCount - a.spotCount;
     });
-    return signals.slice(0, t.maxSignals);
+    // [V7.11.12 修改] 复测需要完整信号集；展示上限在已建档优先排序后应用。
+    return signals;
   },
 
   // 快照 → 信号（Discover 渲染入口共用同一 snapshot 口径）。
@@ -297,6 +298,10 @@ export var DecisionRadar = {
   // 达成条件：|频率变化| ≥ 15pp，或样本增长 ≥50%，或该 Spot 已不再触发信号（复查是否改善）。
   evaluateRetest: function (baselineSnapshot, signal) {
     if (!baselineSnapshot) return { due: false, reasons: [], current: null };
+    // [V7.11.14 修改] Parser changes are not strategy improvements; preserve but invalidate older baselines.
+    if (baselineSnapshot.observationVersion !== OBSERVATION_VERSION) {
+      return { due: true, reasons: ['观察口径已更新，旧基线不可比较；需按当前口径重新建档'], current: null };
+    }
     if (!signal) return { due: true, reasons: ['该 Spot 当前不再触发信号——复查是否已改善'], current: null };
     var reasons = [];
     var dFreq = signal.spotFreq - baselineSnapshot.freq;
@@ -326,7 +331,7 @@ export var DecisionRadar = {
       var aOpen = self.findDossierForSignal(a, dossiers, hands) ? 1 : 0;
       var bOpen = self.findDossierForSignal(b, dossiers, hands) ? 1 : 0;
       return bOpen - aOpen;
-    });
+    }).slice(0, THRESHOLDS.maxSignals);
     var byFamily = {};
     signals.forEach(function (s) {
       if (!byFamily[s.scenario]) byFamily[s.scenario] = [];

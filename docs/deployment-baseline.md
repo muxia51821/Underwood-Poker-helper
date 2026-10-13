@@ -61,3 +61,10 @@ Netlify 的控制台配置和最近一次生产发布已经确认。若要建立
 ## 发布保护
 
 （2026-08-08 核查时）本次核查不授权执行 `pull`、`reset`、`rebase`、merge、push 或生产部署。建立发布基线前，必须先复核当前未提交工作区和远端提交差异。2026-08-25 的 Pages 修复与部署由木下明确授权，不适用上述限制。
+
+## 2026-08-31 发布（V7.9.0 → V7.11.6 合入 master）
+
+- master `13b28df` → `b01e368`：fast-forward 合入 `codex/poker-personal-os-plan` 全部 27 个提交（V7.9.0 导入可靠性 → V7.11.6 概念自测错题集），并合并 origin/master 上的 PR #1（`codex/fix-timer-pause` 计时器暂停/恢复修复，仅动 timer.js，与功能分支零文件交集）。
+- 推送记录：`master` 与 `codex/poker-personal-os-plan` 均推送至 `b01e368`；合并后在 master 上跑契约测试 64 项全绿。
+- `static.yml` 构建由 master 推送触发；**线上抽查（站点版本号/产物 SHA）尚未执行**——抽查结果回填本节后方可作为新基线。
+- 合并过程中的操作偏差记录：一次 `merge origin/master` 误在 codex 分支上执行（生成 b01e368），master 首次推送被远端快进校验拒绝后改为 master fast-forward 到 b01e368，最终两分支内容一致。

@@ -3,7 +3,7 @@
 //   带 DDoG/博客出处）+ 概念引用（conceptIds → CONCEPT_SEEDS）。牌理内容只存在于概念域，本文件不自写叙述。
 // 纪律：格内内容全部有出处；空格不允许（契约测试断言每格至少 1 条应用）。
 // street/scenario/role/question 为 spotMatcher 匹配字段，evidenceRefs 指向证据包 id，boundary 为证据转移边界——保持不变。
-export var POKER_LOGIC_SEED_VERSION = 'v3';
+export var POKER_LOGIC_SEED_VERSION = 'v4';
 
 export var POKER_LOGIC_SEEDS = [
   {
@@ -239,27 +239,27 @@ export var POKER_LOGIC_SEEDS = [
     title: 'SB 河牌决策（OOP 进攻方：下注与面对下注）',
     steps: {
       scope: {
-        note: '本 spot = SBvsBB SRP 河牌，SB 兼有两个问句：首动下注与面对下注。优势是全场景最微弱的，牌理基调是克制。',
+        note: '本 spot = SBvsBB SRP 河牌，SB 兼有首动下注与面对下注两个问句。先回看翻牌、转牌走过的线，再核对双方剩余价值牌与空气牌。',
         conceptIds: ['concept-nut-advantage'],
         applicationIds: ['app-sb8-scope-1'],
       },
       lines: {
-        note: '线语义：下注以小注为主（薄价值 / 阻挡）；大注需要真两极或关键 blocker。',
+        note: '尺寸取决于剩余范围：小注能向哪些更弱手取值？大注能得到哪些跟注或弃牌？下面的转牌与 3-bet 底池书例帮助拆解机制，不给当前河牌指定尺寸。',
         conceptIds: ['concept-value-bluff-ratio'],
         applicationIds: ['app-sb8-lines-1', 'app-sb8-lines-2'],
       },
       streets: {
-        note: '街牌效应：惊悚面 middling 牌失去价值下注资格；成花河牌过牌设陷阱（check 不总是示弱）。',
+        note: '街牌效应：河牌补进了谁的顺子、同花与两对？重新估计薄价值门槛；强牌是否留作过牌陷阱，还要看它保留或阻挡了对手哪些下注组合。',
         conceptIds: ['concept-equity-buckets', 'concept-blockers'],
         applicationIds: ['app-sb8-streets-1'],
       },
       deviation: {
-        note: '偏离解读：面对下注侧按"抓诈唬三问"走；对手有位置的河牌下注更两极，MDF 是下界不是目标。',
+        note: '面对下注：先算赔率，再核对这条线的价值与诈唬组合，最后看自己的 blocker。MDF 是校准工具；具体防守由对手范围与跟注收益决定。',
         conceptIds: ['concept-bluff-catching', 'concept-mdf-boundary'],
         applicationIds: ['app-sb8-deviation-1', 'app-sb8-deviation-2', 'app-sb8-deviation-3'],
       },
     },
     evidenceRefs: ['ev-gto-wizard-bvb-xcx-river', 'ev-gto-wizard-nasty-rivers-oop', 'ev-gto-sbvsbb-cbet-directional'],
-    boundary: '「BvB check-call 转河」为 SB vs BB 场景直接对口（其线为对手翻牌刺探被跟，与你的 C-bet 线镜像同构、非同一前置线）；六深度分布为 MTT 聚合结构参考。',
+    boundary: '「BvB check-call 转河」对应 SB 翻牌 XC、转牌 X-X 后的河牌，不对应所有 SB 河牌线。转牌、3-bet 底池、Spin 与 HU 书例均标明原场景，用于机制对照；六深度分布为 MTT 聚合结构参考。',
   },
 ];

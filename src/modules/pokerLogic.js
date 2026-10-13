@@ -8,6 +8,7 @@ import { POKER_LOGIC_SEEDS } from '../data/pokerLogicSeed.js';
 import { CONCEPT_SEEDS, CONCEPT_APPLICATIONS } from '../data/conceptSeed.js';
 import { Utils } from '../utils.js';
 import { EvidencePackRepo } from '../store/store.js';
+import { topicForSpot } from '../data/strategyFramework.js';  // [V7.11.13 新增]
 
 // [V7.11.1 修改] esc 必须是真转义（V7.11.0 的纯 String() 写法违反 AGENTS.md「用户数据进 HTML 前 escapeHtml」）：
 // 浏览器环境走 Utils.escapeHtml；契约测试在 node 无 document，退化为语义等价的纯 JS 转义
@@ -62,6 +63,8 @@ function conceptLine(conceptId) {
   let html = '<div style="margin:6px 0 2px;padding:6px 8px;border:1px solid #1c2f4a;border-radius:6px;background:#0a1524">';
   html += '<b style="color:#d4a853">' + esc(c.title) + '</b>';
   html += '<div style="margin-top:3px">' + esc(c.mechanism) + '</div>';
+  // [V7.11.14 新增] The same reading scope appears in topic pages and hand cards.
+  if (c.readingNote) html += '<div style="margin-top:3px;color:#8b949e">阅读限定：' + esc(c.readingNote) + '</div>';
   if (c.misconception) html += '<div style="margin-top:3px;color:#c98f8f">⚠ 常见误解：' + esc(c.misconception) + '</div>';
   (c.contrastExamples || []).forEach((ex) => {
     html += '<div style="margin-top:3px;padding-left:8px;border-left:2px solid #3a5a8a;color:#b8c0cc">⚖ ' + esc(ex.text) + sourceLine(ex.sourceRef) + '</div>';
@@ -69,16 +72,19 @@ function conceptLine(conceptId) {
   (c.thresholds || []).forEach((t) => {
     html += '<div style="margin-top:3px;padding-left:8px;border-left:2px solid #8a6a2a;color:#c8c2a8">📐 ' + esc(t.text) + sourceLine(t.sourceRef) + '</div>';
   });
-  if (c.selfCheck && c.selfCheck.question) {
-    html += '<details style="margin-top:4px"><summary style="cursor:pointer;color:#8fb3de">❓ 考考自己（先想再看答案）：' + esc(c.selfCheck.question) + '</summary>';
+  // [V7.11.9 修改] selfChecks 数组：每题一个折叠块（题多时标 Q2/Q3…）
+  (c.selfChecks || []).forEach((sc, si) => {
+    if (!sc.question) return;
+    const qLabel = si === 0 ? '' : '（' + (si + 1) + '）';
+    html += '<details style="margin-top:4px"><summary style="cursor:pointer;color:#8fb3de">❓ 考考自己' + qLabel + '（先想再看答案）：' + esc(sc.question) + '</summary>';
     html += '<div style="margin-top:3px;color:#a8afba">';
-    (c.selfCheck.options || []).forEach((opt) => { html += '<div>· ' + esc(opt) + '</div>'; });
+    (sc.options || []).forEach((opt) => { html += '<div>· ' + esc(opt) + '</div>'; });
     html += '</div>';
-    html += '<div style="margin-top:3px;color:#9fd49f"><b>答案：' + esc(c.selfCheck.answer) + '</b></div>';
-    if (c.selfCheck.answerNote) html += '<div style="margin-top:2px;color:#a8afba">' + esc(c.selfCheck.answerNote) + '</div>';
-    html += sourceLine(c.selfCheck.sourceRef);
+    html += '<div style="margin-top:3px;color:#9fd49f"><b>答案：' + esc(sc.answer) + '</b></div>';
+    if (sc.answerNote) html += '<div style="margin-top:2px;color:#a8afba">' + esc(sc.answerNote) + '</div>';
+    html += sourceLine(sc.sourceRef);
     html += '</details>';
-  }
+  });
   if (c.applicability) html += '<div style="margin-top:3px;color:#8b949e">适用边界：' + esc(c.applicability) + '</div>';
   html += sourceLine(c.sourceRef);
   html += '</div>';
@@ -109,6 +115,8 @@ export var PokerLogic = {
     html += '<summary style="cursor:pointer;color:#d4a853;font-size:0.82em;font-weight:bold">📚 牌理参考：' + esc(seed.title) +
       (match.street === 'river' ? '（河牌' + (match.riverType === 'scary' ? ' · 惊悚' : match.riverType === 'blank' ? ' · 空白' : '') + (match.line ? ' · 线 ' + esc(match.line) : '') + '）' : '') + '</summary>';
     html += '<div style="margin-top:8px;color:#c8ccd0;font-size:0.78em;line-height:1.65">';
+    // [V7.11.13 新增] Topic navigation does not assert an exact solver/profile match.
+    html += '<button type="button" class="btn--mini" data-strategy-topic="' + topicForSpot(seed.id) + '">查看对应策略主题</button>';
 
     html += stepBlock('① 范围合法性', seed.steps && seed.steps.scope);
     html += stepBlock('② 线语义', seed.steps && seed.steps.lines);

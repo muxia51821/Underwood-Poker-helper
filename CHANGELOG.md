@@ -2,7 +2,27 @@
 
 本文件记录正式发布证据。详细的历史功能说明继续保留在 `牌桌助手历史迭代版本/版本更新说明.md`。
 
-## 未发布
+## V7.11.15
+
+本次发布的 source SHA、部署结果与线上检查证据，记录在该版本的 PR 发布说明中。
+
+- V7.11.15 修正学习执行路径：策略训练按街与决策问题进入翻牌频率练习或对应主题概念自测，旧单元无需重建；精确节点保留牌面筛选，通用练习清除上次筛选。位置速查改为准确的位置关系与主题阅读入口。SB 河牌卡区分 XC-X 前置线、转牌与相邻书例，修正同花 blocker 的陷阱方向。完整九人桌模拟牌谱覆盖解析、决策归属和主题关联。
+
+- V7.11.14 策略学习与手牌接通：普通桌与两人桌的盲位行动顺序分开识别，牌理卡与 Radar 共用翻牌决策归属；补全过牌后面对下注的防守节点，无法可靠归属的记录不强行统计。深度、抽水、probe 的机制、阅读限定与自测统一到概念种子。策略主题可查看按桌型筛选的本地候选手牌、进入对应概念自测；浏览不生成个人策略或替用户判断支持／反例。旧统计基线标为口径不可比，用户确认重建时保留旧快照。
+
+- V7.11.13 策略体系首版：在复盘的策略子页加入只读主题目录，引用已有教材概念和文章条件；行动线经验标为待验证。单手牌理卡可跳到对应主题，保留个人策略编辑。主题浏览不写入存储，不自动生成策略或掌握度；深度、抽水、probe 的阅读提示按策略对照稿限定条件。原概念种子、Quiz 答案与旧牌理正文未在本轮整体重写。
+
+- V7.11.12 剥削调整概念 + 参考源纪律（木下教学裁决落地）：新增 concept-exploit-adjustments（对手模型→偏离方向：多 call→少诈唬多价值/多弃→多诈唬/小频率偏差引起大策略偏移；误解=把 GTO 频率抄进实战成"GTO 鱼"），3 对比来自已读课程（value-heavy bet-fold 解锁、trappy probe 收缩、under-bluff 弃 MDF）+ 1 道自测题（对方微偏多 call 该怎么调）；种子头部登记参考源纪律（只讲牌理、牌例须典型、不做 GTO 鱼）并把 NevirPoker 登记为待核验扩展参考源（需木下提供链接后逐条核验，与 GW 博客 URL 同纪律）。概念 54 条、题库 70 题。
+
+- V7.11.11 批次 D + 整体质量复查：场景课按需补应用——5 课全文精读（C-Betting low connected boards 330-333/Finding thin value in checked down pots 1133-1136/It's a chop, right?! 1037-1040/Blocking the missed flush draw 278-280/Belligerent Big Blind 247-249），+1 对比（Belligerent BB：单花 3BP 的 AKQ blocker 反转超池例外）+ 3 条 spot 应用（btn1 低连张面 20% c-bet 条件、sb8 check-down 薄价值 Q-high、sb8 chop 面 rake 博弈 50NL/500NL 分层）；Blocking the missed flush draw 原则已被 unblock-bluffs 覆盖不入种子（台账记录）。质量复查：①种子遗留「图像复核（留待）」清零（头部注释更新为新数字当批核验纪律）；②全量 sourceRef 课名与书签比对——修最后一处笔误（What's the point of mixing?）；③抽样回验 4 页数值（p41 方差 70%/95%、p88 黄金比例 1.618/38%、p149 EV 7bb vs 4.95bb、p765 同花 25%/25.9%）全部与种子一致。应用 50 条、题库 69 题、累计精读 177 课（约全书 53%）。
+
+- V7.11.10 批次 C：CH7 深度维度选 9 课全文精读（30 课深库首次成规模利用），+9 处对比/阈值 + 1 道计算自测 + 2 条 spot 深度应用：implied-odds（10bb limp 极化分工：limp=弱手+价值、shove=高 equity 好 blocker；16bb combo draw 首选全下）、thin-value（短码 OOP 次对转牌全下=实现策略，被跟 39% 但否认 equity+迫过弃）、mdf-draws（combo draw 线性策略瞄 air）、trapping（BvB 40bb 顺子快慢打分野：AJs block 继续范围→call 慢打、KQ 脆弱→快打）、blockers（防守侧选不 block 对方诈唬的 FD）、bluff-catching（静态对子 77-99 弃牌时点=面对转牌 barrel）、4straight-chop-defense（5-flush 深码 chop 动态：3-bet 价值阈值降到第二大同花）、overbetting（150bb 砖河价值阈值弹性至 T9 两对）、alpha-mdf 第二题（200bb 三街连乘 18%/同花 25% 计算题）；spot 应用 +2（btn6 深度阈值、btn2 深度应对谱）。台账见 schema 文档第 14 节；累计精读 172 课（约全书 52%）。
+
+- V7.11.9 批次 B：概念自测多题制——schema v8（`selfCheck` 单题 → `selfChecks` 数组，53 条概念全量迁移）；CH2 剩余 18 课全部升级全文精读后新增 15 道第二题（题库 53 → 68）+ 4 处对比（monotone 实现规律/弃牌权益不均质/几何式 54%×3 街/shortstack TT shove）——覆盖 EV 手算（分支×概率：check 7bb vs bet 4.95bb）、rake 分层（50NL flat/500NL raise 弱占优）、找隐藏假设（对方不打固定策略）、找定律（pot odds 唯一恒真）、极化极值（quads 也 range-check）、几何尺寸（SPR4 极化 54%）等 DDoG 题型原型；conceptQuiz.getItems 展平（首题 id=概念 id 兼容旧掌握度/错题数据，第二题起 = 概念id#2，`CONCEPT_QUIZ_VERSION` 4）；pokerLogic.js 渲染多题折叠块。契约测试：selfChecks 数组校验、题库数=展平数、错题簿逻辑（v4）。
+
+- V7.11.8 批次 A：CH11 All Stars 钦点清单收尾——剩余 14 课全文精读提炼，+17 处对比/阈值与 1 条新概念：equity-realization（冷跟面 AQ 最差 EQR/76s 超实现 AK 欠实现）、board-distribution-shapes（双平台=paired+高张）、bluff-catching 三连（极化转牌注优选 53s 类 outdraw 手、33 不 block 诈唬、纯抓诈手严格定义 vs value-beater）、alpha-mdf（跨街 MDF 连乘：37% call-down、28/37=75% 同花稀释）、trapping（OOP set 陷阱 JJ/99 block check-back 段）、overbetting（200bb 成抽 turn 中和 nut 优势、J 保留）、3bet-construction（对抗紧小 3-bet 跟 86s/对抗 passive 更大更线性）、implied-odds（HU 短码 limp 91%→73%）、icm（FT BTN 20-40-5 最紧：翻倍+6%/出局-12%）、value-bluff-ratio（短码 TT shove 实现逻辑）、mdf-boundary/cbet-3bp/delayed-cbet/stack-depth/thin-value/probe 补 sourceRef；新增 concept-variance-basics（方差与样本量：1 万手 70% 领先/10 万手 95%，文章表格直读）。台账见 `docs/concept-seed-schema.md` 与 map 附录 B；累计精读 145 课（约全书 43%）。
+
+- V7.11.7 概念自测题库全量覆盖：52 条概念每条 1 道书源自测题（40 → 52，新增 pot odds 门槛计算、形态配对、抓诈唬 pot odds、combo EQR、implied odds 场景、纯/频率错误、尺寸瞄准、阈值三问、手牌无真空、GTO 目标、solver 噪声、range-bet 例外）——全部提炼自已全文精读课程，quiz-first 全覆盖；`CONCEPT_SEED_VERSION` v6；契约测试同步（v6/52 条/52 题自测）。
 
 - V7.11.6 概念自测错题集：答错入册（`pa_concept_quiz_errors`，按题去重保留最新错误答案）、答对销账、重做错题模式（只出错题，剩余数在总结页显示）、错题集折叠视图（题目+你的答案+正确答案+解析+出处，计数徽章+清空按钮）——复用 quizTrainer 错题集（`pa_quiz_errors`）的交互模式；`CONCEPT_QUIZ_VERSION` 3；契约测试新增错题簿逻辑校验（入册/去重/未知 id 过滤/销账/清空），测试总数 64。
 
