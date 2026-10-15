@@ -295,7 +295,7 @@
                   max="25"
                   required /></label
               ><label class="field"
-                >4️⃣有效筹码 (SPR)
+                >4️⃣本街下注前有效筹码 (BB)
                 <input type="number" id="stackInput" class="input" value="100" step="1" min="1"
               /></label>
             </div>
@@ -313,8 +313,8 @@
             </div>
             <div id="sprDisplay" class="text-muted" style="margin: 4px 0; min-height: 18px"></div>
             <div class="radio-group">
-              <label><input type="radio" name="street" value="one" checked /> 一张牌</label
-              ><label><input type="radio" name="street" value="two" /> 两张牌</label
+              <label><input type="radio" name="street" value="one" checked /> 转牌：一张牌</label
+              ><label><input type="radio" name="street" value="two" /> 翻牌：两张牌</label
               ><label
                 style="
                   display: flex;
@@ -324,7 +324,7 @@
                   white-space: nowrap;
                 "
                 ><input type="checkbox" id="comboCheck" style="width: auto; margin: 0" />
-                后续再下注</label
+                固定支付翻牌与转牌</label
               >
             </div>
             <div id="comboRow" style="display: none; margin-top: 8px">
@@ -419,7 +419,7 @@
               </div>
             </details>
             <details style="margin-top:12px" id="outsRefDetails">
-              <summary class="tech-summary">📊 Outs → Equity</summary>
+              <summary class="tech-summary">📊 Outs → 补牌命中率</summary>
               <div style="max-height:300px;overflow-y:auto">
                 <table class="cheatsheet" id="outsRefTbl">
                   <thead><tr><th>Outs</th><th>Flop (2 cards)</th><th>Turn (1 card)</th></tr></thead>

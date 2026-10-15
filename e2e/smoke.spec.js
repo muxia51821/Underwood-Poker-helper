@@ -880,8 +880,10 @@ test('手牌复盘显示牌理参考卡片', async ({ page }) => {
   const firstRow = page.locator('#handBody tr[data-hand-id]').first();
   await firstRow.locator('[data-hand-expand]').click();
   const expandRow = page.locator('tr[id^="hand-expand-row"]').first();
-  const logicBox = expandRow.locator('.poker-logic-box');
-  await expect(logicBox).toHaveCount(1);
+  await expect(expandRow.locator('.poker-logic-box')).toHaveCount(2);
+  const turnBox = expandRow.locator('.poker-logic-box').first();
+  await expect(turnBox.locator('> summary')).toContainText('二枪');
+  const logicBox = expandRow.locator('.poker-logic-box').last();
   await expect(logicBox.locator('> summary')).toContainText('牌理参考');
   await expect(logicBox.locator('> summary')).toContainText('空白');
   await expect(logicBox.locator('> summary')).toContainText('agg→agg');

@@ -95,10 +95,10 @@ export const Utils = {
     return isNaN(num) || !isFinite(num) ? '--' : num.toFixed(digits);
   },
   /**
-   * 查表取精确胜率，outs 超过 20 自动回落组合公式
+   * Fixed-outs hit probability; above 20 outs use the combination formula.
    * @param {number} outs - 听牌数 (0-25)
    * @param {boolean} isFlop - true=翻牌(两张牌), false=转牌(一张牌)
-   * @returns {number} 胜率百分比 (0-100)
+   * @returns {number|string} 补牌命中概率百分比 (0-100)
    */
   getEquity(outs, isFlop) {
     if (outs <= 0) return 0;

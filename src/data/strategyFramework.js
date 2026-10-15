@@ -4,6 +4,7 @@ import { POKER_LOGIC_SEEDS } from './pokerLogicSeed.js';
 import { GTO_BASELINE_SEEDS } from './gtoBaselineSeed.js';
 import { EXTERNAL_EVIDENCE_SEEDS } from './externalEvidenceSeed.js';
 import { underBluff, overBluff } from './actionLines.js';
+import { TOPIC_LESSONS, TURN_DECISIONS } from './strategyLessons.js';
 
 export const STRATEGY_TOPICS = [
   {
@@ -37,8 +38,8 @@ export const STRATEGY_TOPICS = [
   {
     id: 'turn', title: '转牌与后续权益实现',
     summary: '先读前街，再读新牌。C-bet 被跟、双方过牌、check-raise 被跟，会留下不同的范围。同一张 A 或成听牌转牌，不能单独决定下一步。',
-    boundary: 'Probe、delayed C-bet 与 donk 按前置线区分。低 SPR 听牌处理不能直接搬到 200bb SRP；现有场景卡尚未覆盖转牌。',
-    conceptIds: ['concept-implied-odds', 'concept-probe', 'concept-delayed-cbet', 'concept-owning-draws', 'concept-check-back-draws'],
+    boundary: '二枪、probe、delayed C-bet 与 donk 按前置线区分；教材的 6max、straddle + ante、100bb／200bb 与 3BP 条件分别保留，不指定主线频率。',
+    conceptIds: ['concept-implied-odds', 'concept-probe', 'concept-delayed-cbet', 'concept-owning-draws', 'concept-check-back-draws', 'concept-turn-barrel', 'concept-turn-defense'],
     sourceIds: ['ev-gto-wizard-bb-turn-probe-100bb'],
   },
   {
@@ -99,13 +100,14 @@ export const STRATEGY_HYPOTHESES = [...underBluff, ...overBluff].map((entry) => 
 export function topicForSpot(spotId) {
   const spot = POKER_LOGIC_SEEDS.find((item) => item.id === spotId);
   if (!spot) return null;
-  return spot.street === 'river' ? 'river' : spot.question === 'facebet' ? 'defense' : 'flop';
+  return spot.street === 'river' ? 'river' : spot.street === 'turn' ? 'turn' : spot.question === 'facebet' ? 'defense' : 'flop';
 }
 
 export function resolveTopic(topicId) {
   const topic = STRATEGY_TOPICS.find((item) => item.id === topicId);
   if (!topic) return null;
   return { ...topic,
+    lessons: topic.id === 'turn' ? TURN_DECISIONS : TOPIC_LESSONS[topic.id] || [],
     concepts: topic.conceptIds.map((id) => CONCEPT_SEEDS.find((item) => item.id === id)),
     sources: topic.sourceIds.map(resolveFrameworkSource),
     spots: POKER_LOGIC_SEEDS.filter((spot) => topicForSpot(spot.id) === topic.id),

@@ -8,7 +8,8 @@
 // 全书 334 课作为同一本参考源：典型 = 本库已提炼条目；全本 = docs/ddog-concept-map.md 附录 A 页码台账。
 // [V7.11.12 新增] 参考源纪律（木下裁决）：只讲牌理，牌例必须典型；对手行为驱动偏离（多 call→少诈唬多价值、多弃→多诈唬；小频率偏差可引起大策略偏移），不做"GTO 鱼"。NevirPoker 为待核验扩展参考源（需木下提供频道/视频链接后逐条核验再入种子，与 GW 博客 URL 同纪律）。
 // 本文件为静态只读知识，直接 import，不入 localStorage。schema 见 docs/concept-seed-schema.md。
-export var CONCEPT_SEED_VERSION = 'v13';
+import { TURN_DECISIONS, TURN_SPOTS } from './strategyLessons.js';
+export var CONCEPT_SEED_VERSION = 'v15';
 
 // sourceRef 简写：DDoG 课程（默认 extraction 正文核验）
 function L(lesson, chapter, readerPages, extraction) {
@@ -503,22 +504,22 @@ export var CONCEPT_SEEDS = [
     title: 'Probe（对手 check-back 后的反击注）',
     cluster: 'range-construction',
     // [V7.11.14 修改] Range filtering does not rule out traps; sizing conclusions belong to the cited examples.
-    mechanism: 'Check-back 会过滤范围，但不等于没有强牌或陷阱。Probe 要重新比较前街过牌后双方的分布及转牌变化。在书中 HJ vs BB 的砖牌例子里，BB 用极化几何超池；其他成花、成对或 A 转牌例子的价值段和尺寸会变化。不同前置线、牌面或范围不能沿用同一个超池答案。',
+    mechanism: 'Check-back 会过滤范围，但不等于没有强牌或陷阱。Probe 要重新比较前街过牌后双方的分布及转牌变化。《Probing turn bricks》是 BTN vs BB、8max / straddle + ante cash / 200bb 的 J♥T♦5♣ 例子，低砖牌采用极化几何超池；另一课 HJ vs BB 的 8♥7♠4♥ 例子通常采用较小的去极化下注，但 A♥ 转牌变为超池／过牌。两例不能混成同一条尺寸规则。',
     readingNote: 'Check-back 会过滤范围，但不等于没有强牌或陷阱。原文例子的范围构成不能推广到所有双方过牌的底池。',
     misconception: 'probe = "对手示弱我随便打"。probe 的尺寸和形态必须重算对手 cap 后的分布，而不是沿用 c-bet 习惯。',
-    applicability: 'Probe 机制可参考；HJ vs BB 转牌、limped pot delayed C-bet 与河牌 probe 分别按原例条件阅读，不相互替代。',
+    applicability: 'BTN vs BB / 8max / straddle + ante / 200bb 与 HJ vs BB / 6max / 200bb 是两个独立转牌例子；limped pot 延迟下注与河牌 probe 也各保留原条件。',
     contrastExamples: [
-      { text: '同为 probe：turn brick → 极化几何超池（BB 对 HJ：强顶对+ 价值、抽牌诈唬）；A turn → 超池/check 二分（A 帮对手 top pair，你的价值段只剩同花，小注 depolarized 不再成立）。', sourceRef: L('Depolarized Turn Probes', 11, '1204-1208') },
+      { text: 'HJ vs BB、6max / 200bb，8♥7♠4♥ 过牌到底：题列多数转牌采用小注，A♥ 却超池／过牌。A♥ 帮 HJ 增加顶对，也令 BB 的价值段主要剩同花；对 BB 范围不利的牌仍可能适合大尺寸。', sourceRef: L('Depolarized Turn Probes', 11, '1204-1208') },
       { text: 'limped pot 的 delayed c-bet（HU SnG 20bb）：SB 200% 超池极化（顶对+ 价值 + 大量 check back）；AJs 进大尺寸，A4s/T6s/QJ check 实现摊牌价值。', sourceRef: L('Delayed c-betting limped pots', 4, '354-356') },
       { text: '河牌 probe 的尺寸分裂：block-bet 走中段薄价值（2nd pair+，Qx 仍 65%+ equity）、顶对 good kicker+ 走超池——对手 turn check-back 自 cap 后，你的"中等牌"其实是 nuts 级。', sourceRef: L('Probing the river on dry runouts', 8, '866-870') },
       { text: 'A-high 干面的 probe 主尺寸（A86 面 50NL）：跨所有转牌，BB 最常用 probe 尺寸 = 超池（101%+）——中段手不值价值下注，两对+ 极化超池是主结构。', sourceRef: L('Probing OOP on Ace high boards', 8, '787-790') },
     ],
     thresholds: [],
     selfChecks: [{
-      question: 'HJ vs BB SRP，flop checks through。BB 在低砖 turn（2/3/4/6）的 probe 形态是？',
+      question: 'BTN vs BB、8max / straddle + ante cash / 200bb，J♥T♦5♣ 翻牌过牌到底。BB 在低砖 turn（2/3/4/6）的 probe 形态是？',
       options: ['Linear', 'Merged', 'Polarized', 'Condensed / Depolarized'],
       answer: 'Polarized',
-      answerNote: '该 HJ vs BB SRP 教材例子的砖牌转牌采用几何超池与极化范围。这个答案只解释原例，不代表所有 check-back 后的底池都应如此下注。',
+      answerNote: '该 BTN vs BB 的深码 straddle + ante 教材例子在低砖牌采用几何超池与极化范围；另一个 HJ vs BB 例子可以采用小注，不能混读。',
       sourceRef: L('Probing turn bricks', 6, '573-576'),
     }],
     relatedSpotIds: ['btnvsbb-caller-riverfirst'],
@@ -683,18 +684,18 @@ export var CONCEPT_SEEDS = [
     id: 'concept-pure-vs-frequency-mistakes',
     title: '纯错误 vs 频率错误',
     cluster: 'calibration',
-    mechanism: '纯错误 = 对固定 Nash 恒亏的动作（任何对手都惩罚）；频率错误 = 混合比例不对，只有偏离均衡的对手才能惩罚。对 GTO 对手：纯错误必亏，频率错误无代价。',
-    misconception: '把所有偏差都当"错误"。复查个人频率时先分清：这个偏差是纯错误（对手任何策略都惩罚）还是频率错误（只有特定对手惩罚）。',
-    applicability: '通用校准；Radar 偏离信号的解读基础。',
+    mechanism: '纯错误是相对固定 Nash 均衡策略损失 EV 的动作，不是说任何对手都会惩罚它。频率错误是在原决策点等 EV 的混合动作间使用了不同频率；固定均衡对手不会因此获得更多收益，但偏离均衡的对手可能利用它。判断基准是与可选动作相比损失多少 EV，不是这个动作的绝对 EV 是否小于零。',
+    misconception: '把“相对均衡策略损失价值”误读为“对任何对手都亏”；或把混合动作间的频率调整与选择一个低 EV 动作混为一谈。',
+    applicability: '学习以 GTO 为基准：原条件下明确不推荐的低 EV 动作不纳入建议；频率讨论仅限已有等 EV 混合动作，不用猜测对手偏差来替纯错误辩护。',
     contrastExamples: [
-      { text: '同一手在错误线上打纯错误动作 = 恒亏；同手在正确线上用错频率 = 面对均衡对手无损、只被剥削型对手惩罚。', sourceRef: L('Pure mistakes vs frequency mistakes', 1, '72-73') },
+      { text: '同一个已确定的决策点：若动作相对最优选择损失 EV，则属于纯错误；若只在等 EV 动作间改变频率，对固定均衡对手不损价值，但可能暴露给会调整的对手。', sourceRef: L('Pure mistakes vs frequency mistakes', 1, '72-73') },
     ],
     thresholds: [],
     selfChecks: [{
       question: '「频率错误」（混合比例不对）什么时候会被惩罚？',
       options: ['只有当对手偏离均衡（打剥削）时', '任何时候都被惩罚', '只被 GTO 对手惩罚', '从不被惩罚'],
       answer: '只有当对手偏离均衡（打剥削）时',
-      answerNote: '纯错误对固定 Nash 恒亏；频率错误只有剥削型对手才能惩罚——复查个人频率偏差时先分清错误类型。',
+      answerNote: '纯错误相对固定 Nash 策略损失 EV；等 EV 混合动作间的频率错误需要对手偏离均衡才能利用。学习仍排除原条件下明确不推荐的低 EV 动作。',
       sourceRef: L('Pure mistakes vs frequency mistakes', 1, '72-73'),
     }],
     relatedSpotIds: [],
@@ -1324,11 +1325,11 @@ export var CONCEPT_SEEDS = [
     id: 'concept-delayed-cbet',
     title: 'Delayed C-bet（延迟持续下注）',
     cluster: 'range-construction',
-    mechanism: 'flop check 后转牌的 delayed c-bet 尺寸由你 check 段的组成决定。3BP 例：SB 的 unpaired 3-bet 翻牌全 miss 后，check 段 = overpairs（陷阱）+ 高张空气 → 转牌首选超池（101%+）极化：overpair 想尽快进钱、空气作诈唬。limped pot 例：SB 200% 超池极化（顶对+ 价值、大量 check back）。与 IP 的 depolarized 小注 probe 形成对照——OOP 的 delayed c-bet 天然更极化。',
-    misconception: 'delayed c-bet = "再给一次小注试探"。OOP check 段里 traps 多、中段少时，超池极化才是首选尺寸。',
-    applicability: '通用；flop check 后的转牌进攻（3BP/limped pot 场景核验）。',
+    mechanism: '翻前加注者在翻牌过牌到底后，转牌再下注称为 delayed C-bet。尺寸取决于自己的过牌范围与转牌变化。SB vs CO、6max / 100bb 的 3-bet 底池例子中，低牌面使未成对高张落空，SB 留下超对陷阱与空气，因此偏向超池／过牌；这不证明所有 OOP 延迟下注都天然极化。',
+    misconception: '把延迟下注固定理解为小注试探，或反过来固定理解为超池。先看过牌段是否真的由强陷阱与空气主导。',
+    applicability: '定义适用于翻牌过牌到底后的转牌；具体尺寸例子来自 SB vs CO / 100bb / 3BP，不是当前 SRP 或 200bb 的默认尺寸。',
     contrastExamples: [
-      { text: '同为 flop check 后：3BP OOP（SB）→ 超池极化（overpair 陷阱+空气）；limped pot SB → 200% 超池（顶对+ 价值）。OOP delayed c-bet 天然极化。', sourceRef: L('Delay c-betting OOP in 3BPs', 9, '920-923') },
+      { text: 'SB vs CO / 100bb 的低牌 3BP：SB 的过牌范围含超对陷阱与高张空气，因此适合超池／过牌。若换成含许多中段手的范围，就不能沿用这套构造。', sourceRef: L('Delay c-betting OOP in 3BPs', 9, '920-923') },
     ],
     thresholds: [],
     selfChecks: [{
@@ -1348,18 +1349,18 @@ export var CONCEPT_SEEDS = [
     id: 'concept-owning-draws',
     title: '用大注持有 draw（Owning Draws）',
     cluster: 'range-construction',
-    mechanism: '用大注"own"对手的 continue 段：175% 转牌超池把对方的 KQ/KT/QT 类压进跟注，你的 draw 手在特定河牌反而失去全部摊牌价值——此时 shove 是唯一收益来源。书例：SB 54s 在 175% 超池后，Q 河牌使对方的 KQ/KT/QT beat 你、摊牌价值归零（check EV 0）→ 必须 shove（EV 4.1）；其他河牌 check EV 0.89-1.33 更优。核心：check EV 为零的手，fold equity 是唯一收益，runout 决定 shove/check。',
+    mechanism: '转牌大注会筛选对手的继续范围，河牌应比较下注与过牌收益。SB vs BB / 100bb，A♠J♥4♦-2♣ 上 SB 持 5♥4♥ 打 175% 二枪；Q♥ 河牌使 BB 保留的 KQ/KT/QT 等组合击败它，过牌 EV 为 0，全下 EV 为 0.41bb，因此该例选择全下。不是“没有摊牌价值就总要诈唬”，而是该手牌在指定范围下全下比过牌更有收益。',
     misconception: '听牌命中就摊牌、不中就弃的线性思维。大注改变了对方的 continue 段，某些河牌你的"成牌"反而毫无摊牌价值——那时它就是纯诈唬。',
-    applicability: '通用；大注后的河牌 runout 决策。',
+    applicability: 'SB vs BB、6max cash / 100bb 的指定行动线与红桃河牌例子；比较动作 EV 的方法可参考，数字与动作不外推到其他底池。',
     contrastExamples: [
-      { text: '同一 54s 四种河牌：Q 河 check EV 0 → shove 4.1；其余河牌 check EV 0.89-1.33 → check。摊牌价值归零的 runout 上，成牌变诈唬。', sourceRef: L('Owning draws with big turn bets', 8, '879-882', '正文核验+文章表格直读') },
+      { text: '同一 5♥4♥：6♥／9♥ 河牌，过牌 1.33bb、全下 0.89bb；Q♥ 河牌，过牌 0bb、全下 0.41bb；A♥ 河牌，过牌 4.1bb、全下 1.93bb。Q♥ 的全下绝对收益最低，却是四张候选里唯一全下优于过牌的河牌。', sourceRef: L('Owning draws with big turn bets', 8, '879-882', '图像复核') },
     ],
     thresholds: [],
     selfChecks: [{
-      question: 'SB c-bet 33% 后在 175% 转牌超池持 54s。哪张河牌必须 shove（而非 check）？',
+      question: 'SB vs BB / 100bb，A♠J♥4♦-2♣，SB 持 5♥4♥ 打 33% 翻牌注与 175% 二枪。题列红桃河牌中，哪张全下优于过牌？',
       options: ['9', '6', 'Q', 'A'],
       answer: 'Q',
-      answerNote: 'Q 河牌让对方的 KQ/KT/QT（被超池压进跟注的组合）beat 54s——摊牌价值归零，check EV 0，shove EV 4.1：fold equity 是唯一收益。',
+      answerNote: 'Q♥ 河牌的过牌 EV 为 0，全下为 0.41bb；6♥／9♥ 为过牌 1.33bb、全下 0.89bb；A♥ 为过牌 4.1bb、全下 1.93bb。比较的是同一河牌两个动作的差值，不是不同河牌全下 EV 的绝对大小。',
       sourceRef: L('Owning draws with big turn bets', 8, '879-882'),
     }],
     relatedSpotIds: [],
@@ -1456,18 +1457,19 @@ export var CONCEPT_SEEDS = [
     id: 'concept-combo-eqr',
     title: 'Combo 级 EQR 差（同手不同花色）',
     cluster: 'equity-distribution',
-    mechanism: '同一手牌不同 combo 的 EQR 可以差 14 个百分点：KJo 在 T95 面，最好的 KJs（同时持有前后门同花 draw 的 blocker）36% pot share，最差 22%——而两者 raw equity 差仅约 4%。同时 block 两个方向的同花 draw 意味着：转牌成顶对不完成对方 FD、自己保有后门心、对方更可能对后续下注弃牌。这个 combo 初期 lead 少，但后期打激进 check-raise 线。',
+    mechanism: '同为 KJo，不同花色组合的权益实现也不同。8max MTT / 35bb，CO 开局、BTN 跟注，T♥9♦5♥ 上 K♥J♦ 的 EQR 最高。表中 K♥J♦ 与 K♠J♣ 的 equity 为 41.5%／37.8%，EQR 为 85.9%／59.3%；正文所说 36%／22% 是底池份额，不是 EQR。K♥J♦ 同时影响前门红桃与后门方块的组合，保留自己的后门潜力；同花 KJs 不属于这道题的候选。',
     misconception: '把同点数手的不同 combo 当等价。combo 间 blocker 分布造成的实现差异远大于 equity 差异——选组合先看花色。',
-    applicability: '通用；同手不同 combo 的选择与 EV 表解读。',
+    applicability: '原例为 8max MTT / 35bb；用于区分 equity、EQR 与底池份额，不给深码现金局指定组合动作。',
     contrastExamples: [
-      { text: 'KJo 四个 combo：equity 差 4%，pot share 差 14pp（36% vs 22%）——blocker 对实现的杠杆远大于对 equity 的杠杆。', sourceRef: L('Gutshot performance', 6, '641-644') },
+      { text: 'K♥J♦ 与 K♠J♣：equity 相差约 3.7 个百分点，EQR 相差 26.6 个百分点；原文底池份额约 36% 与 22%，相差约 14 个百分点。三个指标不能混用。', sourceRef: L('Gutshot performance', 6, '641-644', '图像复核') },
     ],
     thresholds: [],
     selfChecks: [{
-      question: 'CO 开 KJo、BTN 跟注，T95 面。哪个 KJo combo 的 EQR 最高？',
-      options: ['KJs（同时 block 前后门同花 draw）', 'KJo（无同花）', '任意 combo 等价', '取决于位置而非花色'],
-      answer: 'KJs（同时 block 前后门同花 draw）',
-      answerNote: '最好 KJs 36% pot share vs 最差 22%——equity 差仅约 4%，实现差 14 个百分点：blocker 对实现的杠杆远大于对 equity。',
+      id: 'concept-combo-eqr#r2',
+      question: '8max MTT / 35bb，CO 开 KJo、BTN 跟注，T♥9♦5♥。哪个组合的 EQR 最高？',
+      options: ['K♠J♣', 'K♦J♠', 'K♣J♥', 'K♥J♦'],
+      answer: 'K♥J♦',
+      answerNote: 'K♥J♦ 同时影响前门红桃与后门方块组合，表中 EQR 为 85.9%。不要把正文的 36% 底池份额写成 EQR，也不要把 KJo 改成同花 KJs。',
       sourceRef: L('Gutshot performance', 6, '641-644'),
     }],
     relatedSpotIds: [],
@@ -1529,6 +1531,44 @@ export var CONCEPT_SEEDS = [
 
 // [V7.11.2 新增] spot 应用条目：把概念落到本产品 8 个 spot 的四步格子里。
 // 每条 = 该格的一个可核验要点（提炼自对应课程，附出处）；spot 卡的 steps 按 applicationIds 组装。
+// [V7.11.16 新增] New IDs preserve existing quiz progress; the source examples remain explicitly scoped.
+CONCEPT_SEEDS.push(
+  {
+    id: 'concept-turn-barrel', title: '转牌二枪：坚果变化与尺寸重选', cluster: 'range-construction',
+    mechanism: '二枪是翻牌下注被跟后重新构造下注范围，不是重复翻牌动作。转牌若增加自己的强价值且未完成对手听牌，可能支持更极化的大注；若为对方跟注范围补进许多强手，则可能缩小尺寸，容纳更多中段价值。',
+    misconception: '小 C-bet 后必打大二枪；或成听牌一律过牌。尺寸取决于新牌改变了谁的剩余范围。',
+    applicability: 'CO vs BB / 200bb 的 K♠7♠4♦-J♦，与 SB vs BB / 100bb 的 A♠9♥3♥ 转牌报告是两个 6max cash 例子。',
+    contrastExamples: [{ text: 'CO 的 J♦ 转牌增加强价值并支持超池；SB 例子的成花或成对转牌让 BB 增加强手，促使 SB 缩小尺寸。不能只按“危险／空白”选大小。', sourceRef: L('Depolarized turn barrels', 8, '813-816') }],
+    thresholds: [], selfChecks: [
+      { question: 'CO vs BB / 200bb，K♠7♠4♦ 翻牌下注 33% 被跟，J♦ 转牌。教材选择哪种构造？',
+        options: ['两对以上为主超池，多数一对过牌', '所有顶对统一超池保护', '整段范围小注试探'],
+        answer: '两对以上为主超池，多数一对过牌', answerNote: 'J♦ 为 CO 增加坚果组合而未完成许多听牌；坚果优势与深度支持极化建池，不代表所有小 C-bet 后都这样打。', sourceRef: L('Turn barreling after small flop cbet', 8, '791-794') },
+      { question: 'SB vs BB / 100bb，A♠9♥3♥ 翻牌下注被跟。哪些转牌类别在教材中促使 SB 缩小二枪尺寸？',
+        options: ['成花或牌面成对', '所有非红桃 J/Q/K', '所有非同花砖牌'], answer: '成花或牌面成对',
+        answerNote: '这些转牌为 BB 跟注段增加许多强手，SB 改用较去极化的小尺寸构造。', sourceRef: L('Depolarized turn barrels', 8, '813-816') },
+    ], relatedSpotIds: TURN_SPOTS.filter((s) => s.decision.id === 'barrel').map((s) => s.id),
+    relatedConceptIds: ['concept-nut-advantage', 'concept-targeting'], relatedSources: [],
+    sourceRef: L('Turn barreling after small flop cbet', 8, '791-794'), seedRevision: 1,
+  },
+  {
+    id: 'concept-turn-defense', title: '转牌防守：反超路径与加注代价', cluster: 'defensive',
+    mechanism: '面对极化二枪，中间牌力的手都可能只是抓诈。比较它们能否反超价值段、是否阻断价值与保留诈唬，以及河牌能否实现收益。加注则要另外衡量赶走支配自己的手与遭遇再加注的成本。',
+    misconception: '顶对总比小对子适合跟注；或听牌一律应当加注。相对对手的价值段与后街收益才是比较依据。',
+    applicability: 'BTN vs BB / 100bb 的 A♠8♠5♥-2♦ 极化二枪，与 SB vs BB / 100bb 的 Q♠Q♥5♥-J♠ 加注例子分开阅读。',
+    contrastExamples: [{ text: 'A♠8♠5♥-2♦ 上 5♦3♦ 能在 5、4、3 河牌反超部分强价值；这不等于小对子普遍强于顶对。', sourceRef: L('Defending against polar turn barrels', 11, '1191-1194') }],
+    thresholds: [], selfChecks: [
+      { question: 'BTN vs BB / 100bb，A♠8♠5♥ 跟 33%，2♦ 面对 125% 二枪。教材四候选中为何 5♦3♦ 跟注 EV 最高？',
+        options: ['有清晰路径反超部分价值段', '小对子天然比顶对强', '任何对子都必须满足 MDF 跟注'], answer: '有清晰路径反超部分价值段',
+        answerNote: '面对极化范围，四个候选都可能是抓诈牌；5♦3♦ 的改善路径使它能反超 AK/AQ 等价值牌。', sourceRef: L('Defending against polar turn barrels', 11, '1191-1194') },
+      { question: 'SB vs BB / 100bb，Q♠Q♥5♥-J♠ 面对二枪，为什么 4♠3♠ 可以加注？',
+        options: ['赶走支配它的同花听牌，清理补牌', '所有同花听牌都应加注', '小同花听牌已有最高摊牌价值'], answer: '赶走支配它的同花听牌，清理补牌',
+        answerNote: '教材其他候选有更好的摊牌价值且不愿面对转牌再加注，更适合跟注；动作取决于具体手类。', sourceRef: L('Raising vs double-barrels', 9, '949-952') },
+    ], relatedSpotIds: TURN_SPOTS.filter((s) => s.decision.id === 'facebarrel').map((s) => s.id),
+    relatedConceptIds: ['concept-implied-odds', 'concept-pot-odds'], relatedSources: [],
+    sourceRef: L('Defending against polar turn barrels', 11, '1191-1194'), seedRevision: 1,
+  },
+);
+
 export var CONCEPT_APPLICATIONS = [
   // ===== btnvsbb-raiser-cbet（BTN C-bet，IP 进攻）=====
   { id: 'app-btn1-scope-1', spotId: 'btnvsbb-raiser-cbet', step: 'scope',
@@ -1691,3 +1731,8 @@ export var CONCEPT_APPLICATIONS = [
     text: 'chop 面 rake 博弈（AKQJT chop 面，limped 面机制迁移）：50NL（cap 4bb）SB 全下 100% 逼对方弃 chop（跟注=各付 2bb rake、-1bb EV）；500NL（cap 0.6bb）双方 check 100%——rake 结构直接改写 chop 面策略。',
     conceptIds: ['concept-rake-impact'], sourceRef: L("It's a chop, right?!", 10, '1037-1040') },
 ];
+
+// [V7.11.16 新增] Reuse the same sourced text in topic lessons and position-specific hand cards.
+CONCEPT_APPLICATIONS.push(...TURN_SPOTS.flatMap(({ id, decision }) => Object.entries(decision.steps).map(([key, value]) => ({
+  id: 'app-' + id + '-' + key, spotId: id, step: key, ...value,
+}))));

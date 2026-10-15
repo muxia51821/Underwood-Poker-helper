@@ -35,6 +35,25 @@ function conceptHtml(concept) {
     '<p class="strategy-library__source">Daily Dose of GTO · 第 ' + escape(ref.chapter) + ' 章 · ' + escape(ref.lesson) + ' · 阅读器页 ' + escape(ref.readerPages) + '</p></details>';
 }
 
+// [V7.11.16 新增] Read the decision path before opening the concept reference catalogue.
+function readingSourceHtml(ref) {
+  return '<p class="strategy-library__source">' + escape(ref.kind === 'aonlh' ? '无限德州扑克应用指南' : 'Daily Dose of GTO · 第 ' + ref.chapter + ' 章') +
+    ' · ' + escape(ref.lesson) + ' · 阅读器页 ' + escape(ref.readerPages) + '</p>';
+}
+
+function lessonHtml(lesson) {
+  let html = '<details class="strategy-library__reading" data-library-lesson' + (lesson.id ? ' data-turn-decision="' + escape(lesson.id) + '"' : '') + '><summary>' + escape(lesson.title) + '</summary>';
+  if (lesson.steps) {
+    for (const [key, label] of [['scope', '先认前置线'], ['lines', '如何构造动作'], ['streets', '对照另一种牌面'], ['deviation', '回到自己的决策']]) {
+      const step = lesson.steps[key];
+      html += '<h5>' + label + '</h5><p>' + escape(step.text) + '</p>' + readingSourceHtml(step.sourceRef);
+    }
+  } else html += '<p>' + escape(lesson.text) + '</p><p>' + escape(lesson.example) + '</p>' + readingSourceHtml(lesson.sourceRef);
+  html += '<details data-lesson-check><summary>想一想：' + escape(lesson.question) + '</summary><p>' + escape(lesson.answer) + '</p></details>';
+  if (lesson.boundary) html += '<p class="strategy-library__boundary">' + escape(lesson.boundary) + '</p>';
+  return html + '</details>';
+}
+
 export const StrategyLibrary = {
   selectedTopicId: 'preflop',
   profileKey: 'all', handLimit: 10, handsExpanded: false,
@@ -106,6 +125,7 @@ export const StrategyLibrary = {
     body.innerHTML = '<h3 id="strategyTopicTitle" tabindex="-1">' + escape(topic.title) + '</h3><p class="strategy-library__summary">' + escape(topic.summary) + '</p>' +
       '<p class="strategy-library__boundary">适用边界：' + escape(topic.boundary) + '</p>' +
       '<p><button type="button" class="btn--mini" data-library-quiz>练习本主题</button></p>' +
+      '<h4>决策讲解</h4>' + topic.lessons.map(lessonHtml).join('') +
       '<h4>我的相关手牌</h4><p class="strategy-library__source">按已识别决策列出候选，不按输赢筛选，也不自动判为支持或反例。桌型相同不代表有效筹码及来源条件匹配；阅读原行动与复盘后再判断。</p>' +
       '<label>观察桌型 <select class="select" data-library-profile>' + ['all', '9max', '6max', '2max', 'unknown-table'].map((key) => '<option value="' + key + '"' + (key === this.profileKey ? ' selected' : '') + '>' + escape(key === 'all' ? '全部桌型' : key === 'unknown-table' ? '桌型未知' : key) + '</option>').join('') + '</select></label><div id="strategyTopicHands"></div>' +
       '<h4>教材与概念</h4><p class="strategy-library__source">书籍需自行打开 PDF，按阅读器页码定位；例子中的数字只适用于原条件。</p>' + topic.concepts.map(conceptHtml).join('') +

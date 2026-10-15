@@ -1,6 +1,6 @@
 // [V7.11.14 新增] Read-only candidate links: shared decision facts, never evidence or automatic strategy conclusions.
 import { normalizeLearningHand, deriveFlopDecision, getObservedProfile } from './analysisReadModel.js';
-import { matchHandSpot, streetTwoWay } from './spotMatcher.js';
+import { matchHandSpot, matchTurnSpot, streetTwoWay } from './spotMatcher.js';
 import { resolveTopic } from '../data/strategyFramework.js';
 
 // [V7.11.15 新增] Heads-up postflop order in a multi-seat table; roles are explicit rather than inferred from label order.
@@ -49,7 +49,9 @@ export function getTopicHandReferences(topicId, hands, profileKey = 'all') {
     if (topicId === 'flop' && validFlop && decision.question === 'cbet') reason = '翻牌 C-bet 决策（可能已继续到后街）';
     if (topicId === 'defense' && validFlop && decision.question === 'facebet') reason = '翻牌面对下注的决策（可能已继续到后街）';
     if (topicId === 'river' && spot?.street === 'river') reason = '已识别的河牌场景';
-    if (topicId === 'turn' && validFlop && streetTwoWay(hand.actionLineOTT)) reason = '有转牌行动记录，具体节点待复盘';
+    const turn = topicId === 'turn' ? matchTurnSpot(hand) : null;
+    if (turn) reason = '已识别转牌节点：' + resolveTopic('turn').spots.find((item) => item.id === turn.spotId).title;
+    else if (topicId === 'turn' && validFlop && streetTwoWay(hand.actionLineOTT)) reason = '有转牌行动记录，具体节点待复盘';
     if (topicId === 'ranges' && (validFlop || spot)) reason = '可用于核对双方范围的已识别节点';
     if (topicId === 'preflop' && (validFlop || spot)) reason = '有位置与翻前场景，可回看入池条件；有效筹码未核实';
     if (topicId === 'adjustment' && (validFlop || spot) && (hand.reflection || hand.mistake)) reason = '已有复盘备注，待核对是否构成对手证据';

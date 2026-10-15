@@ -66,7 +66,8 @@ src/
   data/
     srpData.js       # GTO 策略速查表（从 gtoRaw 自动生成，import Utils + gtoRaw）
     actionLines.js   # underBluff + overBluff 行动线表
-    strategyFramework.js # [V7.11.14 修改] STRATEGY_TOPICS / STRATEGY_HYPOTHESES；引用概念、来源与场景；阅读限定与自测以 conceptSeed.js 为唯一正文源
+    strategyFramework.js # [V7.11.16 修改] STRATEGY_TOPICS / STRATEGY_HYPOTHESES；引用概念、来源、决策讲解与场景
+    strategyLessons.js # [V7.11.16 新增] TOPIC_LESSONS / TURN_DECISIONS / TURN_SPOTS；带书籍出处的主题讲解，转牌正文同时供主题与牌理应用引用
     gtoBaselineSeed.js # [V7.10.8 修改] GTO 结构性参考种子 v4：按 Radar spot（scenario+question+boardCategory+sizingContext）落位 17 条；数字标注「正文核验/文章表格直读」；gate pa_gto_baseline_seed_v4，未编辑行按 seedRevision 升级
     externalEvidenceSeed.js # [V7.10.9 修改] 外部证据种子 v5：16 条（solver/mda/article/community/video，evidenceLevel 三级 + Radar scope）；含 4 条 street:'river' 河牌证据（由 matchEvidenceForSignal 的 street 过滤保证不进翻牌信号）
     pokerLogicSeed.js # [V7.11.15 修改] 复盘牌理参考种子：四步导航 + applicationIds + conceptIds + evidenceRefs；河牌前置线与相邻书例的条件保留在对应条目
@@ -237,7 +238,13 @@ IndexedDB: `pa_store` v6, 12 ObjectStores (`handReviews`/`sessions`/`weeklyRevie
 
 ## UI Navigation
 
+策略主题的决策讲解由 `strategyLessons.js` 的 `TOPIC_LESSONS` 与 `TURN_DECISIONS` 提供；原子概念和持久化自测仍由 `conceptSeed.js` 提供。转牌位置变体通过 `TURN_SPOTS` 连接 `POKER_LOGIC_SEEDS` 与 `CONCEPT_APPLICATIONS`，主题与手牌卡共享正文，不另存个人策略。
+
+`spotMatcher.js` 的 `matchTurnSpot` 识别未加注翻牌线后的 SRP 转牌节点，保留 Hero 的加注者／跟注者身份与翻后行动顺序。翻牌加注线和不支持的转牌分支不强行归类。`PokerLogic.renderForHand` 可同时呈现转牌与河牌卡；转牌卡不导向仅覆盖翻牌观察的 Radar，也不生成频率或个人漏损结论。
+
 策略主题中的手牌只表示复盘候选，不表示来源条件已完全匹配或已成为支持／反例。候选规则以 `src/modules/strategyStudy.js` 的 `getTopicHandReferences` 为准；当前不自动识别锦标赛分支或完整有效筹码档案。主题自测复用已有概念题目 ID、掌握度与错题存储，仅临时限制题目范围。
+
+自测默认沿用概念 ID；纠正了答案的题目可在 `selfChecks[].id` 显式指定修订 ID，旧掌握度不套用到新题。其他题目身份与存储结构不变。赔率页 `Odds.calc` 的多人池系数为用户设定，不是求解器或通用胜率模型；补牌命中率、价格门槛和假设收益分别显示。
 
 策略训练通过 `getStrategyLearningTarget` 按父策略的街与 Spot 问题动态路由。明确的翻牌 C-bet 节点（或未限定节点的既有翻牌 Family）才进入频率练习，其余进入相应主题概念自测；精确节点保留牌面筛选。新训练单元的 `topicId` 是可选补充字段，旧单元不回写、不迁移，导出／导入继续保留完整对象。
 
