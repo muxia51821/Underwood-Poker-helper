@@ -171,6 +171,7 @@ export function initGGImport() {
     });
   }
   document.getElementById('ggImportCloseBtn').addEventListener('click', function () {
+    if (document.getElementById('ggImportOverlay').getAttribute('aria-busy') === 'true') return;
     document.getElementById('ggImportOverlay').classList.remove('is-active');
   });
   document.getElementById('ggParseBtn').addEventListener('click', function () {
@@ -299,10 +300,10 @@ export function initGGImport() {
         ggListEl.querySelectorAll('.gg-import-check').forEach(function (cb) { cb.checked = false; });
       });
     ggListEl.querySelectorAll('.gg-overwrite-btn').forEach(function (btn) {
-      btn.addEventListener('click', function () {
+      btn.addEventListener('click', async function () {
         var h = ggParsedHands[parseInt(btn.dataset.idx)];
         var existingId = h.duplicateOf.id;
-        if (!confirm('覆盖手牌 ' + h.handId + ' 的牌面/盈亏/对手信息？\n（决策、错误类型、Session关联不受影响）')) return;
+        if (!await Utils.confirmAction({ title: '覆盖已有手牌信息？', message: '将更新手牌 ' + h.handId + ' 的牌面、盈亏和对手信息。决策、错误类型与 Session 关联保持不变。', confirmLabel: '覆盖信息', danger: true })) return;
         HandRepo.update(existingId, createOverwritePatch(h));
         Utils.showToast('已覆盖 ' + h.handId);
         document.getElementById('ggParseBtn').click();
@@ -339,6 +340,8 @@ export function initGGImport() {
   });
   // [V7.10.5 重构] 导入执行统一入口：小批量（勾选）与大批量（导入全部）共用；sourceBtn 用于写入期间的按钮态
   function _runImport(toImport, sourceBtn) {
+    var overlay = document.getElementById('ggImportOverlay');
+    if (overlay.getAttribute('aria-busy') === 'true') return;
     var existingReviews = HandRepo.getAll();
     var existingSessions = SessionRepo.getAll();
     var plan = buildImportPlan(toImport, existingReviews, existingSessions, {
@@ -363,12 +366,7 @@ export function initGGImport() {
     // [V7.9.0 新增] 等待存储真正写入后再提示成功，消除"toast 已显示但数据未落盘"的丢失窗口
     // （真实语料压测：43,680 手的 IndexedDB 写事务约需 30 秒，窗口内关闭页面会静默丢失）
     var importBtn = sourceBtn || document.getElementById('ggImportSelectedBtn');
-    var importBtnLabel = importBtn.textContent;
-    importBtn.disabled = true;
-    importBtn.textContent = '写入存储中…';
-    Promise.all(persisted).then(function (results) {
-      importBtn.disabled = false;
-      importBtn.textContent = importBtnLabel;
+    Utils.withBusy(importBtn, '写入存储中…', () => Promise.all(persisted), overlay).then(function (results) {
       document.getElementById('ggImportOverlay').classList.remove('is-active');
       var targetText = _targetSessionId
         ? ' 手牌到 Session'
@@ -381,10 +379,12 @@ export function initGGImport() {
       } else if (JSON.stringify(plan.records).length > CONSTANTS.LOCAL_BACKUP_SAFE_CHARS) {
         suffix = '\n提示：数据量已超过本地备份容量，请定期在"迁移"中导出备份。';
       }
-      Utils.showToast('成功导入 ' + plan.records.length + ' ' + targetText + '。' + suffix);
+      Utils.showToast((writeFailed ? '已加入 ' : '成功导入 ') + plan.records.length + ' ' + targetText + '。' + suffix, { tone: writeFailed ? 'warning' : 'success' });
       _targetSessionId = null;
       Navigation.refreshReview('all');
       Navigation.goToReviewSubtab('hand', { resetPage: true });
+    }).catch(function () {
+      Utils.showToast('导入尚未完整写入。请保留原牌谱，并下载当前备份后重试。', { tone: 'error' });
     });
   }
   // [V6.14.0] 设置文件拖拽

@@ -13,8 +13,15 @@ var STATUS_LABELS = { research: '研究中', 'candidate-adjustment': '候选调�
 var SOURCE_TYPE_LABELS = { video: '视频', article: '文章', book: '书', course: '课程', solver: 'Solver', mda: 'MDA', community: '社区', personal: '个人观察' };
 var EVIDENCE_LEVEL_LABELS = { conditional: '条件匹配', structural: '结构性参考', lead: '研究线索' };
 var SCOPE_SCENARIO_LABELS = { BTNvsBB: 'BTN vs BB', SBvsBB: 'SB vs BB', COvsBTN: 'CO vs BTN' };
+var SCOPE_STREET_LABELS = { preflop: '翻前', flop: '翻牌', turn: '转牌', river: '河牌' };
 var SCOPE_QUESTION_LABELS = { cbet: 'C-Bet', facebet: '面对下注弃牌' };
 var SCOPE_BOARD_LABELS = { made_straight: '三连张面', flushy_dry: '两花干面', flushy_straighty: '两花连张面', straighty: '连张面', paired_low: '低对子面', paired_high: '高对子面', monotone: '同花面', dryAHigh: 'A 高干面', dry_low: '低张干面', trips_board: '三条公对' };
+
+function _familyLabel(value) {
+  const [scenario, street] = String(value || '').split('|');
+  if (!scenario || !street) return value || '--';
+  return [SCOPE_SCENARIO_LABELS[scenario] || scenario, SCOPE_STREET_LABELS[street] || street].join(' · ');
+}
 
 function _safeExternalUrl(value) {
   if (!value) return '';
@@ -32,7 +39,7 @@ function _scopeLabel(scope, fallbackScenario, fallbackQuestion, fallbackStreet) 
   var question = scope.question || fallbackQuestion;
   var street = scope.street || fallbackStreet;
   if (!scenario || !street) return '';
-  var parts = [SCOPE_SCENARIO_LABELS[scenario] || scenario, street];
+  var parts = [SCOPE_SCENARIO_LABELS[scenario] || scenario, SCOPE_STREET_LABELS[street] || street];
   if (scope.relation === 'context') parts.push('情境参考');
   else if (question) parts.push(SCOPE_QUESTION_LABELS[question] || question);
   else return '';
@@ -224,7 +231,7 @@ export var StrategyDesk = {
         '<div class="finding-card__meta">条件：' + Utils.escapeHtml(reference.conditionText) + '</div>' +
         (b.textureNotes ? '<div class="finding-card__meta">texture：' + Utils.escapeHtml(b.textureNotes) + '</div>' : '') +
         '<div class="finding-card__meta">来源：' + sourceHtml + '（' + Utils.escapeHtml(b.source && b.source.articleDate || '未标注') + '）</div>' +
-        '<div class="finding-card__meta">边界：' + Utils.escapeHtml(reference.boundaryText) + '</div>' +
+        '<div class="finding-card__meta">参考范围：' + Utils.escapeHtml(reference.boundaryText) + '</div>' +
         '<div class="finding-card__actions">' +
         '<button class="btn--mini" data-gto-edit="' + Utils.escapeHtml(b.id) + '">编辑</button>' +
         '<button class="btn--mini" data-gto-toggle="' + Utils.escapeHtml(b.id) + '">' + (b.isActive ? '停用' : '启用') + '</button>' +
@@ -326,7 +333,7 @@ export var StrategyDesk = {
       Utils.showToast('当前没有唯一可用的信号；保留旧基线，先核对观察档案与样本。');
       return false;
     }
-    if (!confirm('按当前行动归属口径重建复测基线？旧快照会保留，不能把这次口径变化当成策略改善。')) return false;
+    if (!confirm('行动归属口径已更新。按新口径重建复测基线？旧快照会保留。')) return false;
     const now = Utils.getLocalDatetime();
     const updated = { ...strategy,
       baselineHistory: [...(strategy.baselineHistory || []), { ...strategy.baselineSnapshot }],
@@ -350,7 +357,7 @@ export var StrategyDesk = {
     });
     const listEl = document.getElementById('strategyList');
     if (!strategies.length) {
-      listEl.innerHTML = '<div class="empty-state">还没有策略修订。从 Radar 信号建档转化，或直接新建。</div>';
+      listEl.innerHTML = '<div class="empty-state">还没有策略修订。可从 Radar 信号创建研究记录，再转为策略修订；也可直接新建。</div>';
       return;
     }
     const dossiers = DossierRepo.getAll();
@@ -396,15 +403,15 @@ export var StrategyDesk = {
         ? '<div class="finding-card__meta" style="color:#8b949e">🌐 GTO 结构性参考：' + gtoMatches.map((b) => {
           const reference = DecisionRadar.getGtoStructuralReference(b);
           return Utils.escapeHtml(reference.valueText) + ' · 来源：' + Utils.escapeHtml(reference.sourceText) +
-            ' · 条件：' + Utils.escapeHtml(reference.conditionText) + ' · 边界：' + Utils.escapeHtml(reference.boundaryText);
+            ' · 条件：' + Utils.escapeHtml(reference.conditionText) + ' · 参考范围：' + Utils.escapeHtml(reference.boundaryText);
         }).join('；') + '</div>'
         : '';
       return '<article class="finding-card" data-strategy-id="' + Utils.escapeHtml(s.id) + '" style="cursor:pointer">' +
         '<div class="finding-card__header"><span><strong>' + Utils.escapeHtml(s.title || '(未命名)') + '</strong></span>' +
         '<span class="status-inline status-inline--' + (s.status === 'maintain' ? 'success' : s.status === 'candidate-adjustment' ? 'danger' : 'info') + '">' + Utils.escapeHtml(statusLabel) + '</span></div>' +
-        '<div class="finding-card__title">' + Utils.escapeHtml(s.familyKey || '--') + '</div>' +
+        '<div class="finding-card__title">' + Utils.escapeHtml(_familyLabel(s.familyKey)) + '</div>' +
         '<div class="finding-card__meta">' + (s.scope ? '范围：' + Utils.escapeHtml(s.scope) + ' · ' : '') +
-        '证据 ' + evidenceCount + ' 个' + (linkedDossiers.length ? ' · Dossier：' + Utils.escapeHtml(linkedDossiers.join('、')) : '') + '</div>' +
+        '证据 ' + evidenceCount + ' 个' + (linkedDossiers.length ? ' · 关联研究记录：' + Utils.escapeHtml(linkedDossiers.join('、')) : '') + '</div>' +
         (s.reviewCondition ? '<div class="finding-card__meta">复测条件：' + Utils.escapeHtml(s.reviewCondition) + '</div>' : '') +
         (retestHtml ? '<div class="finding-card__meta">' + retestHtml + '</div>' : '') +
         (gtoHtml ? '<div class="finding-card__meta">' + gtoHtml + '</div>' : '') +
@@ -457,7 +464,7 @@ export var StrategyDesk = {
           (p.reviewDueAt ? ' · 复查 ' + Utils.escapeHtml(p.reviewDueAt) : '') + '</div>' +
         (p.conditions ? '<div class="finding-card__meta">条件：' + Utils.escapeHtml(p.conditions) + '</div>' : '') +
         (_scopeLabel(p.scope) ? '<div class="finding-card__meta">Radar 匹配：' + Utils.escapeHtml(_scopeLabel(p.scope)) + '</div>' : '') +
-        (p.transferBoundary ? '<div class="finding-card__meta">边界：' + Utils.escapeHtml(p.transferBoundary) + '</div>' : '') +
+        (p.transferBoundary ? '<div class="finding-card__meta">参考范围：' + Utils.escapeHtml(p.transferBoundary) + '</div>' : '') +
         (p.keyPoints ? '<div class="finding-card__meta">要点：' + Utils.escapeHtml(p.keyPoints) + '</div>' : '') +
         '<div class="finding-card__actions">' +
         '<button class="btn--mini" data-evidence-edit="' + Utils.escapeHtml(p.id) + '">编辑</button>' +
@@ -474,7 +481,7 @@ export var StrategyDesk = {
     const statement = document.getElementById('stratStatement').value.trim();
     const reviewCondition = document.getElementById('stratReviewCondition').value.trim();
     if (!title) { Utils.showToast('策略需要标题'); return; }
-    if (!familyKey) { Utils.showToast('需要 Family（如 BTNvsBB|flop）'); return; }
+    if (!familyKey) { Utils.showToast('请填写适用场景和街道，例如 BTNvsBB|flop'); return; }
     const evidenceIds = Array.from(document.querySelectorAll('#stratEvidenceChecks [data-evidence-check]:checked'))
       .map(function (cb) { return cb.dataset.evidenceCheck; });
     const dossierIds = document.getElementById('stratDossierIds').value.split(',').filter(Boolean);

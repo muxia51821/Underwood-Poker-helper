@@ -1,0 +1,76 @@
+/* Shared behavior states use Poker's existing palette and component dimensions. */
+:root{
+  --motion-feedback:120ms;
+  --motion-overlay:160ms;
+  --ease-overlay:cubic-bezier(.2,.8,.2,1);
+  --dialog-radius:16px;
+}
+body.ui-modal-open,body:has(dialog:modal){overflow:hidden}
+:is(.btn,.btn--mini,.ws-button,.toggle-btn,.nav__btn,.subnav__btn,.ws-tabs button,.ws-topic-nav button,.ws-queue-item){
+  -webkit-tap-highlight-color:transparent;
+  transition:background-color var(--motion-feedback) ease-out,color var(--motion-feedback) ease-out,border-color var(--motion-feedback) ease-out,box-shadow var(--motion-feedback) ease-out;
+}
+.btn{transition:background-color var(--motion-feedback) ease-out,color var(--motion-feedback) ease-out,box-shadow var(--motion-feedback) ease-out,transform var(--motion-feedback) ease-out}
+:is(.btn,.btn--mini,.ws-button,.toggle-btn,.replay-step):disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
+.ws-button:disabled:hover{background:var(--color-surface-2)}
+.ws-button--primary:disabled:hover{background:var(--color-accent)}
+:is(.btn,.btn--mini,.ws-button,.nav__btn,.subnav__btn,.toggle-btn,.replay-step,.app__settings-btn,.app__settings-option):focus-visible{
+  outline:2px solid var(--color-accent);outline-offset:3px;box-shadow:none;
+}
+:is(.ws-filters,.workspace) :is(input,select,textarea){transition:border-color var(--motion-feedback) ease-out,box-shadow var(--motion-feedback) ease-out}
+.workspace :is(input,select,textarea):focus{border-color:var(--color-accent)}
+:is(.ws-tabs,.ws-topic-nav) button[aria-pressed=true]{color:var(--color-text);background:var(--color-accent-soft)}
+:is(.ws-concept,.timer-long-break,details)>summary{transition:color var(--motion-feedback) ease-out;scroll-margin-block:20px}
+:is(.ws-concept,.timer-long-break,details)>summary:hover{color:var(--color-text)}
+:is(.table-container,#analyzeQueue,.ws-board-scroll,.ws-reading,.share-dialog,.backup-dialog){overscroll-behavior:contain;scrollbar-color:var(--color-border-strong) transparent;scrollbar-gutter:stable}
+
+.app__settings-menu{display:flex;visibility:hidden;opacity:0;pointer-events:none;transform:translateY(4px);transition:opacity var(--motion-overlay) ease-out,transform var(--motion-overlay) var(--ease-overlay),visibility var(--motion-overlay)}
+.app__settings-menu.is-visible{visibility:visible;opacity:1;pointer-events:auto;transform:none;transition-property:opacity,transform}
+.app__settings-option{min-height:40px;text-align:left}
+#colorSchemeOption{font-size:var(--text-sm)}
+#colorSchemeOption::after{content:none}
+.app__settings-option[aria-pressed=true]{color:var(--color-accent);background:var(--color-accent-soft)}
+#shareUrlDisplay{user-select:all;overflow-wrap:anywhere}
+.share-overlay{display:flex;visibility:hidden;opacity:0;pointer-events:none;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));transition:opacity var(--motion-overlay) ease-out,visibility var(--motion-overlay);z-index:1000}
+.share-overlay.is-active{visibility:visible;opacity:1;pointer-events:auto;transition-property:opacity}
+.share-dialog{width:min(100%,520px);max-width:none;max-height:calc(100dvh - 40px);overflow:auto;padding:24px;border-radius:var(--dialog-radius);box-shadow:var(--shadow-md);text-align:left;transform:translateY(6px);transition:transform var(--motion-overlay) var(--ease-overlay)}
+.share-overlay.is-active>.share-dialog{transform:none}
+.ui-dialog-title{margin:0 0 16px;color:var(--color-text);font-size:20px;line-height:1.35;letter-spacing:-.02em;text-wrap:balance}
+.ui-import-dialog{width:min(100%,720px)}
+.ui-import-dialog :is(.input,.textarea){font-size:14px}
+.ui-import-dialog>.row:last-child{position:sticky;bottom:-24px;padding-block:12px;margin-bottom:-12px;background:var(--color-surface-1);border-top:1px solid var(--color-border)}
+.action-dialog{margin:auto;width:min(520px,calc(100vw - 32px));max-height:calc(100dvh - 40px);overflow:auto;padding:24px;background:var(--color-surface-1);color:var(--color-text);border:1px solid var(--color-border-strong);border-radius:var(--dialog-radius);box-shadow:var(--shadow-md)}
+.action-dialog::backdrop,.backup-dialog::backdrop{background:var(--color-overlay)}
+.action-dialog h2{margin-bottom:12px;font-size:20px;line-height:1.35}
+.action-dialog p{color:var(--color-text-muted);font-size:14px;line-height:1.75;white-space:pre-wrap;overflow-wrap:anywhere}
+.action-dialog__actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:24px}
+.ws-button.ui-danger{background:var(--color-danger-soft);color:var(--color-danger);border-color:var(--color-danger)}
+.ws-button.ui-danger:hover{background:var(--color-danger);color:var(--color-bg)}
+:is(.btn,.ws-button)[aria-busy=true]{gap:8px;cursor:wait;opacity:.8;white-space:normal}
+:is(.btn,.ws-button)[aria-busy=true]::before{content:'';width:14px;height:14px;flex:0 0 14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:ui-spin .8s linear infinite}
+@keyframes ui-spin{to{transform:rotate(360deg)}}
+
+.toast{display:flex;align-items:flex-start;gap:14px;width:max-content;max-width:min(560px,calc(100vw - 32px));padding:14px 16px;line-height:1.6;text-align:left;white-space:pre-wrap;border-radius:var(--radius-md);transition:opacity var(--motion-overlay) ease-out;pointer-events:none}
+.toast[hidden]{display:none}
+.toast--visible{pointer-events:none}
+.toast>span{min-width:0;overflow-wrap:anywhere}
+.toast[data-tone=success]{border-color:var(--color-success)}
+.toast[data-tone=error]{border-color:var(--color-danger)}
+.toast[data-tone=warning]{border-color:var(--color-warning)}
+.toast__dismiss{display:grid;place-items:center;min-width:32px;min-height:32px;margin:-4px -6px -4px 0;border:0;border-radius:var(--radius-sm);background:transparent;color:var(--color-text-muted);font:20px/1 var(--font-sans);cursor:pointer;pointer-events:auto}
+.toast__dismiss:hover{background:var(--color-hover);color:var(--color-text)}
+.toast__dismiss::before{content:'×'}
+.toast__dismiss:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}
+@media(max-width:767px){
+  .app__settings-option{min-height:44px}
+  .share-dialog,.action-dialog{padding:20px}
+  .ui-import-dialog>.row:last-child{bottom:-20px}
+  .action-dialog__actions>.ws-button{flex:1;min-height:44px}
+  .toast{font-size:13px;padding:12px}
+  .toast__dismiss{min-width:44px;min-height:44px}
+}
+@media(prefers-reduced-motion:reduce){
+  .share-overlay,.share-dialog,.app__settings-menu{transition:none;transform:none}
+  :is(.btn,.btn--mini,.ws-button,.toggle-btn,.nav__btn,.subnav__btn,.ws-tabs button,.ws-topic-nav button,.ws-queue-item,.toast){transition:none}
+  :is(.btn,.ws-button)[aria-busy=true]::before{animation:none}
+}

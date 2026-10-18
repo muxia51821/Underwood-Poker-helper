@@ -1,5 +1,7 @@
 # Poker Personal OS
 
+本文件保留产品主线与最初阶段计划。旧页面结构和阶段顺序属于历史规划；已实施行为见 [项目上下文](../CONTEXT.md)与[架构说明](ARCHITECTURE.md)，后续重设计见[新版蓝图](poker-redesign-blueprint.md)与[实施路线图](poker-redesign-roadmap.md)。
+
 ## 目标与范围
 
 Underwood's Table Agent 是个人 NLHE Cash 的长期提升系统：从真实牌局中发现问题，形成有证据的工作策略，训练并在后续牌局中复测。

@@ -1,0 +1,3938 @@
+{
+  "schema": "solver-lab-verification-v1",
+  "passed": true,
+  "status": "completed",
+  "engines": {
+    "primary": "5fc7ee3d92b823b6c58e4f58cbee7d50d5e9e6de",
+    "reference": "9d1509fe5077d019825f833eed04b16d342dfda1"
+  },
+  "cases": [
+    {
+      "id": "turn-checkdown-half-pot",
+      "passed": true,
+      "comboCounts": [
+        11,
+        12
+      ],
+      "compatiblePairs": 132,
+      "pairRunouts": 5808,
+      "publicRivers": 48,
+      "analyticRootEvBb": [
+        -0.8450413223140496,
+        0.8450413223140496
+      ],
+      "checks": [
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop marginal probability sum",
+          "actual": 0.0,
+          "maximum": 1e-12,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop marginal probability sum",
+          "actual": 0.0,
+          "maximum": 1e-12,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 4.470348358154297e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop independent action EV all nodes",
+          "actual": 2.21079046092143e-06,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop analytic turn action EV",
+          "actual": 0.0007781982421875,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop compatible opponent mass",
+          "actual": 1.3546510163608971e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop own reach",
+          "actual": 4.470348358154297e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop analytic root EV",
+          "actual": 1.2989871758239957e-06,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop independent root EV",
+          "actual": 1.3031721145528863e-06,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop independent NashConv",
+          "actual": 1.7004564771490901e-06,
+          "maximum": 1e-05,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop NashConv",
+          "actual": 0.00032165818963144597,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop iterations",
+          "actual": 100000,
+          "maximum": 100000,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop solve seconds",
+          "actual": 8.5611016,
+          "maximum": 300,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop value bets",
+          "actual": 0.0,
+          "maximum": 0.005,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop bluff mix",
+          "actual": 2.926290035248913e-05,
+          "maximum": 0.005,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop call mix",
+          "actual": 1.4420350392674308e-05,
+          "maximum": 0.005,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver marginal probability sum",
+          "actual": 0.0,
+          "maximum": 1e-12,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver marginal probability sum",
+          "actual": 1.1102230246251565e-16,
+          "maximum": 1e-12,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 2.9802322387695312e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver independent action EV all nodes",
+          "actual": 9.5367431640625e-07,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver analytic turn action EV",
+          "actual": 0.0002581422979179848,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver compatible opponent mass",
+          "actual": 3.793022851361627e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver own reach",
+          "actual": 1.4901161193847656e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver analytic root EV",
+          "actual": 7.191965400998868e-08,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver independent root EV",
+          "actual": 7.357206843749964e-08,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver independent NashConv",
+          "actual": 5.8126843782702053e-08,
+          "maximum": 1e-05,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver NashConv",
+          "actual": 8.541197816214208e-05,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver iterations",
+          "actual": 100000,
+          "maximum": 100000,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver solve seconds",
+          "actual": 1.5203416,
+          "maximum": 300,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver value bets",
+          "actual": 0.0,
+          "maximum": 0.005,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver bluff mix",
+          "actual": 8.78870487214245e-06,
+          "maximum": 0.005,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver call mix",
+          "actual": 1.8958250681544442e-05,
+          "maximum": 0.005,
+          "pass": true
+        },
+        {
+          "name": "cross-engine turn action EV",
+          "actual": 0.0005440711975097656,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "cross-engine root EV",
+          "actual": 1.3709068298339844e-06,
+          "maximum": 0.001,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "id": "turn-checkdown-half-pot-suit-swap",
+      "passed": true,
+      "comboCounts": [
+        11,
+        12
+      ],
+      "compatiblePairs": 132,
+      "pairRunouts": 5808,
+      "publicRivers": 48,
+      "analyticRootEvBb": [
+        -0.8450413223140496,
+        0.8450413223140496
+      ],
+      "checks": [
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop marginal probability sum",
+          "actual": 0.0,
+          "maximum": 1e-12,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop marginal probability sum",
+          "actual": 0.0,
+          "maximum": 1e-12,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 4.470348358154297e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop independent action EV all nodes",
+          "actual": 2.21079046092143e-06,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop analytic turn action EV",
+          "actual": 0.0007781982421875,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop compatible opponent mass",
+          "actual": 1.3546510163608971e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop own reach",
+          "actual": 4.470348358154297e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop analytic root EV",
+          "actual": 1.2989871758239957e-06,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop independent root EV",
+          "actual": 1.3031721145528863e-06,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop independent NashConv",
+          "actual": 1.7004564771490901e-06,
+          "maximum": 1e-05,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop NashConv",
+          "actual": 0.00032165818963144597,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop iterations",
+          "actual": 100000,
+          "maximum": 100000,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop solve seconds",
+          "actual": 8.0958503,
+          "maximum": 300,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop value bets",
+          "actual": 0.0,
+          "maximum": 0.005,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop bluff mix",
+          "actual": 2.926290035248913e-05,
+          "maximum": 0.005,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop call mix",
+          "actual": 1.4420350392674308e-05,
+          "maximum": 0.005,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-09,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver marginal probability sum",
+          "actual": 0.0,
+          "maximum": 1e-12,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver marginal probability sum",
+          "actual": 1.1102230246251565e-16,
+          "maximum": 1e-12,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 2.9802322387695312e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver independent action EV all nodes",
+          "actual": 9.5367431640625e-07,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver analytic turn action EV",
+          "actual": 0.0002581422979179848,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver compatible opponent mass",
+          "actual": 3.793022851361627e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver own reach",
+          "actual": 1.4901161193847656e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver analytic root EV",
+          "actual": 7.191965400998868e-08,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver independent root EV",
+          "actual": 7.357206843749964e-08,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver independent NashConv",
+          "actual": 5.8126843782702053e-08,
+          "maximum": 1e-05,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver NashConv",
+          "actual": 8.541197816214208e-05,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver iterations",
+          "actual": 100000,
+          "maximum": 100000,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver solve seconds",
+          "actual": 1.4896055000000001,
+          "maximum": 300,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver value bets",
+          "actual": 0.0,
+          "maximum": 0.005,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver bluff mix",
+          "actual": 8.78870487214245e-06,
+          "maximum": 0.005,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver call mix",
+          "actual": 1.8958250681544442e-05,
+          "maximum": 0.005,
+          "pass": true
+        },
+        {
+          "name": "cross-engine turn action EV",
+          "actual": 0.0005440711975097656,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "cross-engine root EV",
+          "actual": 1.3709068298339844e-06,
+          "maximum": 0.001,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "id": "river-half-pot-7181-regression",
+      "passed": true,
+      "comboCounts": [
+        11,
+        12
+      ],
+      "compatiblePairs": 132,
+      "analyticRootEvBb": [
+        -1.3636363636363638,
+        1.3636363636363638
+      ],
+      "checks": [
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 2.9802322387695312e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 2.9802322387695312e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 2.9802322387695312e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 2.9802322387695312e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 2.9802322387695312e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 2.9802322387695312e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 2.9802322387695312e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 2.9802322387695312e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 1.5543122344752192e-15,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 1.5543122344752192e-15,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 1.5543122344752192e-15,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop independent action EV",
+          "actual": 3.5762786865234375e-07,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop analytic action EV",
+          "actual": 0.0004892349243164062,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop analytic root EV",
+          "actual": 1.0837208019864875e-08,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop independent root EV",
+          "actual": 9.953874835488818e-09,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop independent NashConv",
+          "actual": 3.4679066051135994e-07,
+          "maximum": 1e-05,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop NashConv",
+          "actual": 6.639957427978516e-05,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop solve seconds",
+          "actual": 0.18172,
+          "maximum": 300,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop iterations",
+          "actual": 100000,
+          "maximum": 100000,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop value bets",
+          "actual": 0.0,
+          "maximum": 0.005,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop bluff mix",
+          "actual": 1.6301870346069336e-05,
+          "maximum": 0.005,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop call mix",
+          "actual": 4.9670537313195595e-06,
+          "maximum": 0.005,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 1.4901161193847656e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 1.4901161193847656e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 1.4901161193847656e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 1.4901161193847656e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 1.4901161193847656e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 1.4901161193847656e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 1.4901161193847656e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 1.4901161193847656e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 5.960464477539063e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 5.960464477539063e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 5.960464477539063e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 5.960464477539063e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 5.960464477539063e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 5.960464477539063e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 5.960464477539063e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 5.960464477539063e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 5.960464477539063e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 5.960464477539063e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 5.960464477539063e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 5.960464477539063e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver independent action EV",
+          "actual": 6.556510925292969e-07,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver analytic action EV",
+          "actual": 0.00042629241943359375,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver analytic root EV",
+          "actual": 1.3004649757064612e-07,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver independent root EV",
+          "actual": 1.2748952915586642e-07,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver independent NashConv",
+          "actual": 2.980232238769531e-07,
+          "maximum": 1e-05,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver NashConv",
+          "actual": 7.420778274536133e-05,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver solve seconds",
+          "actual": 0.099907,
+          "maximum": 300,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver iterations",
+          "actual": 100000,
+          "maximum": 100000,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver value bets",
+          "actual": 0.0,
+          "maximum": 0.005,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver bluff mix",
+          "actual": 1.4230608940124512e-05,
+          "maximum": 0.005,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver call mix",
+          "actual": 1.647075017296995e-05,
+          "maximum": 0.005,
+          "pass": true
+        },
+        {
+          "name": "cross-engine root EV",
+          "actual": 1.1920928955078125e-07,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "cross-engine action EV",
+          "actual": 0.00017309188842773438,
+          "maximum": 0.001,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "id": "river-pot-7181-regression",
+      "passed": true,
+      "comboCounts": [
+        11,
+        12
+      ],
+      "compatiblePairs": 132,
+      "analyticRootEvBb": [
+        -0.9090909090909092,
+        0.9090909090909092
+      ],
+      "checks": [
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 2.9802322387695312e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 2.9802322387695312e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 2.9802322387695312e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 2.9802322387695312e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 2.9802322387695312e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 2.9802322387695312e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 2.9802322387695312e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 2.9802322387695312e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 1.5543122344752192e-15,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 1.5543122344752192e-15,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 1.5543122344752192e-15,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 2.9802322387695312e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 2.9802322387695312e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 2.9802322387695312e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 2.9802322387695312e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 2.9802322387695312e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 2.9802322387695312e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 2.9802322387695312e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 2.9802322387695312e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 2.9802322387695312e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 2.9802322387695312e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 2.9802322387695312e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 2.9802322387695312e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop independent action EV",
+          "actual": 5.740412873933565e-07,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop analytic action EV",
+          "actual": 0.0004191398620605469,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop analytic root EV",
+          "actual": 2.113255588298557e-07,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop independent root EV",
+          "actual": 2.1023351826077175e-07,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop independent NashConv",
+          "actual": 3.0886043201793693e-07,
+          "maximum": 1e-05,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop NashConv",
+          "actual": 0.00010300766338001598,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop solve seconds",
+          "actual": 0.1922285,
+          "maximum": 300,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop iterations",
+          "actual": 100000,
+          "maximum": 100000,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop value bets",
+          "actual": 0.0,
+          "maximum": 0.005,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop bluff mix",
+          "actual": 1.1771917343139648e-05,
+          "maximum": 0.005,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop call mix",
+          "actual": 6.377696990966797e-06,
+          "maximum": 0.005,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 1.4901161193847656e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 1.4901161193847656e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 1.4901161193847656e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 1.4901161193847656e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 1.4901161193847656e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 1.4901161193847656e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 1.4901161193847656e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 1.4901161193847656e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0.0,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 8.940696716308594e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 8.940696716308594e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 8.940696716308594e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 8.940696716308594e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 8.940696716308594e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 8.940696716308594e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 8.940696716308594e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 8.940696716308594e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 8.940696716308594e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 8.940696716308594e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 8.940696716308594e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 8.940696716308594e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver independent action EV",
+          "actual": 4.76837158203125e-07,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver analytic action EV",
+          "actual": 0.0004987716674804688,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver analytic root EV",
+          "actual": 2.0590695459787867e-07,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver independent root EV",
+          "actual": 2.0152745427992613e-07,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver independent NashConv",
+          "actual": 2.709302035245004e-07,
+          "maximum": 1e-05,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver NashConv",
+          "actual": 0.00015583905306729403,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver solve seconds",
+          "actual": 0.1017952,
+          "maximum": 300,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver iterations",
+          "actual": 100000,
+          "maximum": 100000,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver value bets",
+          "actual": 0.0,
+          "maximum": 0.005,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver bluff mix",
+          "actual": 1.208484172821045e-05,
+          "maximum": 0.005,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver call mix",
+          "actual": 2.491474151611328e-05,
+          "maximum": 0.005,
+          "pass": true
+        },
+        {
+          "name": "cross-engine root EV",
+          "actual": 4.172325134277344e-07,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "cross-engine action EV",
+          "actual": 0.0008487701416015625,
+          "maximum": 0.001,
+          "pass": true
+        }
+      ]
+    }
+  ],
+  "artifacts": {
+    "results/turn-checkdown-half-pot.input.json": "3cc71a9bb054449dad6eef066858f0089b5fa0f8c423685cc236172c774a0fac",
+    "results/turn-checkdown-half-pot.primary.json": "16980fa364497814a8a8066b4403954fe488b0950d63e7ecbdad7c593390a50b",
+    "results/turn-checkdown-half-pot.reference.json": "8a66999e7864e6832f04392da18cfb8ef17441c1429f1c918388898fa787ad29",
+    "results/turn-checkdown-half-pot-suit-swap.input.json": "ebef4d69d1eb5405f7ecb9e4ebae297f37df2c7c0df0de3c7ea4a93af78cb539",
+    "results/turn-checkdown-half-pot-suit-swap.primary.json": "ae450506d1807d2cbacdfa7adf259cee54d5cdd4f9fad810d4b6b687538e20d1",
+    "results/turn-checkdown-half-pot-suit-swap.reference.json": "328d0158d464f95333d3916e8b78227b0478ea4c4623acab5979cd05918709c6",
+    "results/river-half-pot-7181-regression.input.json": "c2c354beda9f3cd3a4fd9f808bf602394bc9847a00efd4bebc536a1b0a4b66b2",
+    "results/river-half-pot-7181-regression.primary.json": "494162970d3b1f42b82102a395b2b93d3a0cd29da5bc88c0889bf4aec33bf929",
+    "results/river-half-pot-7181-regression.reference.json": "303125d3d1f4c9ef6e294db8b412ef7f971f5e37e41c6aec6695705299cfbbd9",
+    "results/river-pot-7181-regression.input.json": "fad5db5ddb0b7f6b5a2e29d4f04216c235323e173660a8ad6f76aab6becba5b4",
+    "results/river-pot-7181-regression.primary.json": "43c66cd261b5aaa19f4d92f486d797153cbf866222f9052094757718c25893d9",
+    "results/river-pot-7181-regression.reference.json": "ed4ab1ec8285c4ce38f495c8d9ac394203eb36f259ccf989e1e621ba294889c6",
+    "turn-fixtures.json": "d5aae5151f1c8cef53ed9c5fe167efea7ff95dcd669e0d58486c4e8475715b34",
+    "primary.rs": "3f9cbbdf2d02fe5eba61db67eabb35dc0e2724ab2b208b6ff5dbf36a3dbe2d23",
+    "reference.rs": "33f0d0f2199119c268617a8b10c81dea85c7b016c7a71b3917f5633a0cb84c29",
+    "primary.lock": "cfb7d19c3136a87be86ad09ba2e862024994fbf9055dd67e70384100f14f5a56",
+    "reference.lock": "cb813dd8e7acaab1476d61e96fe2294d2f5043d7f283163348ce475728a950b6"
+  },
+  "generatedAt": "2026-10-18T15:48:27Z",
+  "singleThread": true,
+  "compression": false,
+  "crossEngineEvScope": "turn decisions; forced river nodes independently checked against each engine own profile; conditional posteriors can differ in nonunique equilibria"
+}

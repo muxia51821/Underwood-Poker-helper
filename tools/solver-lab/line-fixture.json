@@ -1,0 +1,20 @@
+{
+  "id": "turn-river-half-pot",
+  "board": ["Ks", "7d", "2h", "8h"],
+  "ranges": ["KK,KQs,T9s,A5s", "77,KJs,TT,JTs"],
+  "potBb": 10,
+  "stackBb": 20,
+  "players": 2,
+  "street": "turn",
+  "futureCards": true,
+  "rake": 0,
+  "icm": false,
+  "tableMax": null,
+  "originalStackBb": null,
+  "continuation": "river-betting",
+  "betPotFraction": 0.5,
+  "rangeSource": "Manually chosen study ranges at the turn; not solved preflop or flop ranges.",
+  "treeRules": "Both players may check or bet 50% pot on turn and river. Facing a bet: fold or call only. No raises or automatic all-ins.",
+  "limits": {"iterations": 100000, "seconds": 300},
+  "tolerances": {"nashConvPotFraction": 0.0001, "evBb": 0.001}
+}

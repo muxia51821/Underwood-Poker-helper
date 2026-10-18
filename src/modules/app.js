@@ -1,5 +1,6 @@
 import { CONSTANTS } from '../constants.js';
 import { Utils, PubSub } from '../utils.js';
+import { initOverlayInteractions } from './uiInteractions.js';
 import { Store, SessionRepo, WeeklyRepo, TiltLogRepo } from '../store/store.js';
 import { srpData, ACTION_SHORT } from '../data/srpData.js';
 import { GTO_LEGACY_SCOPE } from '../data/strategy/gtoBaseline.js';  // [V7.9.0 新增] 旧 GTO 对照统一标注
@@ -16,13 +17,19 @@ import { Discover } from './discover.js';      // [V7.4.6]
 import { Navigation } from './navigation.js';  // [V7.7.2]
 import { StrategyDesk } from './strategyDesk.js';  // [V7.10.1 新增] Evidence & Strategy
 import { StrategyLibrary } from './strategyLibrary.js';  // [V7.11.13 新增]
+import { StudyWorkspace } from './studyWorkspace.js'; // [V7.13.0 新增]
+import { PreflopRangeWorkspace } from './preflopRangeWorkspace.js'; // [V7.17.0 新增]
+import { SolutionWorkspace } from './solutionWorkspace.js'; // [V7.18.0 新增]
+import { AnalyzeWorkspace } from './analyzeWorkspace.js'; // [V7.13.0 新增]
+import { PracticeWorkspace } from './practiceWorkspace.js'; // [V7.14.0 新增]
+import { DecisionWorkbench } from './decisionWorkbench.js'; // [V7.15.0 新增]
 
 export const App = {
           sound: true,
           vibrateOn: true,
           reviewRendered: false,
-          confirmDelete: function (itemsGetter, itemsSaver, renderFn, idKey, id) {
-            if (!confirm('确认删除？')) return;
+          confirmDelete: async function (itemsGetter, itemsSaver, renderFn, idKey, id) {
+            if (!await Utils.confirmAction({ title: '删除这条记录？', message: '删除后无法撤销。请确认已保留需要的备份。', confirmLabel: '删除记录', danger: true })) return;
             var items = itemsGetter().filter(function (item) {
               return item[idKey] !== id;
             });
@@ -62,6 +69,10 @@ export const App = {
             Navigation.configure({
               onTab: function (tab) {
                 if (tab === 'odds') Odds.calc();
+                if (tab === 'study') StudyWorkspace.render();
+                if (tab === 'analyze') AnalyzeWorkspace.render();
+                if (tab === 'practice') PracticeWorkspace.render();
+                if (tab !== 'practice') DecisionWorkbench.render(tab, tab === 'study' ? StudyWorkspace.sourceDecision : null);
                 if (tab === 'review' && !App.reviewRendered) {
                   Review.renderAll();
                   App.reviewRendered = true;
@@ -85,9 +96,14 @@ export const App = {
                 }
                 if (name === 'opponent') Review.renderOpponentProfiles();
               },
-              onTargetHand: function (handId) { Review.focusHand(handId); },
+              onTargetHand: function (handId, context) { AnalyzeWorkspace.openHand(handId, context); },
               onTargetSession: function (sessionId) { Review.focusSession(sessionId); },
-              onLearningTarget: function (target) { Review.startLearningTarget(target); },
+              onLearningTarget: function (target) {
+                if (target.type === 'strategy_quiz') PracticeWorkspace.open({ type: 'range', scenario: target.scenario, category: target.boardCategory || '',
+                  learningQuestion: '研究这一场景与牌面类别的整体倾向', returnTab: 'review', returnSub: 'strategy', sourceUnitId: target.findingId });
+                else if (target.handIds?.length) { Navigation.goToHand(target.handIds[0]); AnalyzeWorkspace.setPosition({ street: 'flop', actionIndex: null }); AnalyzeWorkspace.openStudy(); }
+                else StudyWorkspace.open({ topicId: 'ranges' });
+              },
               onTargetStrategy: function (strategyId) { StrategyDesk.editStrategy(strategyId); },  // [V7.10.1 新增]
               onTargetOpponent: function (oHash) { Review.focusOpponent(oHash); },  // [V7.10.2 新增]
               onRefresh: function (scope) {
@@ -97,13 +113,54 @@ export const App = {
               },
             });
             this.bindSettings();
+            initOverlayInteractions();
             this.bindNav();
             this.bindSubNav();
+            document.querySelector('[data-timer-capture]').addEventListener('click', () => document.getElementById('quickCaptureBtn').click());
             Timer.init();
+            // [V7.16.0 新增] Pause the timer before moving to session closeout.
+            document.getElementById('finishPlayBtn').addEventListener('click', () => {
+              if (Timer.running) Timer.toggle();
+              Navigation.goToReviewSubtab('session');
+              document.querySelector('#closeoutInbox h2')?.focus();
+            });
             Odds.init();
 
             Review.init();
             StrategyLibrary.init();
+            StudyWorkspace.init(); // [V7.13.0 新增]
+            PreflopRangeWorkspace.init(); // [V7.17.0 新增]
+            SolutionWorkspace.init(); // [V7.18.0 新增]
+            AnalyzeWorkspace.init();
+            document.getElementById('browseSessionReviewBtn').addEventListener('click', () => AnalyzeWorkspace.browseSessions());
+            Review.onSessionReview = sessionId => { Navigation.goToTab('analyze'); AnalyzeWorkspace.openSession(sessionId); };
+            AnalyzeWorkspace.onReturnSession = sessionId => { Navigation.goToReviewSubtab('session'); Review.openCloseout(sessionId); };
+            PracticeWorkspace.init();
+            DecisionWorkbench.init();
+            DecisionWorkbench.onMode = (mode) => {
+              const current = document.querySelector('.main').dataset.activeTab;
+              if (mode === 'study' && current === 'analyze') return AnalyzeWorkspace.openStudy();
+              if (mode === 'study' && current === 'practice') return PracticeWorkspace.goStudy();
+              if (mode === 'practice') {
+                if (PracticeWorkspace.active()) { PracticeWorkspace.view = 'session'; return Navigation.goToTab('practice'); }
+                if (current === 'analyze') return AnalyzeWorkspace.openPractice();
+                if (current === 'study') return StudyWorkspace.openPractice();
+              }
+              if (mode === 'analyze' && DecisionWorkbench.context) return Navigation.goToHand(DecisionWorkbench.context.handId, DecisionWorkbench.context);
+              Navigation.goToTab(mode);
+            };
+            DecisionWorkbench.onFree = () => StudyWorkspace.freeStudy();
+            DecisionWorkbench.resolveDecision = () => AnalyzeWorkspace.sessionScreen === 'hands' ? AnalyzeWorkspace.bundle()?.context : null;
+            PracticeWorkspace.onRender = () => {
+              let source = PracticeWorkspace.config.sourceDecision;
+              const state = PracticeWorkspace.view === 'session' ? PracticeWorkspace.active() : null;
+              const question = state?.questions[state.index];
+              if (source && question?.type === 'personal') source = { ...source, ...question.context, prefix: [], initialReason: '', street: question.context.street,
+                actionIndex: null, question: state.config.learningQuestion };
+              DecisionWorkbench.render('practice', source);
+            };
+            PracticeWorkspace.onStudy = (topicId, context = null) => StudyWorkspace.open({ ...(context || {}), topicId }, context ? () => Navigation.goToHand(context.handId, context) : null);
+            PracticeWorkspace.onSolutionStudy = (pack, nodePath, combo, context) => StudyWorkspace.openSolution(pack, nodePath, combo, context);
             Discover.init();  // [V7.4.7] 初始化扫描状态
             TiltRescue.init();
             DataSync.init();
@@ -163,23 +220,21 @@ export const App = {
             document.getElementById('shareCloseBtn').addEventListener('click', function () {
               document.getElementById('shareOverlay').classList.remove('is-active');
             });
-            document.getElementById('shareCopyBtn').addEventListener('click', function () {
+            document.getElementById('shareCopyBtn').addEventListener('click', async function () {
               var url = CONSTANTS.SITE_URL;
               var btn = document.getElementById('shareCopyBtn');
               if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard
-                  .writeText(url)
-                  .then(function () {
-                    btn.textContent = '✅ 已复制';
-                    setTimeout(function () {
-                      btn.textContent = '📋 复制链接';
-                    }, 2000);
-                  })
-                  .catch(function () {
-                    prompt('手动复制链接：', url);
-                  });
+                try {
+                  await Utils.withBusy(btn, '复制中…', () => navigator.clipboard.writeText(url));
+                  Utils.showToast('网站链接已复制。', { tone: 'success' });
+                } catch {
+                  Utils.showToast('复制失败。请选中上方链接后手动复制。', { tone: 'error' });
+                  const selection = window.getSelection();
+                  const range = document.createRange(); range.selectNodeContents(document.getElementById('shareUrlDisplay'));
+                  selection.removeAllRanges(); selection.addRange(range);
+                }
               } else {
-                prompt('手动复制链接：', url);
+                Utils.showToast('当前浏览器不支持自动复制，请选中上方链接手动复制。', { tone: 'warning' });
               }
             });
 
@@ -187,6 +242,7 @@ export const App = {
             document.querySelectorAll('.tilt-overlay, .share-overlay').forEach(function (ov) {
               ov.addEventListener('click', function (e) {
                 if (e.target === ov) {
+                  if (ov.getAttribute('aria-busy') === 'true') return;
                   ov.classList.remove('is-active');
                   // [V7.3.3] 点击遮罩关闭 tilt 时重置 locked + 清理计时器
                   if (ov.id === 'tiltOverlay') {
@@ -407,6 +463,8 @@ export const App = {
             this.vibrateOn = settings.vibrate;
             sb.classList.toggle('is-active', this.sound);
             vb.classList.toggle('is-active', this.vibrateOn);
+            sb.setAttribute('aria-pressed', String(this.sound));
+            vb.setAttribute('aria-pressed', String(this.vibrateOn));
 
             Utils.initDropdown(
               document.getElementById('settingsBtn'),
@@ -415,19 +473,22 @@ export const App = {
             sb.addEventListener('click', () => {
               this.sound = !this.sound;
               sb.classList.toggle('is-active', this.sound);
+              sb.setAttribute('aria-pressed', String(this.sound));
               Store.settings.save({ sound: this.sound, vibrate: this.vibrateOn });
             });
             vb.addEventListener('click', () => {
               this.vibrateOn = !this.vibrateOn;
               vb.classList.toggle('is-active', this.vibrateOn);
+              vb.setAttribute('aria-pressed', String(this.vibrateOn));
               Store.settings.save({ sound: this.sound, vibrate: this.vibrateOn });
             });
             // [V7.3.4] 四配色方案切换: Pale → Nimbus → Ember → Neon
             var csBtn = document.getElementById('colorSchemeOption');
             var schemes = ['pale', 'nimbus', 'ember', 'neon'];
-            var labels = { pale: '🎨 Nimbus', nimbus: '🎨 Ember', ember: '🎨 Neon', neon: '🎨 Pale' };
+            var labels = { pale: '配色：Pale', nimbus: '配色：Nimbus', ember: '配色：Ember', neon: '配色：Neon' };
             var classes = { nimbus: 'color-nimbus', ember: 'color-ember', neon: 'color-neon' };
-            var savedScheme = localStorage.getItem('pa_colorScheme') || 'pale';
+            var rawScheme = localStorage.getItem('pa_colorScheme'); // [V7.16.0 修改] Preserve unknown imported preferences; display a supported theme.
+            var savedScheme = schemes.includes(rawScheme) ? rawScheme : 'pale';
             var allClasses = ['color-nimbus', 'color-ember', 'color-neon'];
             if (savedScheme !== 'pale') { document.body.classList.add(classes[savedScheme]); }
             csBtn.textContent = labels[savedScheme];

@@ -16,6 +16,7 @@ import { HandReplay } from './handReplay.js';  // [V7.10.0 新增] 手牌回放�
 import { PokerLogic } from './pokerLogic.js';  // [V7.11.0 新增] 复盘牌理参考（命中 spot 时显示推理链卡片）
 import { StrategyDesk } from './strategyDesk.js';  // [V7.10.1 新增] Evidence & Strategy
 import { POSITION_REFERENCES } from './strategyStudy.js';
+import { DataSync } from './dataSync.js'; // [V7.16.0 新增]
 import { Navigation } from './navigation.js';  // [V7.7.2]
 
 // [V7.11.15 修改] Position facts and source reading replace unsupported blanket frequencies.
@@ -179,7 +180,7 @@ function _toggleMarkHand(id, btnEl) {
       found = true;
       if (btnEl) {
         btnEl.textContent = r.marked ? '★' : '☆';
-        btnEl.style.color = r.marked ? '#d4a853' : '#a8afba';
+        btnEl.style.color = r.marked ? 'var(--color-warning)' : 'var(--color-text-muted)';
       }
     }
   });
@@ -358,6 +359,21 @@ export const Review = {
   _quickCaptureOrigin: null,
   _quickCaptureSnapshot: null,
   init() {
+    // [V7.16.0 新增] Closeout is an entry task; existing table and matching behavior stay available.
+    document.getElementById('closeoutInbox').addEventListener('click', event => {
+      if (event.target.closest('[data-closeout-import]')) document.getElementById('importGGBtn').click();
+      const button = event.target.closest('[data-closeout-session]');
+      if (button) this.openCloseout(decodeURIComponent(button.dataset.closeoutSession));
+    });
+    document.getElementById('sessionBody').addEventListener('input', async event => {
+      if (!event.target.matches('[data-closure-note]')) return;
+      const input = event.target, note = input.value, status = input.closest('[data-closure-session]').querySelector('[data-closure-note-status]');
+      try {
+        const result = await SessionClosure.saveNote(this._closureSessionIdOf(input), note);
+        if (!result.ok) throw new Error('本场总结尚未保存，请保留当前输入后重试。');
+        if (input.value === note) status.textContent = '本场总结已保存。';
+      } catch (error) { status.textContent = error.message; }
+    });
     document.getElementById('addSessionBtn').addEventListener('click', () => this.addSession());
     document.getElementById('clearSessionBtn').addEventListener('click', () => this.clearSessionForm());
     document.getElementById('refreshSessionsBtn').addEventListener('click', () => this.renderSessions());
@@ -421,6 +437,8 @@ export const Review = {
       _renderDiscoverHeatmap();
     });
     document.getElementById('sessionBody').addEventListener('click', (e) => {
+      const reviewSession = e.target.closest('[data-session-review]');
+      if (reviewSession) { this.onSessionReview?.(reviewSession.dataset.sessionReview); return; }
       const delBtn = e.target.closest('[data-delete-id]');
       if (delBtn) this.deleteSession(delBtn.dataset.deleteId);
       const editBtn = e.target.closest('[data-edit-id]');
@@ -537,9 +555,9 @@ export const Review = {
       }
       Review._updateHandBatchUI();
     });
-    document.getElementById('handBatchDelBtn').addEventListener('click', function () {
+    document.getElementById('handBatchDelBtn').addEventListener('click', async function () {
       if (!Review._selectedHandIds.size) { Utils.showToast('请先点击行选择要删除的手牌'); return; }
-      if (!confirm('确定删除选中的 ' + Review._selectedHandIds.size + ' 手牌局？此操作不可恢复。')) return;
+      if (!await Utils.confirmAction({ title: '删除选中的手牌？', message: '将删除 ' + Review._selectedHandIds.size + ' 手牌。此操作无法撤销。', confirmLabel: '删除手牌', danger: true })) return;
       var ids = Review._selectedHandIds;
       var reviews = HandRepo.getAll().filter(function (r) { return !ids.has(r.id); });
       HandRepo.saveAll(reviews);
@@ -548,11 +566,11 @@ export const Review = {
       Review.handCurrentPage = 1;
       Review.renderHandReviews();
     });
-    document.getElementById('handBatchLinkBtn').addEventListener('click', function () {
+    document.getElementById('handBatchLinkBtn').addEventListener('click', async function () {
       if (!Review._selectedHandIds.size) { Utils.showToast('请先选择手牌'); return; }
       var sid = document.getElementById('handBatchSessionSelect').value;
-      if (!sid) { Utils.showToast('请选择目标 Session'); return; }
-      if (!confirm('将选中的 ' + Review._selectedHandIds.size + ' 手牌关联到选定 Session？')) return;
+      if (!sid) { Utils.showToast('请选择目标场次'); return; }
+      if (!await Utils.confirmAction({ title: '关联到所选场次？', message: '将选中的 ' + Review._selectedHandIds.size + ' 手牌关联到所选场次，原有场次关联会被替换。手牌内容保持不变。', confirmLabel: '确认关联' })) return;
       var ids = Review._selectedHandIds;
       var reviews = HandRepo.getAll();
       reviews.forEach(function (r) { if (ids.has(r.id)) r.sessionId = sid; });
@@ -590,7 +608,8 @@ export const Review = {
   },
   getSessions() { return SessionRepo.getAll(); },
   saveSessions(s) { SessionRepo.saveAll(s); },
-  addSession() {
+  async addSession() {
+    if (this.sessionConfirmPending) return;
     const date = document.getElementById('sessDate').value || Utils.getLocalDate(),
       level = document.getElementById('sessLevel').value.trim() || 'NL10',
       dur = parseFloat(document.getElementById('sessDur').value),
@@ -623,9 +642,14 @@ export const Review = {
     var self = this;
     var reviews = HandRepo.getAll();
     var unlinked = reviews.filter(function (r) { return (!r.sessionId || r.sessionId === '') && r.date === s.date; });
-    if (unlinked.length > 0 && confirm('有 ' + unlinked.length + ' 手同日期未关联手牌，是否归入本场 Session？')) {
-      unlinked.forEach(function (r) { r.sessionId = s.id; });
-      HandRepo.saveAll(reviews);
+    if (unlinked.length > 0) {
+      this.sessionConfirmPending = true;
+      try {
+        if (await Utils.confirmAction({ title: '关联同日期的手牌？', message: '发现 ' + unlinked.length + ' 手同日期、尚未关联场次的手牌。请确认它们属于本场；取消只保存场次记录。', confirmLabel: '归入本场' })) {
+          const candidates = new Set(unlinked.map(hand => hand.id));
+          HandRepo.saveAll(HandRepo.getAll().map(hand => candidates.has(hand.id) && !hand.sessionId ? { ...hand, sessionId: s.id } : hand));
+        }
+      } finally { this.sessionConfirmPending = false; }
     }
     this.clearSessionForm(); this.renderAll();
   },
@@ -646,6 +670,17 @@ export const Review = {
     else if (sessionRow) sessionRow.parentNode.appendChild(tr);
     btn.textContent = '✕';
     SessionClosure.renderInto(td, session);
+  },
+  // [V7.16.0 新增] Enter a closeout without toggling an already-open draft closed.
+  openCloseout(sessionId) {
+    document.getElementById('filterLevel').value = 'all';
+    this.renderSessions();
+    const button = [...document.querySelectorAll('[data-closure-sid]')].find(item => item.dataset.closureSid === sessionId);
+    if (!button) { Utils.showToast('找不到本场记录；手牌仍可在复盘列表查看。'); return; }
+    this.toggleSessionClosure(sessionId, button);
+    const title = document.getElementById('closure-row-' + sessionId);
+    title?.scrollIntoView({ block: 'start', behavior: 'instant' });
+    title?.querySelector('textarea')?.focus({ preventScroll: true });
   },
   _closureSessionIdOf(el) {
     const host = el.closest('[data-closure-session]');
@@ -671,16 +706,17 @@ export const Review = {
     tr.id = 'expand-row-' + sessionId;
     var td = document.createElement('td');
     td.colSpan = 8;
-    td.style.cssText = 'padding:8px 12px;background:#0a1628;font-size:0.75em;border-top:1px solid #1e3a5f';
+    // [V7.12.0 修改] Expanded sessions share the themed reading surface.
+    td.className = 'session-expanded-content';
     if (linked.length === 0) {
-      td.innerHTML = '<span style="color:#a8afba">📋 暂无关联手牌</span>';
+      td.innerHTML = '<span class="text-muted">📋 暂无关联手牌</span>';
     } else {
       // [V6.15.1] 筛选下拉 + 筛选逻辑
       var expandFilterId = 'sessHandFilter-' + sessionId;
       var parts = [
         '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">',
-        '<span style="color:#a8afba">📋 关联手牌 (' + linked.length + '手):</span>',
-        '<select class="select" data-sess-filter="' + sessionId + '" id="' + expandFilterId + '" style="font-size:0.7em;padding:2px 6px;width:auto">',
+        '<span class="text-muted">📋 关联手牌 (' + linked.length + '手):</span>',
+        '<select class="select" data-sess-filter="' + sessionId + '" id="' + expandFilterId + '" style="width:auto">',
         '<option value="all"' + (filterVal === 'all' ? ' selected' : '') + '>全部</option>',
         '<option value="above2"' + (filterVal === 'above2' ? ' selected' : '') + '>≥ 2 BB</option>',
         '<option value="above30"' + (filterVal === 'above30' ? ' selected' : '') + '>≥ 30 BB</option>',
@@ -695,20 +731,20 @@ export const Review = {
           handHtml += Utils.renderCardBadges(heroCardsM[1], { style: 'margin-right:2px' });
           // [V6.15.2] 对手牌灰色小字标注
           if (r.oCards) {
-            handHtml += ' <span style="color:#a8afba;font-size:0.7em">vs ' + Utils.escapeHtml(r.oCards) + '</span>';
+            handHtml += ' <span class="text-muted">vs ' + Utils.escapeHtml(r.oCards) + '</span>';
           }
         } else {
           handHtml = '--';
         }
         var profitStr = r.pBB != null ? Utils.formatProfitHTML(r.pBB) : '--';
         var mistakeStr = r.mistake || '--';
-        var ggMark = r.gg ? ' <span style="color:#a8afba;font-size:0.85em">GG</span>' : '';
-        parts.push('<div style="display:flex;align-items:center;gap:6px;padding:2px 0;border-bottom:1px solid #1e293b">');
+        var ggMark = r.gg ? ' <span class="text-muted">GG</span>' : '';
+        parts.push('<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--color-border)">');
         parts.push('<span style="min-width:80px">' + handHtml + '</span>');
         var markIcon = r.marked ? '★' : '☆';
-        var markColor = r.marked ? '#d4a853' : '#a8afba';
-        parts.push('<span style="flex:1;color:#cbd5e1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + profitStr + ggMark + '</span>');
-        parts.push('<span style="color:#a8afba;min-width:60px;text-align:right">' + Utils.escapeHtml(mistakeStr) + '</span>');
+        var markColor = r.marked ? 'var(--color-warning)' : 'var(--color-text-muted)';
+        parts.push('<span style="flex:1;color:var(--color-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + profitStr + ggMark + '</span>');
+        parts.push('<span style="color:var(--color-text-muted);min-width:60px;text-align:right">' + Utils.escapeHtml(mistakeStr) + '</span>');
         parts.push('<button class="btn--mini" data-hand-edit="' + r.id + '" style="font-size:0.85em">👁️</button>');
         parts.push('<button class="btn--mini hand-mark-btn" data-hand-mark="' + r.id + '" style="font-size:0.85em;color:' + markColor + '" title="标记">' + markIcon + '</button>');
         parts.push('</div>');
@@ -756,12 +792,13 @@ export const Review = {
     sessionPane.classList.add('is-editing');
     sessionPane.focus({ preventScroll: true });
   },
-  deleteSession(id) {
+  async deleteSession(id) {
     var self = this;
     var sessions = self.getSessions();
     var session = sessions.find(function (s) { return s.id === id; });
     var label = session ? (session.date || '') + ' ' + (session.level || '') : id;
-    if (!confirm('删除 Session "' + label + '"？\n\n该 Session 下的手牌将一并删除（Picks 精选手牌除外）。')) return;
+    if (!await Utils.confirmAction({ title: '删除这个场次？', message: label + '\n本场关联手牌也将删除，已标记的精选手牌会保留。', confirmLabel: '删除场次', danger: true })) return;
+    sessions = self.getSessions();
     // 删除 Session
     self.saveSessions(sessions.filter(function (s) { return s.id !== id; }));
     // 级联删除手牌（保留 marked = true 的 Picks）
@@ -780,6 +817,7 @@ export const Review = {
   renderSessions() {
     var filter = document.getElementById('filterLevel').value;
     var sessions = Utils.sortByDateKey(this.getSessions());
+    SessionClosure.renderInbox(document.getElementById('closeoutInbox'), sessions, HandRepo.getAll(), ClosureRepo.getAll()); // [V7.16.0 新增]
     // [V7.9.1 新增] 未收尾场次集合（有手牌且无 closed 收尾记录）
     var unfinished = {};
     SessionClosure.getUnfinishedSessions(sessions, HandRepo.getAll(), ClosureRepo.getAll()).forEach(function (s) { unfinished[s.id] = true; });
@@ -806,10 +844,11 @@ export const Review = {
       var profitEl = row.querySelector('[data-bind="profit"]');
       var profitStr = Utils.safeFixed(s.profit, 1);
       profitEl.textContent = (s.profit >= 0 ? '+' : '') + profitStr;
-      profitEl.style.color = s.profit >= 0 ? '#6baf7e' : '#c06060';
+      profitEl.style.color = s.profit >= 0 ? 'var(--color-success)' : 'var(--color-danger)';
       row.querySelector('[data-bind="tilt"]').textContent = s.tilt;
       row.querySelector('[data-bind="mistake"]').textContent = s.mistake;
       row.querySelector('[data-expand-id]').setAttribute('data-expand-id', s.id);
+      row.querySelector('[data-session-review]').dataset.sessionReview = s.id;
       row.querySelector('[data-import-sid]').setAttribute('data-import-sid', s.id);
       row.querySelector('[data-edit-id]').setAttribute('data-edit-id', s.id);
       row.querySelector('[data-delete-id]').setAttribute('data-delete-id', s.id);
@@ -830,6 +869,16 @@ export const Review = {
       });
       frag.appendChild(row);
     });
+    // [V7.12.0 新增] Empty filtered results remain readable table content.
+    if (!sessions.length) {
+      const emptyRow = document.createElement('tr');
+      const emptyCell = document.createElement('td');
+      emptyCell.colSpan = 8;
+      emptyCell.className = 'table-empty-state';
+      emptyCell.textContent = filter === 'all' ? '暂无 Session。使用场次表单创建记录，或导入 GG 手牌开始复盘。' : '没有符合当前级别的 Session，请调整筛选。';
+      emptyRow.appendChild(emptyCell);
+      frag.appendChild(emptyRow);
+    }
     body.replaceChildren(frag);
   },
   // [V6.18.1] 全局统计 — 渲染到 Total 面板
@@ -851,10 +900,10 @@ export const Review = {
     var tsa = document.getElementById('totalStatsArea');
     if (!tsa) return;
     Utils.setSafeHTML(tsa, '<div class="stats"><div class="stats__item"><div class="stats__label">Sessions</div><div class="stats__value">' + c + '</div></div><div class="stats__item ' + (tp >= 0 ? 'stats__item--win' : 'stats__item--lose') + '"><div class="stats__label">Net Profit</div><div class="stats__value ' + (tp >= 0 ? 'text-win' : 'text-lose') + '">' + (tp >= 0 ? '+' + Utils.safeFixed(tp, 1) : Utils.safeFixed(tp, 1)) + ' BB</div></div><div class="stats__item"><div class="stats__label">Hands</div><div class="stats__value">' + th + '</div></div><div class="stats__item ' + (parseFloat(bb100) >= 0 ? 'stats__item--win' : 'stats__item--lose') + '"><div class="stats__label">bb/100</div><div class="stats__value ' + (parseFloat(bb100) >= 0 ? 'text-win' : 'text-lose') + '">' + bb100 + '</div></div><div class="stats__item ' + (parseFloat(hr) >= 0 ? 'stats__item--win' : 'stats__item--lose') + '"><div class="stats__label">Hourly</div><div class="stats__value ' + (parseFloat(hr) >= 0 ? 'text-win' : 'text-lose') + '">' + hr + ' BB/h</div></div><div class="stats__item"><div class="stats__label">Avg Tilt</div><div class="stats__value">' + avgTilt + '</div></div></div>');
-    // 错误追踪
+    // [V7.16.0 修改] Older imported sessions may have no mistake label.
     const mistakeMap = new Map(), mistakeProfitMap = new Map();
     sessions.forEach((s) => {
-      if (s.mistake !== '无') { s.mistake.split(', ').forEach((m) => { const t = m.trim(); if (t) { mistakeMap.set(t, (mistakeMap.get(t) || 0) + 1); mistakeProfitMap.set(t, (mistakeProfitMap.get(t) || 0) + s.profit); } }); }
+      if (s.mistake && s.mistake !== '无') { s.mistake.split(', ').forEach((m) => { const t = m.trim(); if (t) { mistakeMap.set(t, (mistakeMap.get(t) || 0) + 1); mistakeProfitMap.set(t, (mistakeProfitMap.get(t) || 0) + s.profit); } }); }
     });
     let mh = '';
     if (mistakeMap.size) {
@@ -1938,7 +1987,7 @@ export const Review = {
     const pane = document.getElementById('handDetailPane');
     pane.classList.remove('is-editing');
     const saveBtn = document.getElementById('saveHandBtn');
-    saveBtn.textContent = '保存 Mark';  // [V7.9.1 修改] 快速模式保存为 Mark
+    saveBtn.textContent = '保存快记';  // [V7.9.1 修改] 快速模式保存为快记
     saveBtn.dataset.state = 'quick';
     const sessionSelect = document.getElementById('handSessionSelect');
     if (preferredSessionId && sessionSelect.querySelector('option[value="' + preferredSessionId + '"]')) {
@@ -2005,7 +2054,7 @@ export const Review = {
     this._quickCaptureOrigin = null;
     this._quickCaptureSnapshot = null;
     trigger.focus({ preventScroll: true });
-    if (mode === 'saved') Utils.showToast('已记录 Mark，收尾时在 Session 中匹配手牌');  // [V7.9.1 修改]
+    if (mode === 'saved') Utils.showToast('已保存快记；结束本场后可将它匹配到导入的手牌。');  // [V7.9.1 修改]
   },
   handleQuickCaptureKeydown(event) {
     if (!this._quickCaptureActive) return;
@@ -2049,7 +2098,21 @@ export const Review = {
     const reviews = this.getHandReviews();
     if (this.handEditingId) {
       const idx = reviews.findIndex(function (x) { return x.id === this.handEditingId; }.bind(this));
-      if (idx !== -1) { r.id = this.handEditingId; reviews[idx] = r; }
+      if (idx !== -1) {
+        // [V7.14.0 修改] Editing notes must retain imported facts, original time and unknown fields.
+        const existing = reviews[idx];
+        const { date: ignoredDate, pBB: ignoredProfit, ...editable } = r;
+        reviews[idx] = { ...existing, ...editable, id: this.handEditingId };
+        if (existing.desc !== desc) {
+          const updated = reviews[idx];
+          ['OTF', 'OTT', 'OTR'].forEach((street) => { updated['actionLine' + street] = Utils.extractActionLine(desc, street) || ''; });
+          const parsed = HandReplay.parseReplay(updated);
+          if (!parsed.degraded) {
+            updated.boardCode = parsed.streets.find((street) => street.key === 'flop')?.newCards.join('') || '';
+            updated.boardCategory = updated.boardCode ? Utils.classifyBoard(updated.boardCode) : '';
+          }
+        }
+      }
       this.handEditingId = null;
       document.getElementById('saveHandBtn').textContent = '保存手牌';
       document.getElementById('saveHandBtn').dataset.state = 'create';
@@ -2068,7 +2131,7 @@ export const Review = {
   _saveQuickMark() {
     const note = document.getElementById('handDesc').value.trim();
     const mistake = document.getElementById('handMistakeCustom').value.trim();
-    if (!note && !mistake) { Utils.showToast('写一句备注再保存 Mark'); return false; }
+    if (!note && !mistake) { Utils.showToast('写下备注或错误类型，再保存快记'); return false; }
     const mark = {
       id: Utils.generateUUID(),
       time: Utils.getLocalDatetime(),
@@ -2131,24 +2194,25 @@ export const Review = {
     tr.id = 'hand-expand-row-' + handId;
     var td = document.createElement('td');
     td.colSpan = 7;
-    td.style.cssText = 'padding:10px 14px;background:#0a1628;font-size:0.78em;border-top:1px solid #1e3a5f;line-height:1.6';
+    // [V7.12.0 修改] Notes, reflection and replay use the shared reading surface.
+    td.className = 'hand-expanded-content';
     var html = '';
     // [V7.10.0 新增] 回放容器（置于 desc 原文之前；点击「回放」时懒渲染，只读派生视图）
     html += '<div id="hand-replay-' + r.id + '" class="hand-replay-slot" style="display:none"></div>';
     // [V7.11.0 新增] 牌理参考（命中已定义 spot 时显示推理链卡片；未命中返回空串）
     html += PokerLogic.renderForHand(r);
     // 手牌详情
-    html += '<div style="color:#cbd5e1;white-space:pre-wrap;margin-bottom:6px">' + Utils.escapeHtml(r.desc || '--') + '</div>';
+    html += '<div class="hand-expanded-notes">' + Utils.escapeHtml(r.desc || '--') + '</div>';
     // 错误 + 反思
-    if (r.mistake) html += '<div style="margin-bottom:4px"><span style="color:#a8afba">错误：</span><span style="color:#c06060">' + Utils.escapeHtml(r.mistake) + '</span></div>';
-    if (r.reflection) html += '<div style="margin-bottom:6px"><span style="color:#a8afba">反思：</span><span style="color:#c8ccd0">' + Utils.escapeHtml(r.reflection) + '</span></div>';
+    if (r.mistake) html += '<div class="hand-expanded-mistake"><span class="text-muted">错误：</span>' + Utils.escapeHtml(r.mistake) + '</div>';
+    if (r.reflection) html += '<div class="hand-expanded-reflection"><span class="text-muted">反思：</span>' + Utils.escapeHtml(r.reflection) + '</div>';
     // 操作按钮
-    html += '<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">';
+    html += '<div class="hand-expanded-actions">';
     html += '<button class="btn--mini" data-hand-replay="' + r.id + '">⏵ 回放</button>';
     html += '<button class="btn--mini" data-hand-edit="' + r.id + '">✎ 编辑</button>';
     html += '<button class="btn--mini btn--danger" data-hand-delete="' + r.id + '">✕ 删除</button>';
     var markIcon = r.marked ? '★' : '☆';
-    var markColor = r.marked ? '#d4a853' : '#a8afba';
+    var markColor = r.marked ? 'var(--color-warning)' : 'var(--color-text-muted)';
     html += '<button class="btn--mini hand-mark-btn" data-hand-mark="' + r.id + '" style="color:' + markColor + '">' + markIcon + ' 标记</button>';
     html += '</div>';
     td.innerHTML = html;
@@ -2270,16 +2334,26 @@ export const Review = {
       if (markBtn) {
         markBtn.setAttribute('data-hand-mark', r.id);
         markBtn.textContent = r.marked ? '★' : '☆';
-        markBtn.style.color = r.marked ? '#d4a853' : '#a8afba';
+        markBtn.style.color = r.marked ? 'var(--color-warning)' : 'var(--color-text-muted)';
       }
       frag.appendChild(row);
     });
+    // [V7.12.0 新增] Marks are session pointers; only saved or imported hands populate this list.
+    if (!pageReviews.length) {
+      const emptyRow = document.createElement('tr');
+      const emptyCell = document.createElement('td');
+      emptyCell.colSpan = 7;
+      emptyCell.className = 'table-empty-state';
+      emptyCell.textContent = this.getHandReviews().length ? '没有符合当前筛选的手牌，请调整筛选条件。' : '暂无手牌。可保存手工复盘或导入 GG 手牌；快记可在收尾时匹配。';
+      emptyRow.appendChild(emptyCell);
+      frag.appendChild(emptyRow);
+    }
     body.replaceChildren(frag);
     self._renderHandPagination(allReviews.length, pageNum, totalPages);
     var batchBar = document.getElementById('handBatchBar');
     var sessSel = document.getElementById('handBatchSessionSelect');
     if (sessSel) {
-      sessSel.innerHTML = '<option value="">-- 关联到 Session --</option>';
+      sessSel.innerHTML = '<option value="">-- 关联到场次 --</option>';
       sessions.forEach(function (s) { sessSel.innerHTML += '<option value="' + s.id + '">' + Utils.escapeHtml(s.date) + ' ' + Utils.escapeHtml(s.level) + '</option>'; });
     }
     Review._selectedHandIds.clear(); batchBar.style.display = 'none'; document.getElementById('handBatchCount').textContent = '已选 0 手';
@@ -2317,7 +2391,8 @@ export const Review = {
     let tp = 0, th = 0, tt = 0;
     sessions.forEach((x) => { tp += x.profit; th += x.hands; tt += x.tilt; });
     const mm = new Map();
-    sessions.forEach((x) => { if (x.mistake !== '无') x.mistake.split(', ').forEach((m) => { const t = m.trim(); if (t) mm.set(t, (mm.get(t) || 0) + 1); }); });
+    // [V7.16.0 修改] Missing labels remain unclassified in weekly summaries.
+    sessions.forEach((x) => { if (x.mistake && x.mistake !== '无') x.mistake.split(', ').forEach((m) => { const t = m.trim(); if (t) mm.set(t, (mm.get(t) || 0) + 1); }); });
     hrs.forEach((x) => { if (x.mistake) x.mistake.split(', ').forEach((m) => { const t = m.trim(); if (t) mm.set(t, (mm.get(t) || 0) + 1); }); });
     const topMistakes = [...mm.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map((e) => e[0] + '(' + e[1] + '次)').join(', ') || '无';
     const lwEnd = new Date(m); lwEnd.setDate(lwEnd.getDate() - 1); lwEnd.setHours(23, 59, 59, 999);
@@ -2325,7 +2400,7 @@ export const Review = {
     const lwSessions = this.getSessions().filter((x) => { const d = new Date(x.date); return d >= lwStart && d <= lwEnd; });
     const lwHands = this.getHandReviews().filter((x) => { const d = new Date(x.date); return d >= lwStart && d <= lwEnd; });
     const lwMm = new Map();
-    lwSessions.forEach((x) => { if (x.mistake !== '无') x.mistake.split(', ').forEach((m) => { const t = m.trim(); if (t) lwMm.set(t, (lwMm.get(t) || 0) + 1); }); });
+    lwSessions.forEach((x) => { if (x.mistake && x.mistake !== '无') x.mistake.split(', ').forEach((m) => { const t = m.trim(); if (t) lwMm.set(t, (lwMm.get(t) || 0) + 1); }); });
     lwHands.forEach((x) => { if (x.mistake) x.mistake.split(', ').forEach((m) => { const t = m.trim(); if (t) lwMm.set(t, (lwMm.get(t) || 0) + 1); }); });
     let trendHtml = '';
     if (lwSessions.length > 0 && mm.size > 0) {
@@ -2403,27 +2478,9 @@ export const Review = {
     reviews.forEach((r) => { rows.push('<tr><td>' + Utils.escapeHtml(r.week) + '</td><td>' + Utils.escapeHtml(r.weakness || '--') + '</td><td>' + Utils.escapeHtml(r.plan || '--') + '</td><td><button class="btn--mini" data-week-edit="' + r.week + '">✎</button> <button class="btn--mini btn--danger" data-week-delete="' + r.week + '">✕</button></td></tr>'); });
     document.getElementById('weeklyBody').innerHTML = rows.join('');
   },
-  exportData() {
-    const data = Store.exportAll(); const json = JSON.stringify(data);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob); const a = document.createElement('a');
-    a.href = url; a.download = 'poker_backup_' + Utils.getLocalDate() + '.json';
-    a.click(); URL.revokeObjectURL(url);
-  },
-  importData(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const imp = JSON.parse(reader.result);
-        if (imp.sessions !== undefined) {
-          if (confirm('将合并导入数据（不覆盖已有记录），确定继续？')) { Store.importAll(imp); alert('导入成功！页面将刷新。'); location.reload(); }
-        } else Utils.showToast('文件格式不正确');
-      } catch (ex) { Utils.showToast('解析失败'); }
-    };
-    reader.readAsText(file);
-  },
+  // [V7.16.0 修改] File and clipboard restore share one preview and verification path.
+  exportData() { DataSync.download(); },
+  importData(e) { DataSync.importFile(e.target.files[0]); e.target.value = ''; },
   // [V7.4.6] Discover — 自动模式发现渲染
   renderDiscover(options) {
     var findings = Discover.scan();

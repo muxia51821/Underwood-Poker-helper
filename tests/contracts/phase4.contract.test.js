@@ -107,13 +107,13 @@ test('strategy library keeps source links safe and scopes uncertain textbook rea
   assert.equal(safeSourceUrl('https://example.com/'), 'https://example.com/');
   StrategyLibrary.select('preflop');
   let html = document.getElementById('strategyTopicBody').innerHTML;
-  assert.ok(html.includes('三个例子分别读'));
+  assert.ok(html.includes('p168–170 是 BTN 开局 100/200bb 比较'));
   assert.ok(!html.includes('premium 手 preflop 价值上升'));
   assert.ok(html.includes('阅读器页 168-170'));
   StrategyLibrary.select('turn');
   html = document.getElementById('strategyTopicBody').innerHTML;
   assert.ok(html.includes('不等于没有强牌或陷阱'));
-  assert.ok(html.includes('未经验证'));
+  assert.ok(html.includes('待核实'));
   assert.ok(!html.includes('他的 range 不含强 trap'));
   assert.ok(!html.includes('data-strategy-edit'));
 });
@@ -349,7 +349,8 @@ test('retest evaluation compares baseline snapshot against current signal', () =
   assert.equal(same.due, false);
   const stale = DecisionRadar.evaluateRetest({ freq: 80, sample: 10 }, null);
   assert.equal(stale.due, true);
-  assert.ok(stale.reasons.join('').includes('旧基线'));
+  assert.ok(stale.reasons.join('').includes('观察口径已更新'));
+  assert.ok(stale.reasons.join('').includes('重新建档复测'));
   assert.ok(!stale.reasons.join('').includes('已改善'));
 });
 
@@ -1027,7 +1028,7 @@ test('v7.11.0 poker logic renders a framed card only for matched hands', async (
   assert.ok(html.includes('牌理参考'));
   assert.ok(html.includes('BTN 河牌下注'));
   assert.ok(html.includes('空白河牌'));
-  assert.ok(html.includes('边界'));
+  assert.ok(html.includes('适用边界'));
   // v3：应用要点 + 概念卡（标题/机制/误解/对比例/自测折叠/出处行）
   assert.ok(html.includes('Equity Buckets'), 'streets step renders concept card');
   assert.ok(html.includes('常见误解'), 'concept misconception renders');

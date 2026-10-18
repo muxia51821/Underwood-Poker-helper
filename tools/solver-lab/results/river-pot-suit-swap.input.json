@@ -1,0 +1,1 @@
+{"id": "river-pot-suit-swap", "board": ["Kc", "7h", "2s", "8d", "3h"], "ranges": ["KK,A4s,A5s", "TT,JJ"], "potBb": 10, "stackBb": 20, "betBb": 10, "rake": 0, "icm": false}

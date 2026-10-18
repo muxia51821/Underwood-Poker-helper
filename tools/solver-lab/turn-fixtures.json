@@ -1,0 +1,10 @@
+{
+  "schema": "solver-lab-fixtures-v1",
+  "limits": {"iterations":100000,"seconds":300},
+  "tolerances": {"nashConvPotFraction":0.0001,"evBb":0.001,"mixFraction":0.005},
+  "cases": [
+    {"id":"turn-checkdown-half-pot","board":["Ks","7d","2c","8h"],"ranges":["KK,A4s,A5s","TT,JJ"],"potBb":10,"stackBb":20,"betBb":5,"rake":0,"icm":false,"continuation":"river-checkdown"}
+  ],
+  "tree": {"root":["check","bet:5"],"root/check":["check"],"root/bet:5":["fold","call"],"river":["check","check","showdown"]},
+  "evConvention":"bb; solve-start-zero-sum-half-pot; exact uniform river per compatible private pair; average-strategy continuation"
+}

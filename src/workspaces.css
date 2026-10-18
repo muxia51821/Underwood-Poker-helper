@@ -1,0 +1,160 @@
+/* [V7.13.0 新增] The same theme tokens carry from play to analysis and study. */
+.workspace{max-width:1600px;margin:0 auto;color:var(--color-text);font-size:var(--text-md);line-height:1.6;min-width:0}
+.workspace *{box-sizing:border-box;min-width:0}.workspace button,.workspace input,.workspace select{font:inherit}
+.ws-header{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:12px 0 26px;border-bottom:1px solid var(--color-border);margin-bottom:24px}
+.ws-eyebrow{font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--color-accent);margin:0 0 8px}
+.ws-header h2{font-size:clamp(24px,2.4vw,36px);line-height:1.3;letter-spacing:-.04em;margin:0 0 10px;font-weight:650}.ws-header p:last-child{color:var(--color-text-muted);margin:0}
+.workspace :is(button:not(.ws-button),input,select,summary,a):focus-visible{outline:2px solid var(--color-accent);outline-offset:3px}
+.ws-filters{display:flex;flex-wrap:wrap;align-items:end;gap:12px;padding:18px;background:var(--color-surface-1);border:1px solid var(--color-border);border-radius:var(--radius-md)}
+.ws-filters label{flex:1 1 140px;font-size:12px;color:var(--color-text-muted);display:flex;flex-direction:column;gap:6px}.ws-filters .ws-search{flex-basis:200px}
+.ws-filters :is(input,select){width:100%;height:44px;padding:8px 10px}
+.ws-summary{display:flex;align-items:baseline;gap:22px;flex-wrap:wrap;padding:18px 0;color:var(--color-text-muted);font-size:13px}.ws-summary strong{font-size:22px;color:var(--color-text);font-variant-numeric:tabular-nums}.ws-summary small{flex-basis:100%;font-size:12px;margin-top:-12px}
+.ws-analyze-grid{display:grid;grid-template-columns:minmax(260px,.85fr) minmax(0,2fr);gap:24px;align-items:start}.ws-queue{border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-surface-1);overflow:hidden}
+#analyzeQueue{max-height:calc(100vh - 100px);overflow:auto;scrollbar-gutter:stable}.ws-queue-item{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--color-border);border-left:3px solid transparent;background:transparent;color:var(--color-text);padding:16px;cursor:pointer}
+.ws-queue-item:hover{background:var(--color-hover)}.ws-queue-item[aria-pressed=true]{border-left-color:var(--color-accent);background:var(--color-surface-2)}
+.ws-queue-top,.ws-queue-bottom{display:flex;justify-content:space-between;gap:8px;align-items:center}.ws-queue-top strong{overflow-wrap:anywhere;font-size:13px}.ws-queue-top>span,.ws-queue-meta,.ws-queue-bottom{font-size:12px;color:var(--color-text-muted)}.ws-queue-meta{display:block;margin:3px 0 9px}.ws-queue-cards{display:flex;gap:4px;align-items:center;flex-wrap:wrap;margin-bottom:9px}.ws-tag{display:inline-block;color:var(--color-warning);font-size:12px;margin-top:8px}.ws-load-more{margin:12px;width:calc(100% - 24px)}
+.ws-analysis-detail{padding:22px;background:var(--color-surface-1);border:1px solid var(--color-border);border-radius:var(--radius-md);overflow:hidden}.ws-detail-heading{display:flex;justify-content:space-between;align-items:center;gap:16px}.ws-detail-heading h3{font-size:19px;overflow-wrap:anywhere}.ws-adjacent{display:flex;gap:6px;flex-shrink:0}.ws-detail-actions{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.ws-analysis-detail .hand-replay{margin:0}.ws-notes dd{margin:2px 0 12px;white-space:pre-wrap;overflow-wrap:anywhere}.ws-notes dt{font-size:12px;color:var(--color-text-muted)}.workspace pre{white-space:pre-wrap;overflow-wrap:anywhere;font:13px/1.8 var(--font-mono)}
+.ws-empty{padding:30px 20px;text-align:center;color:var(--color-text-muted)}.ws-empty h3{color:var(--color-text);font-size:18px;margin-bottom:10px}.ws-empty p{margin-bottom:14px}.ws-muted,.ws-source{color:var(--color-text-muted);font-size:13px}.ws-source{font-size:12px;margin-top:14px}
+.ws-context{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;padding:12px 16px;background:var(--color-surface-2);border-left:3px solid var(--color-accent);margin-bottom:20px}.ws-context>span{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px;overflow-wrap:anywhere}.ws-context>div{display:flex;gap:8px}
+.ws-tabs{display:flex;gap:24px;border-bottom:1px solid var(--color-border);margin-bottom:24px}.ws-tabs button{min-height:46px;border:0;border-bottom:2px solid transparent;background:none;color:var(--color-text-muted);padding:10px 2px;cursor:pointer}.ws-tabs button[aria-pressed=true]{color:var(--color-accent);border-bottom-color:var(--color-accent);font-weight:650}
+.ws-study-layout{display:grid;grid-template-columns:200px minmax(0,1fr) 240px;gap:28px;align-items:start}.ws-topic-nav{display:flex;flex-direction:column;gap:4px}.ws-topic-nav button{min-height:48px;padding:10px 12px;text-align:left;border:0;border-left:2px solid transparent;background:transparent;color:var(--color-text-muted);cursor:pointer;font-size:14px}.ws-topic-nav button:hover{background:var(--color-hover)}.ws-topic-nav button[aria-pressed=true]{border-left-color:var(--color-accent);background:var(--color-surface-2);color:var(--color-text)}
+.ws-reading{max-width:800px}.ws-reading h3{font-size:25px;line-height:1.4;margin-bottom:16px}.ws-lead{font-size:17px;margin-bottom:18px}.ws-boundary{font-size:13px;line-height:1.7;color:var(--color-text-muted);padding:12px 14px;border-left:2px solid var(--color-warning);background:var(--color-surface-2);margin:16px 0 24px}.ws-reading h4{margin:28px 0 12px;font-size:16px}.ws-concept{border-top:1px solid var(--color-border);padding:12px 0;overflow-wrap:anywhere}.ws-concept summary{font-weight:600;cursor:pointer;min-height:44px;align-content:center}.ws-concept p{margin:12px 0;line-height:1.85}.ws-concept a{color:var(--color-accent)}
+.ws-reading-next{padding:20px 0;display:flex;align-items:center;gap:16px;justify-content:space-between}.ws-reading-next h4{margin:0 0 6px}.ws-reading-next p{font-size:13px;color:var(--color-text-muted)}.ws-reading-next button{flex-shrink:0}
+.ws-related{border-left:1px solid var(--color-border);padding-left:20px}.ws-related h3{font-size:15px;margin-bottom:8px}.ws-hand-link{width:100%;display:block;text-align:left;background:none;border:0;border-bottom:1px solid var(--color-border);padding:16px 0;color:var(--color-text);cursor:pointer}.ws-hand-link strong,.ws-hand-link>span{display:block;font-size:12px;overflow-wrap:anywhere;margin-bottom:6px}.ws-hand-link:hover{background:var(--color-hover)}
+.ws-report-intro h3{font-size:21px}.ws-report-intro>p{color:var(--color-text-muted);font-size:14px}.ws-report-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(300px,1fr);gap:24px;margin-top:24px;align-items:start}.ws-board-browser{border:1px solid var(--color-border);border-radius:var(--radius-md);overflow:hidden;background:var(--color-surface-1)}.ws-section-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid var(--color-border)}.ws-section-heading h4{font-size:14px}.ws-section-heading>span{font-size:12px;color:var(--color-text-muted)}.ws-section-heading h4>span{font-weight:400;color:var(--color-text-muted)}
+.ws-board-scroll{max-height:610px;overflow:auto;scrollbar-gutter:stable}.ws-board-row{display:grid;grid-template-columns:100px minmax(72px,1fr) 70px 80px;align-items:center;gap:8px;width:100%;min-height:52px;text-align:left;padding:10px 14px;background:transparent;border:0;border-bottom:1px solid var(--color-border);border-left:3px solid transparent;color:var(--color-text);cursor:pointer}.ws-board-row .card-badges{white-space:nowrap}.ws-board-row>span{font-size:12px;color:var(--color-text-muted)}.ws-board-row:hover{background:var(--color-hover)}.ws-board-row[aria-pressed=true]{background:var(--color-surface-2);border-left-color:var(--color-accent)}
+.ws-mini-bar{height:5px;background:var(--color-surface-3);display:block;border-radius:3px;overflow:hidden}.ws-mini-bar i{display:block;height:100%;background:var(--color-accent)}.ws-board-detail{padding:24px;background:var(--color-surface-1);border:1px solid var(--color-border);border-radius:var(--radius-md)}.ws-board-detail>h3{font-size:27px;margin:8px 0 14px}.ws-board-detail>p{font-size:13px;color:var(--color-text-muted)}.ws-toggle{display:flex;align-items:center;gap:8px;min-height:44px;margin:14px 0;font-size:13px}.ws-toggle input{accent-color:var(--color-accent);width:18px;height:18px}
+.ws-frequency{display:flex;height:28px;border-radius:4px;overflow:hidden;margin:20px 0;gap:2px;background:var(--color-surface-3)}.ws-frequency>span{flex-basis:0;min-width:0}.ws-frequency__large{background:#b96557}.ws-frequency__medium{background:#c69455}.ws-frequency__small{background:#648f87}.ws-frequency__check{background:#7586a2}.ws-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:22px}.ws-actions dt{font-size:12px;color:var(--color-text-muted);display:flex;gap:8px;align-items:center}.ws-actions dd{font-size:25px;font-variant-numeric:tabular-nums;margin:4px 0 0}.ws-actions small{font-size:13px;color:var(--color-text-muted);margin-left:3px}.ws-dot{display:inline-block;width:8px;height:8px;border-radius:2px}.ws-comparison{border-top:1px solid var(--color-border);margin-top:24px;padding-top:16px}.ws-comparison .ws-section-heading{padding:0 0 12px;flex-wrap:wrap}
+.ws-board-cards{display:flex;gap:3px;white-space:nowrap}.workspace :is(.ws-board-cards,.ws-queue-cards) .card-badge{font-size:14px;min-width:24px;line-height:24px;margin:0;text-align:center}.ws-board-cards .card-badge{flex-shrink:0}
+.ws-hand-link>.card-badge{display:inline-block;font-size:14px;line-height:24px;min-width:24px;margin:4px 2px 0;text-align:center}
+.ws-analysis-detail .replay-step{min-height:44px}
+/* [V7.13.0 修改] The expanded mobile navigation needs clearance below the final actions. */
+@media(max-width:767px){body{padding-bottom:calc(124px + max(8px,env(safe-area-inset-bottom)))}.toast{bottom:calc(120px + max(8px,env(safe-area-inset-bottom)))}}
+@media(min-width:768px){.main[data-active-tab=analyze],.main[data-active-tab=study]{display:block}}
+@media(max-width:1200px){.ws-study-layout{grid-template-columns:170px minmax(0,1fr)}.ws-related{grid-column:2;border-left:0;border-top:1px solid var(--color-border);padding:20px 0}.ws-report-grid{grid-template-columns:1fr}.ws-board-scroll{max-height:350px}}
+@media(max-width:900px){.ws-analyze-grid{grid-template-columns:1fr}.ws-queue #analyzeQueue{max-height:340px}.ws-study-layout{grid-template-columns:1fr}.ws-topic-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.ws-topic-nav button{font-size:13px}.ws-related{grid-column:1}.ws-analysis-detail{padding:16px}.ws-reading{max-width:none}.ws-detail-heading{flex-wrap:wrap}.ws-reading-next{flex-wrap:wrap}}
+@media(max-width:767px){.nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}.nav__btn{min-width:0;padding:10px 3px;font-size:12px}.nav .quick-capture-trigger{grid-column:1/-1}.ws-header{padding:8px 0 20px;align-items:start;flex-direction:column;gap:16px}.ws-header h2{font-size:26px}.ws-filters{padding:12px;gap:10px}.ws-filters label{flex-basis:calc(50% - 10px)}.ws-filters .ws-search{flex-basis:100%}.ws-summary{gap:12px}.ws-summary small{margin-top:0}.ws-context{padding:12px}.ws-board-detail{padding:16px}.ws-board-row{grid-template-columns:100px minmax(58px,1fr) 78px;padding:10px 8px;gap:5px}.ws-board-row .ws-mini-bar{display:none}.ws-report-grid{gap:16px}.ws-lead{font-size:16px}}
+@media(prefers-reduced-motion:reduce){.workspace *{scroll-behavior:auto!important;transition:none!important}}
+
+/* [V7.14.0 新增] Three question types share a calm manual submission flow, not a common GTO score. */
+.practice-toolbar,.practice-start{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.practice-start{margin:22px 0}
+.practice-home{display:grid;grid-template-columns:minmax(0,2fr) minmax(230px,1fr);gap:32px;align-items:start}
+.practice-setup,.practice-round{padding:24px;background:var(--color-surface-1);border:1px solid var(--color-border);border-radius:var(--radius-md)}
+.practice-setup>h3,.practice-library>h3{margin-bottom:18px}.practice-library>h3:not(:first-child){margin-top:30px}
+.practice-field{display:flex;flex-direction:column;gap:8px;margin:20px 0;color:var(--color-text-muted);font-size:14px}
+.practice-field :is(input,textarea),.practice-personal-setup select,.practice-frequency-input input{width:100%;padding:10px 12px;min-height:44px;border:1px solid var(--color-border);background:var(--color-surface-2);color:var(--color-text);border-radius:var(--radius-sm);font:inherit}
+.practice-field textarea{min-height:100px;resize:vertical}.practice-personal-setup{margin:18px 0}.practice-personal-setup>label{display:block;margin-bottom:12px}.practice-preset-save{border-top:1px solid var(--color-border);padding-top:8px}
+.practice-round{max-width:960px;margin:0 auto}.practice-round>.ws-lead{margin:20px 0}.practice-round .ws-section-heading{padding:0 0 18px;flex-wrap:wrap}.practice-round .ws-section-heading h3{font-size:18px}
+.practice-context{padding:16px;background:var(--color-surface-2);border-left:3px solid var(--color-accent);margin-bottom:22px;line-height:1.9}.practice-context .card-badge{font-size:16px}.practice-prefix{font-size:13px}
+.practice-choices{border:0;margin:20px 0;display:grid;gap:10px}.practice-choices legend{margin-bottom:12px;color:var(--color-text-muted);font-size:13px}.practice-choices label{display:flex;gap:12px;align-items:center;min-height:48px;padding:12px 16px;background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius-sm);cursor:pointer}.practice-choices label:has(input:checked){border-color:var(--color-accent);background:var(--color-accent-soft)}.practice-choices input{accent-color:var(--color-accent);width:18px;height:18px;flex-shrink:0}
+.practice-frequency-input{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:22px 0}.practice-frequency-input label{font-size:13px;color:var(--color-text-muted)}.practice-frequency-input input{margin-top:8px}
+.practice-feedback{padding:20px;background:var(--color-surface-2);border:1px solid var(--color-border);margin:22px 0;border-radius:var(--radius-sm)}.practice-feedback p{margin:12px 0;white-space:pre-wrap;overflow-wrap:anywhere}.practice-feedback h4{font-size:18px}.practice-reference{display:grid;gap:10px}.practice-reference>div{display:flex;flex-direction:column;padding:12px;border-bottom:1px solid var(--color-border)}.practice-reference span{font-size:14px;color:var(--color-text-muted)}.practice-result{color:var(--color-accent)}
+@media(max-width:900px){.practice-home{grid-template-columns:1fr}.practice-setup,.practice-round{padding:16px}}
+@media(max-width:767px){.nav{grid-template-columns:repeat(6,minmax(0,1fr))}.practice-toolbar{gap:6px}.practice-toolbar .ws-button{font-size:12px;padding:8px}.practice-context{padding:12px}.practice-feedback{padding:14px}}
+
+/* [V7.15.0 新增] One workspace with a persistent decision and an adjacent review editor. */
+.decision-workbench[hidden]{display:none!important}.decision-workbench .ws-header{margin-bottom:16px}.decision-workbench h2{font-size:clamp(22px,2vw,30px)}
+.decision-context{display:flex;justify-content:space-between;gap:20px;align-items:start;padding:18px 22px;background:var(--color-surface-1);border:1px solid var(--color-border);border-left:3px solid var(--color-accent);border-radius:var(--radius-sm);margin-bottom:24px}.decision-context p{margin:6px 0;font-size:13px;color:var(--color-text-muted);overflow-wrap:anywhere}.decision-context strong{font-size:15px;overflow-wrap:anywhere}
+#decisionEditor{margin:24px 0;padding:20px;background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius-md)}#decisionEditor .practice-field{margin:16px 0}#decisionEditor textarea{min-height:82px}#decisionEditor select{min-height:44px;padding:10px;color:var(--color-text);background:var(--color-surface-1);border:1px solid var(--color-border);border-radius:var(--radius-sm)}
+#analyzeReplay button.replay-chip{cursor:pointer;min-height:44px;white-space:normal;color:var(--color-text);font:inherit;border:1px solid var(--color-border)}#analyzeReplay button.replay-chip[aria-pressed=true]{border-color:var(--color-accent);background:var(--color-accent-soft)}
+@media(max-width:767px){.nav{grid-template-columns:repeat(4,minmax(0,1fr))}.decision-context{flex-direction:column;padding:14px}.decision-workbench .ws-tabs{display:flex;gap:4px;width:100%}.decision-workbench .ws-tabs button{flex:1;padding:10px 6px;font-size:13px}#decisionEditor{padding:14px}}
+.decision-detail-layout{min-width:0}.replay-overview{margin-top:16px;border-top:1px solid var(--color-border);padding-top:12px}.replay-overview>summary{cursor:pointer;min-height:44px;font-size:13px;color:var(--color-text-muted)}
+.decision-context>.workbench-source-body{display:block;flex:1;min-width:0;align-self:stretch}
+.workbench-source-details{margin-top:8px}
+.workbench-source-details>summary{cursor:pointer;min-height:36px;align-content:center;color:var(--color-text-muted);font-size:13px}
+.workbench-source-details p,[data-workbench-question]{white-space:pre-wrap}
+.ws-study-context-actions{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 20px}
+.workspace>.ws-tabs{overflow-x:auto;gap:20px;scrollbar-width:thin;overscroll-behavior-x:contain}
+.workspace>.ws-tabs>button{flex:0 0 auto;white-space:nowrap}
+#decisionWorkbench~.panel .workspace>.ws-header h2{font-size:22px}#decisionWorkbench~.panel .workspace>.ws-header .ws-eyebrow{display:none}#decisionWorkbench~.panel .workspace>.ws-header p:last-child{font-size:13px}
+@media(min-width:1400px){.ws-analyze-grid{grid-template-columns:minmax(220px,.65fr) minmax(0,2.5fr)}.decision-detail-layout{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:20px;align-items:start}#decisionEditor{margin:0;padding:16px}#decisionEditor .ws-section-heading{flex-wrap:wrap;gap:10px}#decisionEditor h3{font-size:17px}.decision-detail-layout .replay-steps{flex-wrap:wrap}}
+/* [V7.16.0 新增] The same restore dialog is available from every workspace. */
+.backup-dialog { margin: auto; width: min(680px, calc(100vw - 28px)); max-height: 85dvh; overflow: auto; box-sizing: border-box; border: 1px solid var(--color-border); border-radius: 16px; background: var(--color-surface-1); color: var(--color-text); padding: 24px; }
+.backup-dialog::backdrop { background: rgb(0 0 0 / 65%); }
+.backup-dialog h2 { margin: 0 0 12px; }
+.backup-dialog p { line-height: 1.6; }
+.backup-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0; }
+.backup-table { max-height: 34dvh; overflow: auto; }
+.backup-table table { width: 100%; border-collapse: collapse; }
+.backup-table th, .backup-table td { padding: 8px; text-align: left; border-bottom: 1px solid var(--color-border); }
+.backup-conflicts, .backup-checkpoint, .backup-issues { padding: 12px 0; border-top: 1px solid var(--color-border); }
+.backup-conflicts label, .backup-issues label { display: flex; align-items: flex-start; gap: 8px; padding: 10px 0; overflow-wrap: anywhere; }
+.backup-notice { position: fixed; bottom: 16px; right: 16px; z-index: 50; max-width: calc(100vw - 32px); padding: 10px 16px; border-radius: 10px; background: #503f16; color: #fff0bb; }
+.backup-notice[hidden] { display: none; }
+#subSession.is-visible { grid-template-areas: "closeout closeout" "master detail"; }
+.closeout-inbox { grid-area: closeout; grid-column: 1 / -1; }
+.closeout-inbox h2 { font-size: 1.15rem; }
+.closeout-inbox p { color: var(--color-text-muted); margin: 8px 0; }
+.closeout-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 14px 0; }
+.closeout-item { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; width: 100%; text-align: left; padding: 14px; margin-top: 8px; border: 1px solid var(--color-border); border-radius: 8px; color: var(--color-text); background: var(--color-surface-2); cursor: pointer; }
+.closeout-item:hover { border-color: var(--color-accent); }
+.closeout-note { display: block; margin: 12px 0; color: var(--color-text-muted); }
+.closeout-note textarea { display: block; width: 100%; margin-top: 6px; padding: 10px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface-1); color: var(--color-text); font: inherit; }
+@media (max-width: 600px) { .backup-dialog { padding: 16px; } .backup-actions > .btn { min-height: 44px; } }
+@container (max-width: 720px) { #subSession.is-visible { grid-template-areas: "closeout" "master" "detail"; } }
+
+/* [V7.17.0 新增] A compact 13 × 13 chart with an adjacent numeric editor. */
+.range-workspace { min-width:0; }
+.range-toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin:12px 0; }
+.range-toolbar h3 { margin-right:auto; }
+.range-workspace label { display:grid; gap:5px; font-size:13px; }
+.range-workspace input,.range-workspace select,.range-workspace textarea { max-width:100%; min-width:0; box-sizing:border-box; padding:9px; border:1px solid var(--border,#454545); border-radius:6px; background:var(--bg,#151a20); color:inherit; }
+.range-workspace input[type=file] { width:180px; font-size:11px; }
+.range-layout { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(230px,1fr); gap:24px; margin-top:20px; }
+.range-grid { display:grid; grid-template-columns:repeat(13,minmax(0,1fr)); gap:3px; }
+.range-cell { min-width:0; aspect-ratio:1.12; border:1px solid transparent; border-radius:3px; color:#fff; background:#242c35; font-size:clamp(10px,1.1vw,14px); font-weight:600; padding:0; cursor:pointer; }
+.range-cell--unknown { border:1px dashed #687480; color:#abb7c2; }
+.range-cell[aria-pressed=true] { outline:3px solid #ffe4a6; outline-offset:-3px; }
+.range-cell:focus-visible { outline:3px solid white; outline-offset:0; z-index:1; }
+.range-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin:12px 0; }
+.range-legend { display:flex; flex-wrap:wrap; gap:10px; font-size:12px; }
+.range-legend i { display:inline-block; width:10px; height:10px; margin-right:4px; }
+.range-license { white-space:pre-wrap; overflow-wrap:anywhere; font-size:12px; }
+.range-workspace [data-range-status] { min-height:22px; overflow-wrap:anywhere; }
+.range-workspace aside .ws-button { margin:4px; }
+.range-workspace textarea { width:100%; min-height:90px; }
+@media(max-width:720px) { .range-layout { grid-template-columns:minmax(0,1fr); gap:12px; } .range-grid { gap:2px; } .range-cell { font-size:10px; min-height:24px; } .range-toolbar label { max-width:100%; } }
+
+/* [V7.18.0 新增] The model's limits remain adjacent to its tree and combo details. */
+/* [V7.19.0 新增] Keep optional decision conditions compact on narrow screens. */
+.postflop-amounts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.postflop-amounts input { width:100%; min-width:0; box-sizing:border-box; padding:10px; color:var(--color-text); background:var(--color-surface-2); border:1px solid var(--color-border); border-radius:6px; }
+.postflop-resume-list { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr)); gap:8px; }
+.postflop-resume-list button { display:grid; gap:6px; overflow-wrap:anywhere; }
+.postflop-resume-list span { font-size:12px; color:var(--color-text-muted); }
+.postflop-prior-plan { padding:12px; margin:16px 0; border:1px solid var(--color-border); border-radius:8px; overflow-wrap:anywhere; }
+.solution-workspace { min-width:0; }
+.solution-workspace select { max-width:100%; padding:8px; color:inherit; background:var(--color-surface-2); border:1px solid var(--color-border); border-radius:6px; }
+.solution-conditions { padding:12px 16px; border:1px solid var(--color-border); border-radius:8px; margin:16px 0; line-height:1.7; }
+.solution-path { display:flex; flex-wrap:wrap; gap:8px; margin:16px 0; }
+.solution-path [aria-pressed=true], .solution-detail [aria-pressed=true] { border-color:var(--color-accent); background:var(--color-surface-3); }
+.solution-layout { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(240px,1fr); gap:24px; margin:20px 0; }
+.solution-layout > * { min-width:0; }
+.solution-matrix { display:grid; grid-template-columns:repeat(13,minmax(0,1fr)); gap:3px; }
+.solution-matrix button { min-width:0; aspect-ratio:1.12; padding:0; color:var(--color-text); border:1px solid #4b8c78; background:#234b3f; border-radius:3px; font-size:clamp(10px,1vw,14px); cursor:pointer; }
+.solution-matrix button:disabled { color:#8d99a6; border-color:#39424a; background:#20272e; cursor:default; }
+.solution-matrix button[aria-pressed=true] { outline:3px solid #ffe4a6; outline-offset:-3px; }
+.solution-matrix button:focus-visible { outline:3px solid white; z-index:1; }
+.solution-values { width:100%; border-collapse:collapse; margin:12px 0; font-size:14px; }
+.solution-values th,.solution-values td { padding:8px 5px; text-align:left; border-bottom:1px solid var(--color-border); }
+.solution-evidence { padding:12px 0; line-height:1.7; }
+.solution-evidence summary { cursor:pointer; }
+.solution-hash { overflow-wrap:anywhere; }
+/* [V7.18.1 新增] Keep public runout probability and blocked combinations readable. */
+.solution-chance { margin:20px 0; padding:16px; border:1px solid var(--color-border); border-radius:8px; line-height:1.7; }
+.solution-chance label { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+.solution-river-combos span { display:inline-block; margin:3px 3px 3px 0; padding:1px 5px; border-radius:4px; background:var(--color-surface-2); }
+.solution-comparison { margin:20px 0; padding:16px; border:1px solid var(--color-border); border-radius:8px; line-height:1.6; }
+.solution-comparison label { display:grid; gap:6px; }
+.solution-compare-boards { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr)); gap:12px; margin:14px 0; }
+.solution-comparison table { font-size:13px; }
+.solution-comparison caption { text-align:left; font-weight:600; }
+.solution-review-queue { overflow-wrap:anywhere; }
+.solution-review-queue .practice-toolbar { margin-top:10px; }
+@media(max-width:720px) { .solution-layout { grid-template-columns:minmax(0,1fr); gap:12px; } .solution-matrix { gap:2px; } .solution-matrix button { min-height:24px; font-size:10px; } .solution-workspace .ws-section-heading { flex-wrap:wrap; } }
+
+/* A bounded learning line: make the current decision and its written plan prominent. */
+.postflop-course{max-width:1200px;margin:0 auto}.postflop-course h3{font-size:clamp(21px,3vw,30px);margin:0 0 10px}.course-badge{display:inline-block;padding:5px 10px;border:1px solid var(--color-border);border-radius:var(--radius-sm);font-size:12px;color:var(--color-text-muted)}.course-layout{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:28px;align-items:start;margin-top:24px}.course-sidebar{display:grid;gap:16px}.course-sidebar .ws-concept{margin:0}.course-context{color:var(--color-text-muted);font-size:13px}.course-intro,.course-table{padding:24px;background:var(--color-surface-1);border:1px solid var(--color-border);border-radius:var(--radius-md)}.course-board{display:flex;gap:6px;flex-wrap:wrap;margin:20px 0}.course-hand-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:18px 0}.course-hand{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:16px;background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius-sm);color:var(--color-text);text-align:left;cursor:pointer}.course-hand:hover{border-color:var(--color-accent)}.course-hand>span:not(.card-badge){font-weight:600}.course-hand small{flex-basis:100%;color:var(--color-text-muted)}.course-stepper{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px}.course-stepper span{padding:5px 9px;border-bottom:2px solid var(--color-border);color:var(--color-text-muted);font-size:12px}.course-stepper [aria-current]{color:var(--color-accent);border-color:var(--color-accent);font-weight:650}.course-field{display:grid;gap:8px;margin:20px 0;font-weight:600}.course-field textarea{font:inherit;font-weight:400;line-height:1.6;resize:vertical;width:100%;padding:12px;border-radius:var(--radius-sm);border:1px solid var(--color-border);color:var(--color-text);background:var(--color-surface-2)}.course-choices{border:0;padding:0;display:flex;flex-wrap:wrap;gap:10px;margin:20px 0}.course-choices legend{margin-bottom:10px;font-weight:600}.course-choices label{display:flex;gap:8px;align-items:center;min-height:48px;padding:10px 15px;border:1px solid var(--color-border);border-radius:var(--radius-sm);cursor:pointer}.course-choices label:has(input:checked){border-color:var(--color-accent);background:var(--color-surface-2)}.course-prior{margin:20px 0;padding:16px;border-left:3px solid var(--color-accent);background:var(--color-surface-1)}.course-feedback{margin:20px 0;padding:16px;background:var(--color-surface-1);border:1px solid var(--color-border);border-radius:var(--radius-md)}.course-picked{background:var(--color-surface-2)}.course-answers{overflow-wrap:anywhere}.course-history{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:52px;width:100%;padding:10px 0;text-align:left;background:transparent;border:0;border-bottom:1px solid var(--color-border);color:var(--color-text);cursor:pointer}.course-history>span:last-child{font-size:12px;color:var(--color-text-muted)}.course-trail{padding-left:20px;font-size:13px}.course-ranges,.course-source{margin-top:24px;border-top:1px solid var(--color-border);padding:16px 0}.course-ranges summary,.course-source summary{cursor:pointer;font-weight:600}.course-matrix{display:grid;grid-template-columns:repeat(13,minmax(0,1fr));gap:2px;margin:14px 0}.course-matrix span{padding:5px 0;text-align:center;background:var(--color-surface-2);font-size:11px}.course-source p{overflow-wrap:anywhere;font-size:13px}.postflop-course [role=alert]{color:var(--color-warning)}.postflop-course [data-course-question],.postflop-course [data-course-summary]{padding-top:18px;scroll-margin-top:20px}
+@media(max-width:900px){.course-layout{grid-template-columns:minmax(0,1fr)}.course-sidebar{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){.course-sidebar,.course-hand-list{grid-template-columns:minmax(0,1fr)}.course-intro,.course-table{padding:16px}.course-choices label{flex:1 1 110px}.course-stepper{gap:2px}.course-stepper span{font-size:11px;padding:5px}.course-matrix span{font-size:9px;padding:4px 0}.course-feedback{padding:12px}}
+
+#studyWorkspace:has(.postflop-course)>.ws-header{display:none}

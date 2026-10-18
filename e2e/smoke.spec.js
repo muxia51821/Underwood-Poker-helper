@@ -129,7 +129,7 @@ test('GTO 基线只显示结构性参考，并安全渲染手工来源', async (
   await expect(page.locator('#gtoBaselineList')).toContainText('结构性参考');
   await expect(page.locator('#gtoBaselineList')).not.toContainText('与 Spot 差');
   await expect(page.locator('#gtoBaselineList')).toContainText('来源：');
-  await expect(page.locator('#gtoBaselineList')).toContainText('边界：');
+  await expect(page.locator('#gtoBaselineList')).toContainText('参考范围：');
 
   await page.click('#addGtoBaselineBtn');
   await page.fill('#gtoStackBB', '100');
@@ -210,7 +210,7 @@ test('移动端快速记录复用 Hand 表单并恢复来源上下文', async ({
   await expect(page.locator('[data-tab="timer"]')).toHaveClass(/nav__btn--active/);
   await expect(page.locator('#handDetailPane')).not.toHaveClass(/is-quick-capture/);
   await expect(page.locator('body')).not.toHaveClass(/quick-capture-open/);
-  await expect(page.locator('#toast')).toHaveText('已记录 Mark，收尾时在 Session 中匹配手牌');
+  await expect(page.locator('#toast')).toHaveText('已保存快记；结束本场后可将它匹配到导入的手牌。');
 
   await page.click('[data-tab="review"]');
   await page.click('[data-sub="hand"]');
@@ -346,7 +346,7 @@ test('Session 收尾闭环：Mark 匹配、候选复盘与确认收尾', async (
   await expect(page.locator('#handDetailPane')).toHaveClass(/is-quick-capture/);
   await page.fill('#handDesc', 'closure-e2e-mark');
   await page.click('#saveHandBtn');
-  await expect(page.locator('#toast')).toHaveText('已记录 Mark，收尾时在 Session 中匹配手牌');
+  await expect(page.locator('#toast')).toHaveText('已保存快记；结束本场后可将它匹配到导入的手牌。');
   await expect(page.locator('#closurePendingCount')).toHaveText('1 场待收尾');
 
   // 展开该场收尾工作区
@@ -450,7 +450,7 @@ test('Decision Radar：Spot 信号、建档与重载持久化', async ({ page })
   const editor = page.locator('[data-radar-editor]').first();
   await editor.locator('[data-dossier-field="hypothesis"]').fill('e2e-hypothesis');
   await editor.locator('[data-radar-save]').click();
-  await expect(page.locator('#toast')).toHaveText('Dossier 已保存');
+  await expect(page.locator('#toast')).toHaveText('研究记录已保存');
   await expect(radarCard.locator('.status-inline--success').first()).toBeVisible();
 
   // 重载后 Dossier 持久化
@@ -637,10 +637,10 @@ test('策略生成训练单元并跳转 Quiz（BTNvsBB）', async ({ page }) => 
   await page.click('[data-strategy-unit]');
   await expect(page.locator('#toast')).toHaveText('已生成 Quiz 训练单元');
 
-  // 去 Quiz：Discover 面板场景自动选中 BTNvsBB
+  // [V7.15.0 修改] 策略专项进入统一工作台，保留场景。
   await page.click('[data-unit-quiz]');
-  await expect(page.locator('[data-sub="discover"]')).toHaveClass(/subnav__btn--active/);
-  await expect(page.locator('#quizScenario')).toHaveValue('BTNvsBB');
+  await expect(page.locator('#practicePanel')).toBeVisible();
+  await expect(page.locator('[data-practice-config=scenario]')).toHaveValue('BTNvsBB');
   expect(getRealErrors(errors)).toEqual([]);
 });
 
@@ -888,9 +888,9 @@ test('手牌复盘显示牌理参考卡片', async ({ page }) => {
   await expect(logicBox.locator('> summary')).toContainText('空白');
   await expect(logicBox.locator('> summary')).toContainText('agg→agg');
   await logicBox.locator('> summary').click();
-  await expect(logicBox).toContainText('范围合法性');
-  await expect(logicBox).toContainText('机制参照');
-  await expect(logicBox).toContainText('边界');
+  await expect(logicBox).toContainText('下注要与过牌比较');
+  await expect(logicBox).toContainText('诈唬占比由对方的 pot odds 门槛锁定');
+  await expect(logicBox).toContainText('适用边界：通用；数值随尺寸与 rake 变');
   // [V7.11.13 新增] A real imported hand can open its corresponding knowledge topic.
   await logicBox.locator('[data-strategy-topic="river"]').click();
   await expect(page.locator('#strategyTopicTitle')).toHaveText('河牌价值、诈唬与抓诈');

@@ -1,0 +1,7070 @@
+{
+  "format": "poker-solution-pack",
+  "version": 1,
+  "id": "turn-checkdown-half-pot",
+  "revision": 1,
+  "title": "转牌样例 C · 河牌只摊牌",
+  "modelLabel": "受限模型验证样例",
+  "conditions": {
+    "id": "turn-checkdown-half-pot",
+    "board": [
+      "Ks",
+      "7d",
+      "2c",
+      "8h"
+    ],
+    "ranges": [
+      "KK,A4s,A5s",
+      "TT,JJ"
+    ],
+    "potBb": 10,
+    "stackBb": 20,
+    "betBb": 5,
+    "rake": 0,
+    "icm": false,
+    "continuation": "river-checkdown",
+    "players": 2,
+    "street": "turn",
+    "futureCards": true,
+    "tableMax": null,
+    "originalStackBb": null
+  },
+  "ev": {
+    "unit": "bb",
+    "baseline": "solve-start-zero-sum-half-pot",
+    "continuation": "solved-average-strategy",
+    "approximateEqualityBb": 0.002
+  },
+  "boundary": "只适用于给定双方范围、转牌与受限动作树。转牌过牌或下注 5bb，IP 面对下注只能弃牌或跟注；继续时随机发一张河牌，河牌双方只能过牌摊牌。不能加注或全下；不代表完整 9max／200bb 策略，也不评价来源手牌。",
+  "provenance": {
+    "method": "self-generated; independently enumerated analytic benchmark and dual-engine verification",
+    "primary": {
+      "repository": "https://github.com/ucsandman/postflop",
+      "commit": "5fc7ee3d92b823b6c58e4f58cbee7d50d5e9e6de",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2026 Wes Sander"
+    },
+    "reference": {
+      "repository": "https://github.com/b-inary/postflop-solver",
+      "commit": "9d1509fe5077d019825f833eed04b16d342dfda1",
+      "license": "AGPL-3.0-or-later",
+      "role": "offline cross-check only"
+    },
+    "data": "Synthetic lab fixtures; no personal hand histories or third-party strategy archives"
+  },
+  "rootEvBb": [
+    -0.8450416922569275,
+    0.8450400233268738
+  ],
+  "ranges": [
+    {
+      "player": 0,
+      "combos": [
+        {
+          "cards": "Ac4c",
+          "weight": 1
+        },
+        {
+          "cards": "Ad4d",
+          "weight": 1
+        },
+        {
+          "cards": "Ah4h",
+          "weight": 1
+        },
+        {
+          "cards": "As4s",
+          "weight": 1
+        },
+        {
+          "cards": "Ac5c",
+          "weight": 1
+        },
+        {
+          "cards": "Ad5d",
+          "weight": 1
+        },
+        {
+          "cards": "Ah5h",
+          "weight": 1
+        },
+        {
+          "cards": "As5s",
+          "weight": 1
+        },
+        {
+          "cards": "KdKc",
+          "weight": 1
+        },
+        {
+          "cards": "KhKc",
+          "weight": 1
+        },
+        {
+          "cards": "KhKd",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "player": 1,
+      "combos": [
+        {
+          "cards": "TdTc",
+          "weight": 1
+        },
+        {
+          "cards": "ThTc",
+          "weight": 1
+        },
+        {
+          "cards": "TsTc",
+          "weight": 1
+        },
+        {
+          "cards": "ThTd",
+          "weight": 1
+        },
+        {
+          "cards": "TsTd",
+          "weight": 1
+        },
+        {
+          "cards": "TsTh",
+          "weight": 1
+        },
+        {
+          "cards": "JdJc",
+          "weight": 1
+        },
+        {
+          "cards": "JhJc",
+          "weight": 1
+        },
+        {
+          "cards": "JsJc",
+          "weight": 1
+        },
+        {
+          "cards": "JhJd",
+          "weight": 1
+        },
+        {
+          "cards": "JsJd",
+          "weight": 1
+        },
+        {
+          "cards": "JsJh",
+          "weight": 1
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "actions": [
+        {
+          "child": "root/check",
+          "id": "check",
+          "amountBb": 0
+        },
+        {
+          "child": "root/bet:5",
+          "id": "bet:5",
+          "amountBb": 5
+        }
+      ],
+      "board": [
+        "Ks",
+        "7d",
+        "2c",
+        "8h"
+      ],
+      "combos": [
+        {
+          "cards": "Ac4c",
+          "evBb": [
+            -4.31818151473999,
+            -4.3179850578308105
+          ],
+          "frequency": [
+            0.8625292181968689,
+            0.13747073709964752
+          ],
+          "opponentMass": 12,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "Ad4d",
+          "evBb": [
+            -4.31818151473999,
+            -4.3179850578308105
+          ],
+          "frequency": [
+            0.8625292181968689,
+            0.13747073709964752
+          ],
+          "opponentMass": 12,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "Ah4h",
+          "evBb": [
+            -4.31818151473999,
+            -4.3179850578308105
+          ],
+          "frequency": [
+            0.8625292181968689,
+            0.13747073709964752
+          ],
+          "opponentMass": 12,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "As4s",
+          "evBb": [
+            -4.31818151473999,
+            -4.3179850578308105
+          ],
+          "frequency": [
+            0.8625292181968689,
+            0.13747073709964752
+          ],
+          "opponentMass": 12,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "Ac5c",
+          "evBb": [
+            -4.31818151473999,
+            -4.3179850578308105
+          ],
+          "frequency": [
+            0.8625292181968689,
+            0.13747073709964752
+          ],
+          "opponentMass": 12,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "Ad5d",
+          "evBb": [
+            -4.31818151473999,
+            -4.3179850578308105
+          ],
+          "frequency": [
+            0.8625292181968689,
+            0.13747073709964752
+          ],
+          "opponentMass": 12,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "Ah5h",
+          "evBb": [
+            -4.31818151473999,
+            -4.3179850578308105
+          ],
+          "frequency": [
+            0.8625292181968689,
+            0.13747073709964752
+          ],
+          "opponentMass": 12,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "As5s",
+          "evBb": [
+            -4.31818151473999,
+            -4.3179850578308105
+          ],
+          "frequency": [
+            0.8625292181968689,
+            0.13747073709964752
+          ],
+          "opponentMass": 12,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "KdKc",
+          "evBb": [
+            4.999999523162842,
+            8.416594505310059
+          ],
+          "frequency": [
+            1.4999783531615264e-15,
+            1
+          ],
+          "opponentMass": 12,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "KhKc",
+          "evBb": [
+            4.999999523162842,
+            8.416594505310059
+          ],
+          "frequency": [
+            1.4999783531615264e-15,
+            1
+          ],
+          "opponentMass": 12,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "KhKd",
+          "evBb": [
+            4.999999523162842,
+            8.416594505310059
+          ],
+          "frequency": [
+            1.4999783531615264e-15,
+            1
+          ],
+          "opponentMass": 12,
+          "reachWeight": 1,
+          "status": "reachable"
+        }
+      ],
+      "path": "root",
+      "player": 0,
+      "potBb": 10,
+      "stacksBb": [
+        20,
+        20
+      ]
+    },
+    {
+      "actions": [
+        {
+          "child": "root/check/check",
+          "id": "check",
+          "amountBb": 0
+        }
+      ],
+      "board": [
+        "Ks",
+        "7d",
+        "2c",
+        "8h"
+      ],
+      "combos": [
+        {
+          "cards": "TdTc",
+          "evBb": [
+            4.318179607391357
+          ],
+          "frequency": [
+            1
+          ],
+          "opponentMass": 6.900233745574951,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "ThTc",
+          "evBb": [
+            4.318179607391357
+          ],
+          "frequency": [
+            1
+          ],
+          "opponentMass": 6.900233745574951,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "TsTc",
+          "evBb": [
+            4.318179607391357
+          ],
+          "frequency": [
+            1
+          ],
+          "opponentMass": 6.900233745574951,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "ThTd",
+          "evBb": [
+            4.318179607391357
+          ],
+          "frequency": [
+            1
+          ],
+          "opponentMass": 6.900233745574951,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "TsTd",
+          "evBb": [
+            4.318179607391357
+          ],
+          "frequency": [
+            1
+          ],
+          "opponentMass": 6.900233745574951,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "TsTh",
+          "evBb": [
+            4.318179607391357
+          ],
+          "frequency": [
+            1
+          ],
+          "opponentMass": 6.900233745574951,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "JdJc",
+          "evBb": [
+            4.318179607391357
+          ],
+          "frequency": [
+            1
+          ],
+          "opponentMass": 6.900233745574951,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "JhJc",
+          "evBb": [
+            4.318179607391357
+          ],
+          "frequency": [
+            1
+          ],
+          "opponentMass": 6.900233745574951,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "JsJc",
+          "evBb": [
+            4.318179607391357
+          ],
+          "frequency": [
+            1
+          ],
+          "opponentMass": 6.900233745574951,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "JhJd",
+          "evBb": [
+            4.318179607391357
+          ],
+          "frequency": [
+            1
+          ],
+          "opponentMass": 6.900233745574951,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "JsJd",
+          "evBb": [
+            4.318179607391357
+          ],
+          "frequency": [
+            1
+          ],
+          "opponentMass": 6.900233745574951,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "JsJh",
+          "evBb": [
+            4.318179607391357
+          ],
+          "frequency": [
+            1
+          ],
+          "opponentMass": 6.900233745574951,
+          "reachWeight": 1,
+          "status": "reachable"
+        }
+      ],
+      "path": "root/check",
+      "player": 1,
+      "potBb": 10,
+      "stacksBb": [
+        20,
+        20
+      ]
+    },
+    {
+      "actions": [
+        {
+          "child": "root/bet:5/fold",
+          "id": "fold",
+          "amountBb": 0
+        },
+        {
+          "child": "root/bet:5/call",
+          "id": "call",
+          "amountBb": 5
+        }
+      ],
+      "board": [
+        "Ks",
+        "7d",
+        "2c",
+        "8h"
+      ],
+      "combos": [
+        {
+          "cards": "TdTc",
+          "evBb": [
+            -5,
+            -5.0007781982421875
+          ],
+          "frequency": [
+            0.3166810870170593,
+            0.6833189129829407
+          ],
+          "opponentMass": 4.099765777587891,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "ThTc",
+          "evBb": [
+            -5,
+            -5.0007781982421875
+          ],
+          "frequency": [
+            0.3166810870170593,
+            0.6833189129829407
+          ],
+          "opponentMass": 4.099765777587891,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "TsTc",
+          "evBb": [
+            -5,
+            -5.0007781982421875
+          ],
+          "frequency": [
+            0.3166810870170593,
+            0.6833189129829407
+          ],
+          "opponentMass": 4.099765777587891,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "ThTd",
+          "evBb": [
+            -5,
+            -5.0007781982421875
+          ],
+          "frequency": [
+            0.3166810870170593,
+            0.6833189129829407
+          ],
+          "opponentMass": 4.099765777587891,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "TsTd",
+          "evBb": [
+            -5,
+            -5.0007781982421875
+          ],
+          "frequency": [
+            0.3166810870170593,
+            0.6833189129829407
+          ],
+          "opponentMass": 4.099765777587891,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "TsTh",
+          "evBb": [
+            -5,
+            -5.0007781982421875
+          ],
+          "frequency": [
+            0.3166810870170593,
+            0.6833189129829407
+          ],
+          "opponentMass": 4.099765777587891,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "JdJc",
+          "evBb": [
+            -5,
+            -5.0007781982421875
+          ],
+          "frequency": [
+            0.3166810870170593,
+            0.6833189129829407
+          ],
+          "opponentMass": 4.099765777587891,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "JhJc",
+          "evBb": [
+            -5,
+            -5.0007781982421875
+          ],
+          "frequency": [
+            0.3166810870170593,
+            0.6833189129829407
+          ],
+          "opponentMass": 4.099765777587891,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "JsJc",
+          "evBb": [
+            -5,
+            -5.0007781982421875
+          ],
+          "frequency": [
+            0.3166810870170593,
+            0.6833189129829407
+          ],
+          "opponentMass": 4.099765777587891,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "JhJd",
+          "evBb": [
+            -5,
+            -5.0007781982421875
+          ],
+          "frequency": [
+            0.3166810870170593,
+            0.6833189129829407
+          ],
+          "opponentMass": 4.099765777587891,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "JsJd",
+          "evBb": [
+            -5,
+            -5.0007781982421875
+          ],
+          "frequency": [
+            0.3166810870170593,
+            0.6833189129829407
+          ],
+          "opponentMass": 4.099765777587891,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "JsJh",
+          "evBb": [
+            -5,
+            -5.0007781982421875
+          ],
+          "frequency": [
+            0.3166810870170593,
+            0.6833189129829407
+          ],
+          "opponentMass": 4.099765777587891,
+          "reachWeight": 1,
+          "status": "reachable"
+        }
+      ],
+      "path": "root/bet:5",
+      "player": 1,
+      "potBb": 15,
+      "stacksBb": [
+        15,
+        20
+      ]
+    }
+  ],
+  "terminals": [
+    {
+      "board": [
+        "Ks",
+        "7d",
+        "2c",
+        "8h"
+      ],
+      "kind": "Terminal(Fold { folder: 1, pot: 10.0 })",
+      "path": "root/bet:5/fold",
+      "potBb": 10,
+      "stacksBb": [
+        20,
+        20
+      ]
+    }
+  ],
+  "verification": {
+    "passed": true,
+    "fixtureHash": "1861d0d1ee6501399e030a0a9f7182bfd91cd2c6da5e2aa20a205d365c88ca99",
+    "primaryOutputHash": "10258e396f27fbc83a5aa5974decbbb8c285b4564dd09e24b65bf45cbc3b492f",
+    "referenceOutputHash": "f36fe683554b64a092583b30d8009928a790340dab53b41f99f9641771f145e0",
+    "reportHash": "c51bc72a839c9e2354bfb0b684a4ceb69e9f7cccd2ba4dad07892246ebc311be",
+    "report": {
+      "id": "turn-checkdown-half-pot",
+      "passed": true,
+      "comboCounts": [
+        11,
+        12
+      ],
+      "compatiblePairs": 132,
+      "pairRunouts": 5808,
+      "publicRivers": 48,
+      "analyticRootEvBb": [
+        -0.8450413223140496,
+        0.8450413223140496
+      ],
+      "checks": [
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop marginal probability sum",
+          "actual": 0,
+          "maximum": 1e-12,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop marginal probability sum",
+          "actual": 0,
+          "maximum": 1e-12,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 4.470348358154297e-8,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop independent action EV all nodes",
+          "actual": 0.00000221079046092143,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop analytic turn action EV",
+          "actual": 0.0007781982421875,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop compatible opponent mass",
+          "actual": 1.3546510163608971e-8,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop own reach",
+          "actual": 4.470348358154297e-8,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop analytic root EV",
+          "actual": 0.0000012989871758239957,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop independent root EV",
+          "actual": 0.0000013031721145528863,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop independent NashConv",
+          "actual": 0.0000017004564771490901,
+          "maximum": 0.00001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop NashConv",
+          "actual": 0.00032165818963144597,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop iterations",
+          "actual": 100000,
+          "maximum": 100000,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop solve seconds",
+          "actual": 8.5611016,
+          "maximum": 300,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop value bets",
+          "actual": 0,
+          "maximum": 0.005,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop bluff mix",
+          "actual": 0.00002926290035248913,
+          "maximum": 0.005,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop call mix",
+          "actual": 0.000014420350392674308,
+          "maximum": 0.005,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver pair river probability",
+          "actual": 6.773255081804486e-10,
+          "maximum": 1e-9,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver marginal probability sum",
+          "actual": 0,
+          "maximum": 1e-12,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver marginal probability sum",
+          "actual": 1.1102230246251565e-16,
+          "maximum": 1e-12,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 2.9802322387695312e-8,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver independent action EV all nodes",
+          "actual": 9.5367431640625e-7,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver analytic turn action EV",
+          "actual": 0.0002581422979179848,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver compatible opponent mass",
+          "actual": 3.793022851361627e-8,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver own reach",
+          "actual": 1.4901161193847656e-8,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver analytic root EV",
+          "actual": 7.191965400998868e-8,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver independent root EV",
+          "actual": 7.357206843749964e-8,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver independent NashConv",
+          "actual": 5.8126843782702053e-8,
+          "maximum": 0.00001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver NashConv",
+          "actual": 0.00008541197816214208,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver iterations",
+          "actual": 100000,
+          "maximum": 100000,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver solve seconds",
+          "actual": 1.5203416,
+          "maximum": 300,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver value bets",
+          "actual": 0,
+          "maximum": 0.005,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver bluff mix",
+          "actual": 0.00000878870487214245,
+          "maximum": 0.005,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver call mix",
+          "actual": 0.000018958250681544442,
+          "maximum": 0.005,
+          "pass": true
+        },
+        {
+          "name": "cross-engine turn action EV",
+          "actual": 0.0005440711975097656,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "cross-engine root EV",
+          "actual": 0.0000013709068298339844,
+          "maximum": 0.001,
+          "pass": true
+        }
+      ]
+    },
+    "engines": [
+      {
+        "name": "ucsandman/postflop",
+        "iterations": 100000,
+        "seconds": 8.5611016,
+        "nashConvBb": 0.0003199577331542969
+      },
+      {
+        "name": "b-inary/postflop-solver",
+        "iterations": 100000,
+        "seconds": 1.5203416,
+        "nashConvBb": 0.00008535385131835938
+      }
+    ],
+    "scope": "All native nodes independently checked. Cross-engine action EV comparison applies to turn decisions; forced river nodes are display-only."
+  },
+  "chanceNodes": [
+    {
+      "board": [
+        "Ks",
+        "7d",
+        "2c",
+        "8h"
+      ],
+      "outcomes": [
+        {
+          "card": "2d",
+          "path": "root/check/check/river:2d",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "2d"
+          ],
+          "rootEvBb": [
+            -4.999999999999994,
+            4.999999999999994
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272614385157
+        },
+        {
+          "card": "2h",
+          "path": "root/check/check/river:2h",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "2h"
+          ],
+          "rootEvBb": [
+            -4.999999999999994,
+            4.999999999999994
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272614385157
+        },
+        {
+          "card": "2s",
+          "path": "root/check/check/river:2s",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "2s"
+          ],
+          "rootEvBb": [
+            -4.999999999999994,
+            4.999999999999994
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272614385157
+        },
+        {
+          "card": "3c",
+          "path": "root/check/check/river:3c",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "3c"
+          ],
+          "rootEvBb": [
+            -4.999999999999994,
+            4.999999999999994
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272614385157
+        },
+        {
+          "card": "3d",
+          "path": "root/check/check/river:3d",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "3d"
+          ],
+          "rootEvBb": [
+            -4.999999999999994,
+            4.999999999999994
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272614385157
+        },
+        {
+          "card": "3h",
+          "path": "root/check/check/river:3h",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "3h"
+          ],
+          "rootEvBb": [
+            -4.999999999999994,
+            4.999999999999994
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272614385157
+        },
+        {
+          "card": "3s",
+          "path": "root/check/check/river:3s",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "3s"
+          ],
+          "rootEvBb": [
+            -4.999999999999994,
+            4.999999999999994
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272614385157
+        },
+        {
+          "card": "4c",
+          "path": "root/check/check/river:4c",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "4c"
+          ],
+          "rootEvBb": [
+            -4.999999999999993,
+            4.999999999999993
+          ],
+          "compatiblePairs": 120,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.019886363537587017
+        },
+        {
+          "card": "4d",
+          "path": "root/check/check/river:4d",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "4d"
+          ],
+          "rootEvBb": [
+            -4.999999999999993,
+            4.999999999999993
+          ],
+          "compatiblePairs": 120,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.019886363537587017
+        },
+        {
+          "card": "4h",
+          "path": "root/check/check/river:4h",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "4h"
+          ],
+          "rootEvBb": [
+            -4.999999999999993,
+            4.999999999999993
+          ],
+          "compatiblePairs": 120,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.019886363537587017
+        },
+        {
+          "card": "4s",
+          "path": "root/check/check/river:4s",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "4s"
+          ],
+          "rootEvBb": [
+            -4.999999999999993,
+            4.999999999999993
+          ],
+          "compatiblePairs": 120,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.019886363537587017
+        },
+        {
+          "card": "5c",
+          "path": "root/check/check/river:5c",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "5c"
+          ],
+          "rootEvBb": [
+            -4.999999999999993,
+            4.999999999999993
+          ],
+          "compatiblePairs": 120,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.019886363537587017
+        },
+        {
+          "card": "5d",
+          "path": "root/check/check/river:5d",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "5d"
+          ],
+          "rootEvBb": [
+            -4.999999999999993,
+            4.999999999999993
+          ],
+          "compatiblePairs": 120,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.019886363537587017
+        },
+        {
+          "card": "5h",
+          "path": "root/check/check/river:5h",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "5h"
+          ],
+          "rootEvBb": [
+            -4.999999999999993,
+            4.999999999999993
+          ],
+          "compatiblePairs": 120,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.019886363537587017
+        },
+        {
+          "card": "5s",
+          "path": "root/check/check/river:5s",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "5s"
+          ],
+          "rootEvBb": [
+            -4.999999999999993,
+            4.999999999999993
+          ],
+          "compatiblePairs": 120,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.019886363537587017
+        },
+        {
+          "card": "6c",
+          "path": "root/check/check/river:6c",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "6c"
+          ],
+          "rootEvBb": [
+            -4.999999999999994,
+            4.999999999999994
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272614385157
+        },
+        {
+          "card": "6d",
+          "path": "root/check/check/river:6d",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "6d"
+          ],
+          "rootEvBb": [
+            -4.999999999999994,
+            4.999999999999994
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272614385157
+        },
+        {
+          "card": "6h",
+          "path": "root/check/check/river:6h",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "6h"
+          ],
+          "rootEvBb": [
+            -4.999999999999994,
+            4.999999999999994
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272614385157
+        },
+        {
+          "card": "6s",
+          "path": "root/check/check/river:6s",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "6s"
+          ],
+          "rootEvBb": [
+            -4.999999999999994,
+            4.999999999999994
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272614385157
+        },
+        {
+          "card": "7c",
+          "path": "root/check/check/river:7c",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "7c"
+          ],
+          "rootEvBb": [
+            -4.999999999999994,
+            4.999999999999994
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272614385157
+        },
+        {
+          "card": "7h",
+          "path": "root/check/check/river:7h",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "7h"
+          ],
+          "rootEvBb": [
+            -4.999999999999994,
+            4.999999999999994
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272614385157
+        },
+        {
+          "card": "7s",
+          "path": "root/check/check/river:7s",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "7s"
+          ],
+          "rootEvBb": [
+            -4.999999999999994,
+            4.999999999999994
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272614385157
+        },
+        {
+          "card": "8c",
+          "path": "root/check/check/river:8c",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "8c"
+          ],
+          "rootEvBb": [
+            -4.999999999999994,
+            4.999999999999994
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272614385157
+        },
+        {
+          "card": "8d",
+          "path": "root/check/check/river:8d",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "8d"
+          ],
+          "rootEvBb": [
+            -4.999999999999994,
+            4.999999999999994
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272614385157
+        },
+        {
+          "card": "8s",
+          "path": "root/check/check/river:8s",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "8s"
+          ],
+          "rootEvBb": [
+            -4.999999999999994,
+            4.999999999999994
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272614385157
+        },
+        {
+          "card": "9c",
+          "path": "root/check/check/river:9c",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "9c"
+          ],
+          "rootEvBb": [
+            -4.999999999999994,
+            4.999999999999994
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272614385157
+        },
+        {
+          "card": "9d",
+          "path": "root/check/check/river:9d",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "9d"
+          ],
+          "rootEvBb": [
+            -4.999999999999994,
+            4.999999999999994
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272614385157
+        },
+        {
+          "card": "9h",
+          "path": "root/check/check/river:9h",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "9h"
+          ],
+          "rootEvBb": [
+            -4.999999999999994,
+            4.999999999999994
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272614385157
+        },
+        {
+          "card": "9s",
+          "path": "root/check/check/river:9s",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "9s"
+          ],
+          "rootEvBb": [
+            -4.999999999999994,
+            4.999999999999994
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272614385157
+        },
+        {
+          "card": "Tc",
+          "path": "root/check/check/river:Tc",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "Tc"
+          ],
+          "rootEvBb": [
+            -4.999999523162836,
+            4.999999523162836
+          ],
+          "compatiblePairs": 99,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.01704545508167056
+        },
+        {
+          "card": "Td",
+          "path": "root/check/check/river:Td",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "Td"
+          ],
+          "rootEvBb": [
+            -4.999999523162836,
+            4.999999523162836
+          ],
+          "compatiblePairs": 99,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "ThTc",
+                "TsTc",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.01704545508167056
+        },
+        {
+          "card": "Th",
+          "path": "root/check/check/river:Th",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "Th"
+          ],
+          "rootEvBb": [
+            -4.999999523162836,
+            4.999999523162836
+          ],
+          "compatiblePairs": 99,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "TsTc",
+                "TsTd",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.01704545508167056
+        },
+        {
+          "card": "Ts",
+          "path": "root/check/check/river:Ts",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "Ts"
+          ],
+          "rootEvBb": [
+            -4.999999523162836,
+            4.999999523162836
+          ],
+          "compatiblePairs": 99,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "ThTd",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.01704545508167056
+        },
+        {
+          "card": "Jc",
+          "path": "root/check/check/river:Jc",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "Jc"
+          ],
+          "rootEvBb": [
+            -4.999999523162836,
+            4.999999523162836
+          ],
+          "compatiblePairs": 99,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.01704545508167056
+        },
+        {
+          "card": "Jd",
+          "path": "root/check/check/river:Jd",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "Jd"
+          ],
+          "rootEvBb": [
+            -4.999999523162836,
+            4.999999523162836
+          ],
+          "compatiblePairs": 99,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JhJc",
+                "JsJc",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.01704545508167056
+        },
+        {
+          "card": "Jh",
+          "path": "root/check/check/river:Jh",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "Jh"
+          ],
+          "rootEvBb": [
+            -4.999999523162836,
+            4.999999523162836
+          ],
+          "compatiblePairs": 99,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JsJc",
+                "JsJd"
+              ]
+            }
+          ],
+          "probability": 0.01704545508167056
+        },
+        {
+          "card": "Js",
+          "path": "root/check/check/river:Js",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "Js"
+          ],
+          "rootEvBb": [
+            -4.999999523162836,
+            4.999999523162836
+          ],
+          "compatiblePairs": 99,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JhJd"
+              ]
+            }
+          ],
+          "probability": 0.01704545508167056
+        },
+        {
+          "card": "Qc",
+          "path": "root/check/check/river:Qc",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "Qc"
+          ],
+          "rootEvBb": [
+            -4.999999999999994,
+            4.999999999999994
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272614385157
+        },
+        {
+          "card": "Qd",
+          "path": "root/check/check/river:Qd",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "Qd"
+          ],
+          "rootEvBb": [
+            -4.999999999999994,
+            4.999999999999994
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272614385157
+        },
+        {
+          "card": "Qh",
+          "path": "root/check/check/river:Qh",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "Qh"
+          ],
+          "rootEvBb": [
+            -4.999999999999994,
+            4.999999999999994
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272614385157
+        },
+        {
+          "card": "Qs",
+          "path": "root/check/check/river:Qs",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "Qs"
+          ],
+          "rootEvBb": [
+            -4.999999999999994,
+            4.999999999999994
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272614385157
+        },
+        {
+          "card": "Kc",
+          "path": "root/check/check/river:Kc",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "Kc"
+          ],
+          "rootEvBb": [
+            -4.999999999999998,
+            4.999999999999998
+          ],
+          "compatiblePairs": 108,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272614385147
+        },
+        {
+          "card": "Kd",
+          "path": "root/check/check/river:Kd",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "Kd"
+          ],
+          "rootEvBb": [
+            -4.999999999999998,
+            4.999999999999998
+          ],
+          "compatiblePairs": 108,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KhKc"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272614385147
+        },
+        {
+          "card": "Kh",
+          "path": "root/check/check/river:Kh",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "Kh"
+          ],
+          "rootEvBb": [
+            -4.999999999999998,
+            4.999999999999998
+          ],
+          "compatiblePairs": 108,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272614385147
+        },
+        {
+          "card": "Ac",
+          "path": "root/check/check/river:Ac",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "Ac"
+          ],
+          "rootEvBb": [
+            4.999999999999999,
+            -4.999999999999999
+          ],
+          "compatiblePairs": 108,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.017045454460788874
+        },
+        {
+          "card": "Ad",
+          "path": "root/check/check/river:Ad",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "Ad"
+          ],
+          "rootEvBb": [
+            4.999999999999999,
+            -4.999999999999999
+          ],
+          "compatiblePairs": 108,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.017045454460788874
+        },
+        {
+          "card": "Ah",
+          "path": "root/check/check/river:Ah",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "Ah"
+          ],
+          "rootEvBb": [
+            4.999999999999999,
+            -4.999999999999999
+          ],
+          "compatiblePairs": 108,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.017045454460788874
+        },
+        {
+          "card": "As",
+          "path": "root/check/check/river:As",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "As"
+          ],
+          "rootEvBb": [
+            4.999999999999999,
+            -4.999999999999999
+          ],
+          "compatiblePairs": 108,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.017045454460788874
+        }
+      ],
+      "path": "root/check/check",
+      "potBb": 10,
+      "stacksBb": [
+        20,
+        20
+      ],
+      "forcedActions": [
+        "check",
+        "check"
+      ],
+      "pairProbability": 0.022727272727272728
+    },
+    {
+      "board": [
+        "Ks",
+        "7d",
+        "2c",
+        "8h"
+      ],
+      "outcomes": [
+        {
+          "card": "2d",
+          "path": "root/bet:5/call/river:2d",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "2d"
+          ],
+          "rootEvBb": [
+            4.634981974671581,
+            -4.634981974671581
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272727272714
+        },
+        {
+          "card": "2h",
+          "path": "root/bet:5/call/river:2h",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "2h"
+          ],
+          "rootEvBb": [
+            4.634981974671581,
+            -4.634981974671581
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272727272714
+        },
+        {
+          "card": "2s",
+          "path": "root/bet:5/call/river:2s",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "2s"
+          ],
+          "rootEvBb": [
+            4.634981974671581,
+            -4.634981974671581
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272727272714
+        },
+        {
+          "card": "3c",
+          "path": "root/bet:5/call/river:3c",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "3c"
+          ],
+          "rootEvBb": [
+            4.634981974671581,
+            -4.634981974671581
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272727272714
+        },
+        {
+          "card": "3d",
+          "path": "root/bet:5/call/river:3d",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "3d"
+          ],
+          "rootEvBb": [
+            4.634981974671581,
+            -4.634981974671581
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272727272714
+        },
+        {
+          "card": "3h",
+          "path": "root/bet:5/call/river:3h",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "3h"
+          ],
+          "rootEvBb": [
+            4.634981974671581,
+            -4.634981974671581
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272727272714
+        },
+        {
+          "card": "3s",
+          "path": "root/bet:5/call/river:3s",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "3s"
+          ],
+          "rootEvBb": [
+            4.634981974671581,
+            -4.634981974671581
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272727272714
+        },
+        {
+          "card": "4c",
+          "path": "root/bet:5/call/river:4c",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "4c"
+          ],
+          "rootEvBb": [
+            5.142738635498367,
+            -5.142738635498367
+          ],
+          "compatiblePairs": 120,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.021965196303220382
+        },
+        {
+          "card": "4d",
+          "path": "root/bet:5/call/river:4d",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "4d"
+          ],
+          "rootEvBb": [
+            5.142738635498367,
+            -5.142738635498367
+          ],
+          "compatiblePairs": 120,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.021965196303220382
+        },
+        {
+          "card": "4h",
+          "path": "root/bet:5/call/river:4h",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "4h"
+          ],
+          "rootEvBb": [
+            5.142738635498367,
+            -5.142738635498367
+          ],
+          "compatiblePairs": 120,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.021965196303220382
+        },
+        {
+          "card": "4s",
+          "path": "root/bet:5/call/river:4s",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "4s"
+          ],
+          "rootEvBb": [
+            5.142738635498367,
+            -5.142738635498367
+          ],
+          "compatiblePairs": 120,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.021965196303220382
+        },
+        {
+          "card": "5c",
+          "path": "root/bet:5/call/river:5c",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "5c"
+          ],
+          "rootEvBb": [
+            5.142738635498367,
+            -5.142738635498367
+          ],
+          "compatiblePairs": 120,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.021965196303220382
+        },
+        {
+          "card": "5d",
+          "path": "root/bet:5/call/river:5d",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "5d"
+          ],
+          "rootEvBb": [
+            5.142738635498367,
+            -5.142738635498367
+          ],
+          "compatiblePairs": 120,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.021965196303220382
+        },
+        {
+          "card": "5h",
+          "path": "root/bet:5/call/river:5h",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "5h"
+          ],
+          "rootEvBb": [
+            5.142738635498367,
+            -5.142738635498367
+          ],
+          "compatiblePairs": 120,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.021965196303220382
+        },
+        {
+          "card": "5s",
+          "path": "root/bet:5/call/river:5s",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "5s"
+          ],
+          "rootEvBb": [
+            5.142738635498367,
+            -5.142738635498367
+          ],
+          "compatiblePairs": 120,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.021965196303220382
+        },
+        {
+          "card": "6c",
+          "path": "root/bet:5/call/river:6c",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "6c"
+          ],
+          "rootEvBb": [
+            4.634981974671581,
+            -4.634981974671581
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272727272714
+        },
+        {
+          "card": "6d",
+          "path": "root/bet:5/call/river:6d",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "6d"
+          ],
+          "rootEvBb": [
+            4.634981974671581,
+            -4.634981974671581
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272727272714
+        },
+        {
+          "card": "6h",
+          "path": "root/bet:5/call/river:6h",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "6h"
+          ],
+          "rootEvBb": [
+            4.634981974671581,
+            -4.634981974671581
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272727272714
+        },
+        {
+          "card": "6s",
+          "path": "root/bet:5/call/river:6s",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "6s"
+          ],
+          "rootEvBb": [
+            4.634981974671581,
+            -4.634981974671581
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272727272714
+        },
+        {
+          "card": "7c",
+          "path": "root/bet:5/call/river:7c",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "7c"
+          ],
+          "rootEvBb": [
+            4.634981974671581,
+            -4.634981974671581
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272727272714
+        },
+        {
+          "card": "7h",
+          "path": "root/bet:5/call/river:7h",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "7h"
+          ],
+          "rootEvBb": [
+            4.634981974671581,
+            -4.634981974671581
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272727272714
+        },
+        {
+          "card": "7s",
+          "path": "root/bet:5/call/river:7s",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "7s"
+          ],
+          "rootEvBb": [
+            4.634981974671581,
+            -4.634981974671581
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272727272714
+        },
+        {
+          "card": "8c",
+          "path": "root/bet:5/call/river:8c",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "8c"
+          ],
+          "rootEvBb": [
+            4.634981974671581,
+            -4.634981974671581
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272727272714
+        },
+        {
+          "card": "8d",
+          "path": "root/bet:5/call/river:8d",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "8d"
+          ],
+          "rootEvBb": [
+            4.634981974671581,
+            -4.634981974671581
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272727272714
+        },
+        {
+          "card": "8s",
+          "path": "root/bet:5/call/river:8s",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "8s"
+          ],
+          "rootEvBb": [
+            4.634981974671581,
+            -4.634981974671581
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272727272714
+        },
+        {
+          "card": "9c",
+          "path": "root/bet:5/call/river:9c",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "9c"
+          ],
+          "rootEvBb": [
+            4.634981974671581,
+            -4.634981974671581
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272727272714
+        },
+        {
+          "card": "9d",
+          "path": "root/bet:5/call/river:9d",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "9d"
+          ],
+          "rootEvBb": [
+            4.634981974671581,
+            -4.634981974671581
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272727272714
+        },
+        {
+          "card": "9h",
+          "path": "root/bet:5/call/river:9h",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "9h"
+          ],
+          "rootEvBb": [
+            4.634981974671581,
+            -4.634981974671581
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272727272714
+        },
+        {
+          "card": "9s",
+          "path": "root/bet:5/call/river:9s",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "9s"
+          ],
+          "rootEvBb": [
+            4.634981974671581,
+            -4.634981974671581
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272727272714
+        },
+        {
+          "card": "Tc",
+          "path": "root/bet:5/call/river:Tc",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "Tc"
+          ],
+          "rootEvBb": [
+            4.634981974671581,
+            -4.634981974671581
+          ],
+          "compatiblePairs": 99,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.017045454545454534
+        },
+        {
+          "card": "Td",
+          "path": "root/bet:5/call/river:Td",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "Td"
+          ],
+          "rootEvBb": [
+            4.634981974671581,
+            -4.634981974671581
+          ],
+          "compatiblePairs": 99,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "ThTc",
+                "TsTc",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.017045454545454534
+        },
+        {
+          "card": "Th",
+          "path": "root/bet:5/call/river:Th",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "Th"
+          ],
+          "rootEvBb": [
+            4.634981974671581,
+            -4.634981974671581
+          ],
+          "compatiblePairs": 99,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "TsTc",
+                "TsTd",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.017045454545454534
+        },
+        {
+          "card": "Ts",
+          "path": "root/bet:5/call/river:Ts",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "Ts"
+          ],
+          "rootEvBb": [
+            4.634981974671581,
+            -4.634981974671581
+          ],
+          "compatiblePairs": 99,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "ThTd",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.017045454545454534
+        },
+        {
+          "card": "Jc",
+          "path": "root/bet:5/call/river:Jc",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "Jc"
+          ],
+          "rootEvBb": [
+            4.634981974671581,
+            -4.634981974671581
+          ],
+          "compatiblePairs": 99,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.017045454545454534
+        },
+        {
+          "card": "Jd",
+          "path": "root/bet:5/call/river:Jd",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "Jd"
+          ],
+          "rootEvBb": [
+            4.634981974671581,
+            -4.634981974671581
+          ],
+          "compatiblePairs": 99,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JhJc",
+                "JsJc",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.017045454545454534
+        },
+        {
+          "card": "Jh",
+          "path": "root/bet:5/call/river:Jh",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "Jh"
+          ],
+          "rootEvBb": [
+            4.634981974671581,
+            -4.634981974671581
+          ],
+          "compatiblePairs": 99,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JsJc",
+                "JsJd"
+              ]
+            }
+          ],
+          "probability": 0.017045454545454534
+        },
+        {
+          "card": "Js",
+          "path": "root/bet:5/call/river:Js",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "Js"
+          ],
+          "rootEvBb": [
+            4.634981974671581,
+            -4.634981974671581
+          ],
+          "compatiblePairs": 99,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JhJd"
+              ]
+            }
+          ],
+          "probability": 0.017045454545454534
+        },
+        {
+          "card": "Qc",
+          "path": "root/bet:5/call/river:Qc",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "Qc"
+          ],
+          "rootEvBb": [
+            4.634981974671581,
+            -4.634981974671581
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272727272714
+        },
+        {
+          "card": "Qd",
+          "path": "root/bet:5/call/river:Qd",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "Qd"
+          ],
+          "rootEvBb": [
+            4.634981974671581,
+            -4.634981974671581
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272727272714
+        },
+        {
+          "card": "Qh",
+          "path": "root/bet:5/call/river:Qh",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "Qh"
+          ],
+          "rootEvBb": [
+            4.634981974671581,
+            -4.634981974671581
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272727272714
+        },
+        {
+          "card": "Qs",
+          "path": "root/bet:5/call/river:Qs",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "Qs"
+          ],
+          "rootEvBb": [
+            4.634981974671581,
+            -4.634981974671581
+          ],
+          "compatiblePairs": 132,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.022727272727272714
+        },
+        {
+          "card": "Kc",
+          "path": "root/bet:5/call/river:Kc",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "Kc"
+          ],
+          "rootEvBb": [
+            -0.4751286652924277,
+            0.4751286652924277
+          ],
+          "compatiblePairs": 108,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.011640165170703341
+        },
+        {
+          "card": "Kd",
+          "path": "root/bet:5/call/river:Kd",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "Kd"
+          ],
+          "rootEvBb": [
+            -0.4751286652924277,
+            0.4751286652924277
+          ],
+          "compatiblePairs": 108,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KhKc"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.011640165170703341
+        },
+        {
+          "card": "Kh",
+          "path": "root/bet:5/call/river:Kh",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "Kh"
+          ],
+          "rootEvBb": [
+            -0.4751286652924277,
+            0.4751286652924277
+          ],
+          "compatiblePairs": 108,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.011640165170703341
+        },
+        {
+          "card": "Ac",
+          "path": "root/bet:5/call/river:Ac",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "Ac"
+          ],
+          "rootEvBb": [
+            10,
+            -10
+          ],
+          "compatiblePairs": 108,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ad4d",
+                "Ah4h",
+                "As4s",
+                "Ad5d",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.02120311987916805
+        },
+        {
+          "card": "Ad",
+          "path": "root/bet:5/call/river:Ad",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "Ad"
+          ],
+          "rootEvBb": [
+            10,
+            -10
+          ],
+          "compatiblePairs": 108,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ah4h",
+                "As4s",
+                "Ac5c",
+                "Ah5h",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.02120311987916805
+        },
+        {
+          "card": "Ah",
+          "path": "root/bet:5/call/river:Ah",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "Ah"
+          ],
+          "rootEvBb": [
+            10,
+            -10
+          ],
+          "compatiblePairs": 108,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "As4s",
+                "Ac5c",
+                "Ad5d",
+                "As5s",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.02120311987916805
+        },
+        {
+          "card": "As",
+          "path": "root/bet:5/call/river:As",
+          "board": [
+            "Ks",
+            "7d",
+            "2c",
+            "8h",
+            "As"
+          ],
+          "rootEvBb": [
+            10,
+            -10
+          ],
+          "compatiblePairs": 108,
+          "ranges": [
+            {
+              "player": 0,
+              "combos": [
+                "Ac4c",
+                "Ad4d",
+                "Ah4h",
+                "Ac5c",
+                "Ad5d",
+                "Ah5h",
+                "KdKc",
+                "KhKc",
+                "KhKd"
+              ]
+            },
+            {
+              "player": 1,
+              "combos": [
+                "TdTc",
+                "ThTc",
+                "TsTc",
+                "ThTd",
+                "TsTd",
+                "TsTh",
+                "JdJc",
+                "JhJc",
+                "JsJc",
+                "JhJd",
+                "JsJd",
+                "JsJh"
+              ]
+            }
+          ],
+          "probability": 0.02120311987916805
+        }
+      ],
+      "path": "root/bet:5/call",
+      "potBb": 20,
+      "stacksBb": [
+        15,
+        15
+      ],
+      "forcedActions": [
+        "check",
+        "check"
+      ],
+      "pairProbability": 0.022727272727272728
+    }
+  ],
+  "contentHash": "18fb133f2863f35bec164be80bbd5d55f2b35709d98a4cb17ce6ad7fea754ae9"
+}

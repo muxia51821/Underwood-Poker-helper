@@ -1,0 +1,56 @@
+import { test, expect } from '@playwright/test';
+import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { openWorkbenchMode } from './helpers/workbench.js';
+import { readFile } from 'node:fs/promises';
+const targets = [{name:'desktop',width:1440,height:1000,url:'/#safemode'}, {name:'mobile',width:390,height:844,url:'/#safemode'}];
+if (process.env.E2E_OUT_DIR) targets.push({name:'offline',width:390,height:844,url:pathToFileURL(join(process.env.E2E_OUT_DIR,'index.html')).href+'#safemode'});
+async function openRanges(page) { await openWorkbenchMode(page,'study'); await page.locator('[data-study-view=ranges]').click(); }
+for (const target of targets) test('local range edit, draft recovery, import preview and read-only reference: '+target.name,async({page})=>{
+  const errors=[];page.on('pageerror',error=>errors.push(error.message));await page.setViewportSize(target);if(target.name==='offline')await page.context().setOffline(true);
+  await page.goto(target.url);await openRanges(page);await page.locator('[data-range-command=new]').click();
+  await expect(page.locator('[data-range-hand]')).toHaveCount(169);await expect(page.locator('[data-range-hand=AA]')).toHaveAttribute('aria-label','AA 未知');
+  await page.locator('[data-range-value=raise]').fill('70');await page.locator('[data-range-value=call]').fill('30');
+  await page.locator('[data-range-command=apply]').click();await expect(page.locator('[data-range-summary]')).toContainText('折算后 6.0/1326 个组合');
+  await page.locator('[data-range-command=save]').click();
+  await page.locator('[data-range-hand=AKs]').click();await page.locator('[data-range-value=call]').fill('');
+  await page.reload();await openRanges(page);await expect(page.locator('[data-range-value=call]')).toHaveValue('');
+  await page.locator('[data-range-command=save]').click();await expect(page.locator('[data-range-status]')).toContainText('未应用');
+  await page.locator('[data-range-command=unknown]').click();
+  const text=page.locator('[data-range-text]');await text.locator('..').locator('summary').click();await text.fill('QQ+, A5s-A2s:0.5');await page.locator('[data-range-command=preview-text]').click();
+  await page.locator('[data-range-hand=KK]').click();await expect(text).toHaveValue('QQ+, A5s-A2s:0.5');
+  await expect(page.locator('[data-range-preview]')).toContainText('7 类手牌');await page.locator('[data-range-command=import]').click();await expect(page.locator('[data-range-summary]')).toContainText('7/169');
+  await expect(text).toHaveValue('QQ+, A5s-A2s:0.5');
+  await page.reload();await openRanges(page);await expect(text).toHaveValue('QQ+, A5s-A2s:0.5');
+  await text.locator('..').locator('summary').click();await text.fill('AJs-KQs');await page.locator('[data-range-command=preview-text]').click();
+  await expect(page.locator('[data-range-status]')).toContainText('区间只支持');await expect(page.locator('[data-range-preview]')).toBeEmpty();
+  await expect(page.locator('[data-range-summary]')).toContainText('7/169');
+  const reference=await page.evaluate(()=>{const state=JSON.parse(localStorage.getItem('pa_ranges_v1'));const range=state.drafts[state.selectedId]||state.ranges.find(r=>r.id===state.selectedId);return {...range,kind:'reference',name:'Synthetic reference',source:{title:'Synthetic source',url:'',method:'Fixture only',rights:'Synthetic'}};});
+  await page.locator('[data-range-file]').setInputFiles({name:'reference.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({format:'poker-preflop-range',version:1,range:reference}))});
+  await expect(page.locator('[data-range-preview]')).toContainText('Synthetic source');expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('pa_ranges_v1')).ranges.length)).toBe(1);
+  await page.locator('[data-range-command=import]').click();await expect(page.locator('[data-range-value=raise]')).toBeDisabled();await expect(page.locator('[data-range-command=save]')).toBeDisabled();
+  await page.locator('[data-range-command=copy]').click();await expect(page.locator('[data-range-value=raise]')).toBeEnabled();
+  await page.locator('[data-range-compare]').selectOption({label:'Synthetic reference'});
+  await page.locator('.range-workspace details').filter({has:page.locator('[data-range-meta="conditions.heroPosition"]')}).locator('summary').click();
+  for (const [field,value] of [['heroPosition','BTN'],['actionLine','R2.5'],['rake','5%'],['ante','none']]) await page.locator('[data-range-meta="conditions.'+field+'"]').fill(value);
+  await expect(page.locator('[data-range-summary]')).not.toContainText('条件待补');
+  await expect(page.locator('[data-range-detail]')).toContainText('先补齐两份范围的条件，再比较频率');
+  await page.locator('[data-range-meta="conditions.rake"]').fill('');await expect(page.locator('[data-range-summary]')).toContainText('条件待补：抽水');
+  await page.locator('[data-range-hand=AA]').focus();await page.keyboard.press('ArrowRight');await expect(page.locator('[data-range-hand=AKs]')).toBeFocused();
+  const download=page.waitForEvent('download');await page.locator('[data-range-command=export]').click();expect((await download).suggestedFilename()).toBe('poker-range.json');
+  await expect(page.locator('[data-study-practice]')).toHaveText('翻前概念自测');await page.locator('[data-study-practice]').click();
+  await expect(page.locator('[data-practice-config=topicId]')).toHaveValue('preflop');
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();expect(errors).toEqual([]);
+});
+
+test('quota failure preserves visible range input and offers a restorable draft file', async ({page}) => {
+  await page.goto('/#safemode');await openRanges(page);await page.locator('[data-range-command=new]').click();
+  const before=await page.evaluate(()=>localStorage.getItem('pa_ranges_v1'));
+  await page.evaluate(()=>{const set=Storage.prototype.setItem;Storage.prototype.setItem=function(key,value){if(key==='pa_ranges_v1')throw new DOMException('quota','QuotaExceededError');return set.call(this,key,value);};});
+  await page.locator('[data-range-value=raise]').fill('100');await expect(page.locator('[data-range-status]')).toContainText('本机保存未完成');
+  await expect(page.locator('[data-range-value=raise]')).toHaveValue('100');
+  const downloaded=page.waitForEvent('download');await page.locator('[data-range-command=backup]').click();
+  const backup=JSON.parse(await readFile(await(await downloaded).path(),'utf8'));
+  const state=JSON.parse(backup.localState.values.pa_ranges_v1);expect(state.editors[state.selectedId].values.AA.raise).toBe('100');
+  expect(await page.evaluate(()=>localStorage.getItem('pa_ranges_v1'))).toBe(before);
+});
