@@ -25,6 +25,7 @@ test('odds labels hit probability as a model and derives future streets from the
   t.mock.property(Odds, 'lastCalc', {});
   Odds.calc();
   let html = nodes.get('oddsResult').innerHTML;
+  assert.match(nodes.get('sprDisplay').innerHTML, /SPR: <span class="highlight">10\.0<\/span>/);
   assert.match(html, /补牌命中率/);
   assert.ok(!/精确|EV 跟注|EV 弃牌|当前下注需防守|最终需防守/.test(html));
   assert.ok(!html.includes('Flop:') && !html.includes('Turn:') && html.includes('River:'));

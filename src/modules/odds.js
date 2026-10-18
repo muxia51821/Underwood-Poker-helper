@@ -126,7 +126,7 @@ export const Odds = {
     }
     ratioDiv.textContent = '📊 对手下注了底池的 ' + Utils.safeFixed((bet / pot) * 100, 1) + '%';
     if (stack > 0) {
-      const spr = (stack / pot).toFixed(1);
+      const spr = Utils.safeFixed(stack / pot, 1);
       document.getElementById('sprDisplay').innerHTML = !isNaN(spr)
         ? '💡 本街下注前 SPR: <span class="highlight">' + spr + '</span> (' + stack + 'BB / ' + pot + 'BB)'
         : '';
