@@ -11,6 +11,11 @@ from bootstrap import ROOT, PRIMARY, REFERENCE, environment
 from run import HERE, RANKS, SUITS, cards, canonical, expand, compatible, strength, build, verify
 
 
+def artifact_sha256(path):
+    """Hash artifact content with canonical LF newlines across platforms."""
+    return hashlib.sha256(path.read_bytes().replace(b'\r\n', b'\n')).hexdigest()
+
+
 @lru_cache(maxsize=None)
 def hand_strength(board, hand):
     return strength(list(board)+cards(hand))
@@ -183,10 +188,10 @@ def main():
         reports.append(result);print(c['id'],'PASS' if result['passed'] else 'FAIL',flush=True)
         for suffix in ['input','primary','reference']:
             source=ROOT/'results'/(c['id']+'.'+suffix+'.json');destination=HERE/'results'/source.name
-            shutil.copyfile(source,destination);artifacts['results/'+destination.name]=hashlib.sha256(destination.read_bytes()).hexdigest()
+            shutil.copyfile(source,destination);artifacts['results/'+destination.name]=artifact_sha256(destination)
         if not result['passed']:break
     for file in ['turn-fixtures.json','primary.rs','reference.rs','primary.lock','reference.lock']:
-        artifacts[file]=hashlib.sha256((HERE/file).read_bytes()).hexdigest()
+        artifacts[file]=artifact_sha256(HERE/file)
     report={'schema':'solver-lab-verification-v1','passed':len(reports)==len(cases) and all(c['passed'] for c in reports),'status':'completed',
             'engines':{'primary':PRIMARY,'reference':REFERENCE},'cases':reports,'artifacts':artifacts,
             'generatedAt':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'singleThread':True,'compression':False,

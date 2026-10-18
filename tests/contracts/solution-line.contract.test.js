@@ -26,7 +26,7 @@ test('two-street answers bind to actual checked native artifacts with every suit
   const report=JSON.parse(await readFile(new URL('../../tools/solver-lab/line-verification.json',import.meta.url)));
   assert.equal(report.passed,true);assert.equal(report.cases.length,4);
   for(const c of report.cases)assert.ok(c.checks.every(v=>v.pass));
-  for(const [file,hash] of Object.entries(report.artifacts))assert.equal(createHash('sha256').update(await readFile(new URL('../../tools/solver-lab/'+file,import.meta.url))).digest('hex'),hash);
+  for(const [file,hash] of Object.entries(report.artifacts))assert.equal(createHash('sha256').update((await readFile(new URL('../../tools/solver-lab/'+file,import.meta.url))).toString('utf8').replaceAll('\r\n','\n')).digest('hex'),hash);
   const native=JSON.parse(await readFile(new URL('../../tools/solver-lab/results/'+pack.id+'.primary.json',import.meta.url)));
   for(const original of native.nodes) {
     const node=solutionNode(pack,original.path);assert.deepEqual(node.board,original.board);

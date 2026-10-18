@@ -11,6 +11,11 @@ from bootstrap import ROOT, PRIMARY, REFERENCE, environment
 from run import HERE, expand, compatible, canonical, cards, strength
 
 
+def artifact_sha256(path):
+    """Hash artifact content with canonical LF newlines across platforms."""
+    return hashlib.sha256(path.read_bytes().replace(b'\r\n', b'\n')).hexdigest()
+
+
 def build_line():
     for label, repo, revision, dependency, license_name in [('primary','postflop',PRIMARY,'engine','MIT'),('reference','postflop-solver',REFERENCE,'postflop-solver','AGPL-3.0-or-later')]:
         directory=ROOT/'adapters'/('line-'+label);(directory/'src').mkdir(parents=True,exist_ok=True)
@@ -141,12 +146,12 @@ def main():
             report=verify_line(fixture,output);shapes.append(report.pop('signature'));report['id']=fixture['id'];reports.append(report)
             print(label,'verified',report['passed'],flush=True)
             destination=HERE/'results'/out.name;shutil.copyfile(out,destination)
-            artifacts['results/'+out.name]=hashlib.sha256(destination.read_bytes()).hexdigest()
+            artifacts['results/'+out.name]=artifact_sha256(destination)
         same=same and shapes[0]==shapes[1]
         root_diff=max(root_diff,max(abs(a-b) for a,b in zip(pair[0]['rootEvBb'],pair[1]['rootEvBb'])))
     suit_diff=max(abs(outputs[i]['rootEvBb'][0]-outputs[i+2]['rootEvBb'][0]) for i in [0,1])
     for name in ['line-fixture.json','line-primary.rs','line-reference.rs','run_line.py']:
-        artifacts[name]=hashlib.sha256((HERE/name).read_bytes()).hexdigest()
+        artifacts[name]=artifact_sha256(HERE/name)
     report={'passed':same and root_diff<=0.001 and suit_diff<=0.001 and all(r['passed'] for r in reports),'sameTreeAndCombos':same,'crossEngineRootEvDifferenceBb':root_diff,'suitPermutationRootDifferenceBb':suit_diff,
             'engines':{'primary':PRIMARY,'reference':REFERENCE},'cases':reports,'artifacts':artifacts,'generatedAt':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),
             'evScope':'Every action EV checked against the exporting engine own average-strategy continuation; conditional posteriors are not required to coincide across different equilibria. No analytic mix solution claimed.'}

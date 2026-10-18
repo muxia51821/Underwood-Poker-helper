@@ -199,7 +199,7 @@ test('turn report passes with reproducible artifact hashes while old river packs
   assert.ok(report.cases.every(c=>c.passed&&c.checks.every(v=>v.pass&&v.actual<=v.maximum)));
   for(const [file,expected] of Object.entries(report.artifacts)) {
     const bytes=await readFile(new URL('../../tools/solver-lab/'+file,import.meta.url));
-    assert.equal(createHash('sha256').update(bytes).digest('hex'),expected);
+    assert.equal(createHash('sha256').update(bytes.toString('utf8').replaceAll('\r\n','\n')).digest('hex'),expected);
   }
   assert.equal(SOLUTION_PACKS[0].contentHash,'6a4851eec3956f85c488d4f9f305b05cf84765464c8f2b96807019f08006c5cd');
   assert.equal(SOLUTION_PACKS[1].contentHash,'164301becf9adcd767b0795ee3997af28e7c080dae6d16548fdc83c34085aadc');

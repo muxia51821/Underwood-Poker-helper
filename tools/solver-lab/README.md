@@ -32,6 +32,8 @@ node tools/solver-lab/export-line-pack.mjs
 
 Each case has declared ranges, actions, stack and pot sizes, payout assumptions and verification thresholds. The reports compare two pinned engines and independently enumerate the covered values and conditions. See `verification.json`, `turn-verification.json`, `line-verification.json` and `results/` for the recorded runs and raw engine output.
 
+Report artifact hashes use LF-normalized content so Windows checkouts and Linux CI verify the same files.
+
 These examples are conditional study references. Their ranges are not full preflop or flop solutions, their trees do not cover every legal action, and they do not establish a general GTO answer or a match to a real hand. The river-only checkdown branches cannot be trained as betting decisions. No sample automatically scores a user's hand.
 
 The primary adapter is MIT licensed and the reference adapter is AGPL-3.0-or-later; their license texts are in `licenses/`. Neither native engine nor adapter is bundled in the web app.

@@ -5,10 +5,11 @@ const here=new URL('./',import.meta.url);
 const read=async name=>JSON.parse(await readFile(new URL(name,here),'utf8'));
 const canonical=value=>Array.isArray(value)?value.map(canonical):value&&typeof value==='object'?Object.fromEntries(Object.keys(value).sort().map(k=>[k,canonical(value[k])])):value;
 const hash=value=>createHash('sha256').update(JSON.stringify(canonical(value))).digest('hex');
+const artifactHash=bytes=>createHash('sha256').update(bytes.toString('utf8').replaceAll('\r\n','\n')).digest('hex');
 const report=await read('turn-verification.json');
 if(report.passed!==true||report.cases.length!==4||report.cases.some(c=>!c.passed)) throw new Error('The turn numerical gate has not passed.');
 for(const [file,digest] of Object.entries(report.artifacts)) {
-  if(createHash('sha256').update(await readFile(new URL(file,here))).digest('hex')!==digest) throw new Error('Verification artifact changed: '+file);
+  if(artifactHash(await readFile(new URL(file,here)))!==digest) throw new Error('Verification artifact changed: '+file);
 }
 const fixture=(await read('turn-fixtures.json')).cases[0];
 const primary=await read(`results/${fixture.id}.primary.json`),reference=await read(`results/${fixture.id}.reference.json`);
