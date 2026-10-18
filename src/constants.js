@@ -2,7 +2,7 @@
 /* ==================== 核心配置 ==================== */
 export const CONSTANTS = {
   STORAGE_PREFIX: 'pa_',
-  VERSION: '7.11.15',
+  VERSION: '7.19.0',
   SESSION_GAP_HOURS: 1,  // [V7.3.2] 从 3h 改为 1h，线下 Live 手动创建不受影响
   DEV: true,
   SITE_URL: 'https://mxpoker.netlify.app/',
@@ -16,7 +16,7 @@ export const CONSTANTS = {
   INPUT_DEBOUNCE_MS: 300,
 };
 
-// [V6.3 新增] 精确胜率查找表（out→百分比），翻牌用组合概率公式、转牌用outs/46
+// [V7.11.16 修改] Fixed-outs hit probabilities, rounded to one decimal; not range equity.
 export const EQUITY_FLOP = [
   0, 4.3, 8.4, 12.5, 16.5, 20.4, 24.1, 27.8, 31.5, 35.0, 38.4, 41.7, 45.0, 48.1, 51.2, 54.1,
   57.0, 59.8, 62.4, 65.0, 67.5,

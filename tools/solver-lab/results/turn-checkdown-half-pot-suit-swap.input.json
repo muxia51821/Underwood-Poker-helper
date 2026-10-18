@@ -1,0 +1,1 @@
+{"id": "turn-checkdown-half-pot-suit-swap", "board": ["Kc", "7h", "2s", "8d"], "ranges": ["KK,A4s,A5s", "TT,JJ"], "potBb": 10, "stackBb": 20, "betBb": 5, "rake": 0, "icm": false, "continuation": "river-checkdown"}

@@ -1,0 +1,35 @@
+{
+  "rustManifestSha256": "fb152be80975c194aa5fc684b2aec3a6e14e2b855efe2faa4e5f8ae6e590f463",
+  "tools": [
+    {
+      "name": "rustc",
+      "version": "1.99.1",
+      "url": "https://static.rust-lang.org/dist/2026-10-15/rustc-1.99.1-x86_64-pc-windows-gnu.tar.xz",
+      "sha256": "a48f186defb3d57538b34e14a24a94f6e29906f191630b627dcb091198bae438"
+    },
+    {
+      "name": "cargo",
+      "version": "1.99.1",
+      "url": "https://static.rust-lang.org/dist/2026-10-15/cargo-1.99.1-x86_64-pc-windows-gnu.tar.xz",
+      "sha256": "e4b9107e9f655d37200c884294e74930829f236a3e81982fc678e9fc56ae9a6b"
+    },
+    {
+      "name": "rust-std",
+      "version": "1.99.1",
+      "url": "https://static.rust-lang.org/dist/2026-10-15/rust-std-1.99.1-x86_64-pc-windows-gnu.tar.xz",
+      "sha256": "b17e3bc962ff24b3bc47a750d838defed85b280746250e3a3ad029e6c1a29dd7"
+    },
+    {
+      "name": "rust-mingw",
+      "version": "1.99.1",
+      "url": "https://static.rust-lang.org/dist/2026-10-15/rust-mingw-1.99.1-x86_64-pc-windows-gnu.tar.xz",
+      "sha256": "1dca8e0d253565dbf21296eabc3e8d6e06e607e92c59dc00e3ecff902fe3d5ae"
+    },
+    {
+      "name": "w64devkit",
+      "version": "2.10.1",
+      "url": "https://github.com/skeeto/w64devkit/releases/download/v2.10.1/w64devkit-x64-2.10.1.7z.exe",
+      "sha256": "add1edf984ce4d473cfeb7c52e0ab38db73a855bba6c7f564d5e16648eb2896a"
+    }
+  ]
+}

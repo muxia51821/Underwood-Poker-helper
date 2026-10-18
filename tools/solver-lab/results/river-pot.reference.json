@@ -1,0 +1,557 @@
+{
+  "chanceNodes": [],
+  "engine": "b-inary/postflop-solver",
+  "iterations": 100000,
+  "nashConvBb": 0.00015556812286376953,
+  "nodes": [
+    {
+      "actions": [
+        {
+          "child": "root/check",
+          "id": "check"
+        },
+        {
+          "child": "root/bet:10",
+          "id": "bet:10"
+        }
+      ],
+      "board": [
+        "Ks",
+        "7d",
+        "2c",
+        "8h",
+        "3d"
+      ],
+      "combos": [
+        {
+          "cards": "Ac4c",
+          "evBb": [
+            -5.0,
+            -5.0004987716674805
+          ],
+          "frequency": [
+            0.8124879002571106,
+            0.1875120848417282
+          ],
+          "opponentMass": 12.0,
+          "reachWeight": 1.0
+        },
+        {
+          "cards": "Ad4d",
+          "evBb": [
+            -5.0,
+            -5.0004987716674805
+          ],
+          "frequency": [
+            0.8124879002571106,
+            0.1875120848417282
+          ],
+          "opponentMass": 12.0,
+          "reachWeight": 1.0
+        },
+        {
+          "cards": "Ah4h",
+          "evBb": [
+            -5.0,
+            -5.0004987716674805
+          ],
+          "frequency": [
+            0.8124879002571106,
+            0.1875120848417282
+          ],
+          "opponentMass": 12.0,
+          "reachWeight": 1.0
+        },
+        {
+          "cards": "As4s",
+          "evBb": [
+            -5.0,
+            -5.0004987716674805
+          ],
+          "frequency": [
+            0.8124879002571106,
+            0.1875120848417282
+          ],
+          "opponentMass": 12.0,
+          "reachWeight": 1.0
+        },
+        {
+          "cards": "Ac5c",
+          "evBb": [
+            -5.0,
+            -5.0004987716674805
+          ],
+          "frequency": [
+            0.8124879002571106,
+            0.1875120848417282
+          ],
+          "opponentMass": 12.0,
+          "reachWeight": 1.0
+        },
+        {
+          "cards": "Ad5d",
+          "evBb": [
+            -5.0,
+            -5.0004987716674805
+          ],
+          "frequency": [
+            0.8124879002571106,
+            0.1875120848417282
+          ],
+          "opponentMass": 12.0,
+          "reachWeight": 1.0
+        },
+        {
+          "cards": "Ah5h",
+          "evBb": [
+            -5.0,
+            -5.0004987716674805
+          ],
+          "frequency": [
+            0.8124879002571106,
+            0.1875120848417282
+          ],
+          "opponentMass": 12.0,
+          "reachWeight": 1.0
+        },
+        {
+          "cards": "As5s",
+          "evBb": [
+            -5.0,
+            -5.0004987716674805
+          ],
+          "frequency": [
+            0.8124879002571106,
+            0.1875120848417282
+          ],
+          "opponentMass": 12.0,
+          "reachWeight": 1.0
+        },
+        {
+          "cards": "KdKc",
+          "evBb": [
+            5.0,
+            10.000248908996582
+          ],
+          "frequency": [
+            0.0,
+            1.0
+          ],
+          "opponentMass": 12.0,
+          "reachWeight": 1.0
+        },
+        {
+          "cards": "KhKc",
+          "evBb": [
+            5.0,
+            10.000248908996582
+          ],
+          "frequency": [
+            0.0,
+            1.0
+          ],
+          "opponentMass": 12.0,
+          "reachWeight": 1.0
+        },
+        {
+          "cards": "KhKd",
+          "evBb": [
+            5.0,
+            10.000248908996582
+          ],
+          "frequency": [
+            0.0,
+            1.0
+          ],
+          "opponentMass": 12.0,
+          "reachWeight": 1.0
+        }
+      ],
+      "path": "root",
+      "player": 0,
+      "potBb": 10,
+      "stacksBb": [
+        20,
+        20
+      ]
+    },
+    {
+      "actions": [
+        {
+          "child": "root/check/check",
+          "id": "check"
+        }
+      ],
+      "board": [
+        "Ks",
+        "7d",
+        "2c",
+        "8h",
+        "3d"
+      ],
+      "combos": [
+        {
+          "cards": "TdTc",
+          "evBb": [
+            5.0
+          ],
+          "frequency": [
+            1.0
+          ],
+          "opponentMass": 6.499903678894043,
+          "reachWeight": 1.0
+        },
+        {
+          "cards": "ThTc",
+          "evBb": [
+            5.0
+          ],
+          "frequency": [
+            1.0
+          ],
+          "opponentMass": 6.499903678894043,
+          "reachWeight": 1.0
+        },
+        {
+          "cards": "TsTc",
+          "evBb": [
+            5.0
+          ],
+          "frequency": [
+            1.0
+          ],
+          "opponentMass": 6.499903678894043,
+          "reachWeight": 1.0
+        },
+        {
+          "cards": "ThTd",
+          "evBb": [
+            5.0
+          ],
+          "frequency": [
+            1.0
+          ],
+          "opponentMass": 6.499903678894043,
+          "reachWeight": 1.0
+        },
+        {
+          "cards": "TsTd",
+          "evBb": [
+            5.0
+          ],
+          "frequency": [
+            1.0
+          ],
+          "opponentMass": 6.499903678894043,
+          "reachWeight": 1.0
+        },
+        {
+          "cards": "TsTh",
+          "evBb": [
+            5.0
+          ],
+          "frequency": [
+            1.0
+          ],
+          "opponentMass": 6.499903678894043,
+          "reachWeight": 1.0
+        },
+        {
+          "cards": "JdJc",
+          "evBb": [
+            5.0
+          ],
+          "frequency": [
+            1.0
+          ],
+          "opponentMass": 6.499903678894043,
+          "reachWeight": 1.0
+        },
+        {
+          "cards": "JhJc",
+          "evBb": [
+            5.0
+          ],
+          "frequency": [
+            1.0
+          ],
+          "opponentMass": 6.499903678894043,
+          "reachWeight": 1.0
+        },
+        {
+          "cards": "JsJc",
+          "evBb": [
+            5.0
+          ],
+          "frequency": [
+            1.0
+          ],
+          "opponentMass": 6.499903678894043,
+          "reachWeight": 1.0
+        },
+        {
+          "cards": "JhJd",
+          "evBb": [
+            5.0
+          ],
+          "frequency": [
+            1.0
+          ],
+          "opponentMass": 6.499903678894043,
+          "reachWeight": 1.0
+        },
+        {
+          "cards": "JsJd",
+          "evBb": [
+            5.0
+          ],
+          "frequency": [
+            1.0
+          ],
+          "opponentMass": 6.499903678894043,
+          "reachWeight": 1.0
+        },
+        {
+          "cards": "JsJh",
+          "evBb": [
+            5.0
+          ],
+          "frequency": [
+            1.0
+          ],
+          "opponentMass": 6.499903678894043,
+          "reachWeight": 1.0
+        }
+      ],
+      "path": "root/check",
+      "player": 1,
+      "potBb": 10,
+      "stacksBb": [
+        20,
+        20
+      ]
+    },
+    {
+      "actions": [
+        {
+          "child": "root/bet:10/fold",
+          "id": "fold"
+        },
+        {
+          "child": "root/bet:10/call",
+          "id": "call"
+        }
+      ],
+      "board": [
+        "Ks",
+        "7d",
+        "2c",
+        "8h",
+        "3d"
+      ],
+      "combos": [
+        {
+          "cards": "TdTc",
+          "evBb": [
+            -5.0,
+            -4.999570369720459
+          ],
+          "frequency": [
+            0.4999749958515167,
+            0.5000249147415161
+          ],
+          "opponentMass": 4.500096321105957,
+          "reachWeight": 1.0
+        },
+        {
+          "cards": "ThTc",
+          "evBb": [
+            -5.0,
+            -4.999570369720459
+          ],
+          "frequency": [
+            0.4999749958515167,
+            0.5000249147415161
+          ],
+          "opponentMass": 4.500096321105957,
+          "reachWeight": 1.0
+        },
+        {
+          "cards": "TsTc",
+          "evBb": [
+            -5.0,
+            -4.999570369720459
+          ],
+          "frequency": [
+            0.4999749958515167,
+            0.5000249147415161
+          ],
+          "opponentMass": 4.500096321105957,
+          "reachWeight": 1.0
+        },
+        {
+          "cards": "ThTd",
+          "evBb": [
+            -5.0,
+            -4.999570369720459
+          ],
+          "frequency": [
+            0.4999749958515167,
+            0.5000249147415161
+          ],
+          "opponentMass": 4.500096321105957,
+          "reachWeight": 1.0
+        },
+        {
+          "cards": "TsTd",
+          "evBb": [
+            -5.0,
+            -4.999570369720459
+          ],
+          "frequency": [
+            0.4999749958515167,
+            0.5000249147415161
+          ],
+          "opponentMass": 4.500096321105957,
+          "reachWeight": 1.0
+        },
+        {
+          "cards": "TsTh",
+          "evBb": [
+            -5.0,
+            -4.999570369720459
+          ],
+          "frequency": [
+            0.4999749958515167,
+            0.5000249147415161
+          ],
+          "opponentMass": 4.500096321105957,
+          "reachWeight": 1.0
+        },
+        {
+          "cards": "JdJc",
+          "evBb": [
+            -5.0,
+            -4.999570369720459
+          ],
+          "frequency": [
+            0.4999749958515167,
+            0.5000249147415161
+          ],
+          "opponentMass": 4.500096321105957,
+          "reachWeight": 1.0
+        },
+        {
+          "cards": "JhJc",
+          "evBb": [
+            -5.0,
+            -4.999570369720459
+          ],
+          "frequency": [
+            0.4999749958515167,
+            0.5000249147415161
+          ],
+          "opponentMass": 4.500096321105957,
+          "reachWeight": 1.0
+        },
+        {
+          "cards": "JsJc",
+          "evBb": [
+            -5.0,
+            -4.999570369720459
+          ],
+          "frequency": [
+            0.4999749958515167,
+            0.5000249147415161
+          ],
+          "opponentMass": 4.500096321105957,
+          "reachWeight": 1.0
+        },
+        {
+          "cards": "JhJd",
+          "evBb": [
+            -5.0,
+            -4.999570369720459
+          ],
+          "frequency": [
+            0.4999749958515167,
+            0.5000249147415161
+          ],
+          "opponentMass": 4.500096321105957,
+          "reachWeight": 1.0
+        },
+        {
+          "cards": "JsJd",
+          "evBb": [
+            -5.0,
+            -4.999570369720459
+          ],
+          "frequency": [
+            0.4999749958515167,
+            0.5000249147415161
+          ],
+          "opponentMass": 4.500096321105957,
+          "reachWeight": 1.0
+        },
+        {
+          "cards": "JsJh",
+          "evBb": [
+            -5.0,
+            -4.999570369720459
+          ],
+          "frequency": [
+            0.4999749958515167,
+            0.5000249147415161
+          ],
+          "opponentMass": 4.500096321105957,
+          "reachWeight": 1.0
+        }
+      ],
+      "path": "root/bet:10",
+      "player": 1,
+      "potBb": 20,
+      "stacksBb": [
+        10,
+        20
+      ]
+    }
+  ],
+  "reportedHalfNashConvBb": 0.00007778406143188477,
+  "rootEvBb": [
+    -0.9090911149978638,
+    0.9090911149978638
+  ],
+  "seconds": 0.099471,
+  "terminals": [
+    {
+      "board": [
+        "Ks",
+        "7d",
+        "2c",
+        "8h",
+        "3d"
+      ],
+      "path": "root/check/check"
+    },
+    {
+      "board": [
+        "Ks",
+        "7d",
+        "2c",
+        "8h",
+        "3d"
+      ],
+      "path": "root/bet:10/fold"
+    },
+    {
+      "board": [
+        "Ks",
+        "7d",
+        "2c",
+        "8h",
+        "3d"
+      ],
+      "path": "root/bet:10/call"
+    }
+  ]
+}

@@ -4,7 +4,7 @@ import { CONSTANTS } from '../constants.js';
 const DB = {
   _db: null,
   _name: 'pa_store',
-  _version: 6,  // [V7.10.4 修改] 新增 gtoBaselines object store（GTO 基线域）
+  _version: 7,  // [V7.16.0 修改] Keep the pre-restore checkpoint outside user collections.
 
   isReady: function () {
     return Boolean(this._db);
@@ -13,9 +13,11 @@ const DB = {
   open: function () {
     var self = this;
     return new Promise(function (resolve, reject) {
+      let blocked = false; // [V7.16.0 新增]
       var req = indexedDB.open(self._name, self._version);
       req.onupgradeneeded = function (e) {
         var db = e.target.result;
+        if (!db.objectStoreNames.contains('recoverySnapshots')) db.createObjectStore('recoverySnapshots', { keyPath: 'id' });
         if (!db.objectStoreNames.contains('sessions'))
           db.createObjectStore('sessions', { keyPath: 'id' });
         if (!db.objectStoreNames.contains('handReviews')) {
@@ -51,8 +53,17 @@ const DB = {
           db.createObjectStore('gtoBaselines', { keyPath: 'id' });
       };
       req.onsuccess = function (e) {
+        if (blocked) { e.target.result.close(); return; }
         self._db = e.target.result;
+        // [V7.16.0 新增] Release this connection when another tab upgrades the database.
+        self._db.onversionchange = function () { self._db.close(); self._db = null; };
         resolve(self._db);
+      };
+      req.onblocked = function () {
+        blocked = true;
+        const error = new Error('请关闭其他旧版牌桌页面，再刷新以完成本地数据库升级。');
+        error.code = 'DB_UPGRADE_BLOCKED';
+        reject(error);
       };
       req.onerror = function (e) {
         reject(e.target.error);
@@ -78,6 +89,21 @@ const DB = {
         reject(e);
       }
     });
+  },
+
+  // [V7.16.0 新增] Resolve only after the checkpoint transaction commits.
+  saveRestoreCheckpoint: function (checkpoint) {
+    return new Promise((resolve, reject) => {
+      try {
+        const tx = this._db.transaction('recoverySnapshots', 'readwrite');
+        tx.objectStore('recoverySnapshots').put({ ...checkpoint, id: 'latest' });
+        tx.oncomplete = () => resolve();
+        tx.onerror = tx.onabort = () => reject(tx.error || new Error('恢复前副本未保存'));
+      } catch (error) { reject(error); }
+    });
+  },
+  async getRestoreCheckpoint() {
+    return (await this.getAll('recoverySnapshots'))[0] || null;
   },
 
   putAll: function (storeName, items) {

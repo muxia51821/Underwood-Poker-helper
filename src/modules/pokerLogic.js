@@ -3,7 +3,7 @@
 //   概念卡新增 对比例 / 阈值 / 自测题（嵌套 <details> 折叠，quiz-first：先想再看答案）。
 // 牌理机制文本只来自概念域（提炼自权威来源，附出处），本文件不自写牌理。
 // 纪律：卡片是"怎么想"的框架与机制参照；来源频率绝不与当前手牌做差值；证据只列来源与边界。
-import { matchHandSpot } from './spotMatcher.js';
+import { matchHandSpot, matchTurnSpot } from './spotMatcher.js';
 import { POKER_LOGIC_SEEDS } from '../data/pokerLogicSeed.js';
 import { CONCEPT_SEEDS, CONCEPT_APPLICATIONS } from '../data/conceptSeed.js';
 import { Utils } from '../utils.js';
@@ -22,6 +22,7 @@ function esc(s) {
 
 function sourceLine(ref) {
   if (!ref) return '';
+  if (ref.kind === 'aonlh') return '<div style="margin-top:2px;color:#7a8494;font-size:0.95em">来源：《无限德州扑克应用指南》' + esc(ref.lesson) + ' · 阅读器页 ' + esc(ref.readerPages) + '</div>';
   if (ref.kind === 'gwblog') {
     return '<div style="margin-top:2px;color:#7a8494;font-size:0.95em">来源：GTO Wizard 博客《' + esc(ref.lesson) + '》</div>';
   }
@@ -104,8 +105,13 @@ function stepBlock(label, step) {
 export var PokerLogic = {
   // 返回牌理参考 HTML；未命中 spot 返回 ''（调用方直接拼接）
   renderForHand: function (hand) {
-    let match = null;
-    try { match = matchHandSpot(hand); } catch (e) { return ''; }
+    // [V7.11.16 新增] Reaching the river must not hide the newly available turn decision.
+    const turn = matchTurnSpot(hand);
+    const current = matchHandSpot(hand);
+    const matches = [turn, current].filter((match, index, all) => match && all.findIndex((item) => item?.spotId === match.spotId) === index);
+    return matches.map((match) => this._renderMatch(match)).join('');
+  },
+  _renderMatch: function (match) {
     if (!match) return '';
     const seed = POKER_LOGIC_SEEDS.find((s) => s.id === match.spotId);
     if (!seed) return '';
@@ -115,14 +121,15 @@ export var PokerLogic = {
     html += '<summary style="cursor:pointer;color:#d4a853;font-size:0.82em;font-weight:bold">📚 牌理参考：' + esc(seed.title) +
       (match.street === 'river' ? '（河牌' + (match.riverType === 'scary' ? ' · 惊悚' : match.riverType === 'blank' ? ' · 空白' : '') + (match.line ? ' · 线 ' + esc(match.line) : '') + '）' : '') + '</summary>';
     html += '<div style="margin-top:8px;color:#c8ccd0;font-size:0.78em;line-height:1.65">';
+    if (match.street === 'turn') html += '<p>前置线与转牌行动：' + esc(match.line) + '</p>';
     // [V7.11.13 新增] Topic navigation does not assert an exact solver/profile match.
     html += '<button type="button" class="btn--mini" data-strategy-topic="' + topicForSpot(seed.id) + '">查看对应策略主题</button>';
 
     html += stepBlock('① 范围合法性', seed.steps && seed.steps.scope);
     html += stepBlock('② 线语义', seed.steps && seed.steps.lines);
-    html += stepBlock('③ ' + (match.street === 'river' ? '这张河牌改变了什么' : '牌面改变了什么'), seed.steps && seed.steps.streets);
-    html += stepBlock('④ 如果你的频率偏离', seed.steps && seed.steps.deviation);
-    if (seed.steps && seed.steps.deviation) {
+    html += stepBlock('③ ' + (match.street === 'river' ? '这张河牌改变了什么' : match.street === 'turn' ? '这张转牌改变了什么' : '牌面改变了什么'), seed.steps && seed.steps.streets);
+    html += stepBlock(match.street === 'turn' ? '④ 替代动作与河牌计划' : '④ 如果你的频率偏离', seed.steps && seed.steps.deviation);
+    if (match.street !== 'turn' && seed.steps && seed.steps.deviation) {
       html += '<div style="margin:-4px 0 7px;color:#8b949e">频率对照请回 Decision Radar 的对应信号卡（那里用你自己的样本基线），本卡只提供解读框架。</div>';
     }
 

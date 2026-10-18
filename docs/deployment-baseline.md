@@ -1,19 +1,17 @@
 # 部署基线
 
-> 核查日期：2026-08-08。本文件记录已观察到的证据，不代表平台侧全部设置都已确认。
-> 2026-08-25 更新：GitHub Pages 部署来源切换为 GitHub Actions 工作流并修复 CI，见「GitHub Pages」小节与证据表新增行。
+> 本文件保存 2026-08-08、2026-08-25 的核查证据与 2026-08-31 的发布记录。历史观察不代表最新平台设置或线上状态；建立新发布基线时按 [工作流](workflow.md) 复核。
 
-## 当前结论
+## 已记录的核查结论
 
-项目当前有两个内容不同的线上入口。Netlify 是文档中记录的主入口候选，GitHub Pages 仍是有效备用入口。Netlify 控制台已经确认仓库绑定、Git 持续部署、自动发布、生产分支、构建命令、发布目录和 Node.js 版本。2026-08-25 抽查显示 `poker.catstarry.xyz` 实际返回 `V7.8.0`（与 GitHub Pages 产物字节级一致），2026-08-08 记录的「Netlify 仍停留在 V7.3.3」结论已过时；控制台侧的最新发布记录本轮未重新核查。
+Netlify 是主入口候选，GitHub Pages 是备用入口。2026-08-08 核查记录确认了 Netlify 的仓库绑定、Git 持续部署、自动发布、生产分支、构建命令、发布目录和 Node.js 版本；当时两个入口返回不同内容。2026-08-25 抽查的 `poker.catstarry.xyz` 与 GitHub Pages 均返回 `V7.8.0`，产物字节级一致。2026-08-31 的合入和推送已有记录，但对应线上抽查未补齐，不能据此确认新的线上基线。
 
 ## 证据表
 
+未标注日期的行均为 2026-08-08 核查证据；其他行以所标日期为准。
+
 | 来源 | 观察到的状态 | 证据 |
 | --- | --- | --- |
-
-> 未标注日期的行均为 2026-08-08 核查证据；标注 2026-08-25 的行为本轮更新。
-
 | 本地 `HEAD` | `3c04f75770c0464fce85967cde240304abd557b2` | `V7.7.2 — Quiz独立可用 + 文档全面更新` |
 | 本地 `origin/master` | `3c04f75770c0464fce85967cde240304abd557b2` | 本地 tracking ref，不能证明当前 GitHub 状态 |
 | 公开 GitHub `master` | `e89e19077ad13895439099da25d839f6460d5d19` | 前一次远端核查中连续 3 次直接查询成功 |
@@ -30,41 +28,25 @@
 
 ### Netlify
 
-`netlify.toml` declares:
-
-```toml
-[build]
-  command = "npm run build"
-  publish = "dist"
-```
-
-当前控制台已确认该项目连接 GitHub 并启用 Git 持续部署。仓库文件中的构建契约与控制台配置一致：`npm run build` 输出到 `dist`。
+构建命令和发布目录以 `netlify.toml` 的 `[build]` 为准。仓库配置只执行构建，完整发布检查由 [PR 与发布流程](workflow.md#pr-与发布) 负责。上表中的 Git 持续部署和平台绑定是历史控制台观察，配置文件本身不能证明后台设置仍然相同。
 
 ### GitHub Pages
 
-`.github/workflows/static.yml` 由推送到 `master` 触发并部署 `dist`。当前 workflow 会先安装依赖、安装 Playwright Chromium（commit `7bb3cb9` 新增，修复 CI 中 e2e 因浏览器缺失而失败）、运行 `npm run check`，再构建 `dist` 后上传。
+`.github/workflows/static.yml` 声明推送到 `master` 或手动触发后，先安装依赖与 Playwright Chromium、运行 `npm run check`，再构建并上传 `dist`，最后部署 Pages。工作流配置与一次运行成功、线上内容一致是不同证据。
 
-2026-08-25 起，仓库 Pages 设置的 Build type 已从 legacy "Deploy from a branch" 切换为 "GitHub Actions"（通过 Pages API `build_type=workflow` 修改）。切换原因：legacy 模式会把 `master` 根目录的源码 `index.html` 直接发布为站点，其 `/src/styles.css` 与 `/src/main.js` 引用在子路径下全部失效，导致 UI 无法加载。此后站点内容只来自工作流上传的 `dist` 产物；如需回滚该设置，在 GitHub 仓库 Settings → Pages → Build and deployment 中把 Source 改回 "Deploy from a branch"。GitHub Pages 在后续明确决定前继续作为备用入口。
+2026-08-25 核查记录显示，仓库 Pages 设置的 Build type 已从 legacy "Deploy from a branch" 切换为 "GitHub Actions"（通过 Pages API `build_type=workflow` 修改）。旧模式曾把 `master` 根目录的源码 `index.html` 直接发布为站点，导致 `/src/styles.css` 与 `/src/main.js` 在子路径下失效；Actions 改为发布工作流上传的 `dist`。恢复旧 Source 设置会重新引入该风险，不能作为产物回滚方案。
 
 ## 仍需核对的线上证据
 
-Netlify 的控制台配置和最近一次生产发布已经确认。若要建立新的发布基线，还需要在木下选择性提交并推送后记录新部署的完整 SHA、产物 hash 和线上 smoke 结果。
+建立新发布基线时，按 [工作流](workflow.md#发布证据) 记录 source SHA、产物 hash、自动检查与线上 smoke 结果，并关联对应平台的部署记录或 workflow run 与 checkout SHA。平台绑定、生产分支或域名有变化时再复核相关后台设置；上表中曾核对成功的记录只证明其所标日期的状态。
 
-在把 Pages 当作备用入口依赖前，需要从 GitHub 记录：
+## 权限入口
 
-- 最近一次成功的 `static.yml` run
-- workflow checkout 的 SHA
-- 上传产物的 SHA-256
-
-2026-08-25 已全部满足：run `32863472393`，checkout `c17214d`，上传产物 `index.html` SHA-256 `25E8A175E76B975E43B243DC5BCE3204CF25C99BC5B26EB5D6A4F101B5352AA2`（与线上内容一致）。
-
-## 发布保护
-
-（2026-08-08 核查时）本次核查不授权执行 `pull`、`reset`、`rebase`、merge、push 或生产部署。建立发布基线前，必须先复核当前未提交工作区和远端提交差异。2026-08-25 的 Pages 修复与部署由木下明确授权，不适用上述限制。
+Git 与生产操作权限统一见 [AGENTS.md](../AGENTS.md#git-与协作权限)；历史核查中的临时操作限制不作为当前任务规则。
 
 ## 2026-08-31 发布（V7.9.0 → V7.11.6 合入 master）
 
 - master `13b28df` → `b01e368`：fast-forward 合入 `codex/poker-personal-os-plan` 全部 27 个提交（V7.9.0 导入可靠性 → V7.11.6 概念自测错题集），并合并 origin/master 上的 PR #1（`codex/fix-timer-pause` 计时器暂停/恢复修复，仅动 timer.js，与功能分支零文件交集）。
 - 推送记录：`master` 与 `codex/poker-personal-os-plan` 均推送至 `b01e368`；合并后在 master 上跑契约测试 64 项全绿。
-- `static.yml` 构建由 master 推送触发；**线上抽查（站点版本号/产物 SHA）尚未执行**——抽查结果回填本节后方可作为新基线。
+- 该次 master 推送会触发 `static.yml`；截至此记录，**线上抽查（站点版本号/产物 SHA）尚未执行**，因此不构成已确认的线上基线。
 - 合并过程中的操作偏差记录：一次 `merge origin/master` 误在 codex 分支上执行（生成 b01e368），master 首次推送被远端快进校验拒绝后改为 master fast-forward 到 b01e368，最终两分支内容一致。

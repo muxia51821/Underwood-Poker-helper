@@ -4,6 +4,10 @@ import { GGParser } from './parsers/ggParser.js';
 import { initStorage, getStorageHealth } from './store/store.js';
 import { App } from './modules/app.js';
 import './selfTests.js';
+import './workspaces.css'; // [V7.13.0 新增]
+import './sessionReview.css';
+import './timerWorkspace.css';
+import './interactions.css';
 
 // 向后兼容：保留 Utils 上的原有调用路径
 Utils.parseGGHandHistory = function (text) {
@@ -30,11 +34,13 @@ initStorage({ safeMode: isSafeMode() })
   })
   .catch(function (e) {
     console.error('Storage init failed', e);
+    // [V7.16.0 新增] Explain a blocked upgrade before offering an explicit fallback.
+    const upgradeBlocked = e.code === 'DB_UPGRADE_BLOCKED';
     var safeModeLink = isSafeMode()
       ? ''
       : '<p style="margin-top:16px"><a href="#safemode" style="color:#facc15">尝试安全模式启动（跳过 IndexedDB）</a></p>';
     document.body.innerHTML =
-      '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#141b24;color:#c8ccd0;font-family:sans-serif;text-align:center;padding:20px"><div><h2 style="color:#f87171;margin-bottom:12px">数据加载失败</h2><p style="margin-bottom:16px;font-size:0.85em">请尝试刷新页面，或使用备份文件恢复数据。</p><button id="fatalReloadBtn" style="background:#3b82f6;color:#fff;border:none;padding:8px 20px;border-radius:6px;font-size:0.9em;cursor:pointer">刷新页面</button>' +
+      '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#141b24;color:#c8ccd0;font-family:sans-serif;text-align:center;padding:20px"><div><h2 style="color:#f87171;margin-bottom:12px">' + (upgradeBlocked ? '请先关闭其他旧版页面' : '数据加载失败') + '</h2><p style="margin-bottom:16px;font-size:0.85em">' + (upgradeBlocked ? Utils.escapeHtml(e.message) : '请尝试刷新页面，或使用备份文件恢复数据。') + '</p><button id="fatalReloadBtn" style="background:#3b82f6;color:#fff;border:none;padding:8px 20px;border-radius:6px;font-size:0.9em;cursor:pointer">刷新页面</button>' +
       safeModeLink +
       '</div></div>';
     document.getElementById('fatalReloadBtn').addEventListener('click', function () {

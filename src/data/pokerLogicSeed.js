@@ -3,7 +3,8 @@
 //   带 DDoG/博客出处）+ 概念引用（conceptIds → CONCEPT_SEEDS）。牌理内容只存在于概念域，本文件不自写叙述。
 // 纪律：格内内容全部有出处；空格不允许（契约测试断言每格至少 1 条应用）。
 // street/scenario/role/question 为 spotMatcher 匹配字段，evidenceRefs 指向证据包 id，boundary 为证据转移边界——保持不变。
-export var POKER_LOGIC_SEED_VERSION = 'v4';
+import { TURN_SPOTS } from './strategyLessons.js';
+export var POKER_LOGIC_SEED_VERSION = 'v5';
 
 export var POKER_LOGIC_SEEDS = [
   {
@@ -175,7 +176,7 @@ export var POKER_LOGIC_SEEDS = [
     title: 'BTN 河牌下注（IP 进攻方终街）',
     steps: {
       scope: {
-        note: '本 spot = BTN 进攻权延续到河牌（IP 终街）。河牌是最后一次变现窗口——过牌后你的范围优势不再产生收益。',
+        note: '本 spot = BTN 河牌后行动。河牌是最后一个下注回合，但过牌也能兑现摊牌收益；下注要与过牌比较，不能只因仍有范围优势就下注。',
         conceptIds: ['concept-nut-advantage'],
         applicationIds: ['app-btn6-scope-1'],
       },
@@ -190,7 +191,7 @@ export var POKER_LOGIC_SEEDS = [
         applicationIds: ['app-btn6-streets-1'],
       },
       deviation: {
-        note: '偏离解读：空白河牌下注偏低 = 放弃收租窗口；惊悚面不重新定价是偏高侧的典型问题；对照 Radar 基线。',
+        note: '复盘时分别核对是否漏掉向更差手取值的机会，以及是否把有摊牌价值的手无谓转成诈唬。空白河牌不自动要求下注；频率变化本身不能证明收益变化。',
         conceptIds: [],
         applicationIds: ['app-btn6-deviation-1'],
       },
@@ -263,3 +264,15 @@ export var POKER_LOGIC_SEEDS = [
     boundary: '「BvB check-call 转河」对应 SB 翻牌 XC、转牌 X-X 后的河牌，不对应所有 SB 河牌线。转牌、3-bet 底池、Spin 与 HU 书例均标明原场景，用于机制对照；六深度分布为 MTT 聚合结构参考。',
   },
 ];
+
+// [V7.11.16 新增] Each position variant shares sourced teaching, not solver frequencies.
+POKER_LOGIC_SEEDS.push(...TURN_SPOTS.map(({ id, scenario, role, decision }) => ({
+  id, scenario, role, street: 'turn', question: decision.id,
+  title: scenario + ' · ' + decision.title,
+  steps: Object.fromEntries(Object.entries(decision.steps).map(([key, value]) => [key, {
+    note: key === 'scope' ? '当前识别：' + scenario + ' 单加注底池，Hero 为' + (role === 'raiser' ? '翻前加注者。' : '翻前跟注者。')
+      : { lines: '先按前街过滤范围，再选择当前动作。', streets: '比较转牌给双方范围带来的改变。', deviation: '比较替代动作与河牌计划。' }[key],
+    conceptIds: value.conceptIds, applicationIds: ['app-' + id + '-' + key],
+  }])),
+  evidenceRefs: [], boundary: decision.boundary,
+})));

@@ -11,18 +11,22 @@ var _handlers = {
 };
 
 function _activateMainTab(tab) {
-  var button = document.querySelector('.nav__btn[data-tab="' + tab + '"]');
+  var workspace = ['analyze', 'study', 'practice'].includes(tab);
+  var button = document.querySelector('.nav__btn[data-tab="' + (workspace ? 'workbench' : tab) + '"]');
   var panel = document.getElementById(tab + 'Panel');
   var main = document.querySelector('.main');
   if (!button || !panel || !main) return false;
   document.querySelectorAll('.nav__btn').forEach(function (item) {
     item.classList.toggle('nav__btn--active', item === button);
+    if (item === button) item.setAttribute('aria-current', 'page'); else item.removeAttribute('aria-current');
   });
   main.setAttribute('data-active-tab', tab);
   document.querySelectorAll('.panel').forEach(function (item) {
     item.classList.remove('is-visible');
   });
   panel.classList.add('is-visible');
+  var workbench = document.getElementById('decisionWorkbench');
+  if (workbench) workbench.hidden = !workspace;
   return true;
 }
 
@@ -33,6 +37,7 @@ function _activateReviewSubtab(name) {
   if (!button || !panel) return false;
   document.querySelectorAll('#reviewSubNav .subnav__btn').forEach(function (item) {
     item.classList.toggle('subnav__btn--active', item === button);
+    item.setAttribute('aria-pressed', String(item === button));
   });
   document.querySelectorAll('#reviewPanel .sub-panel').forEach(function (item) {
     item.classList.remove('is-visible');
@@ -42,6 +47,8 @@ function _activateReviewSubtab(name) {
 }
 
 export const Navigation = {
+  lastWorkbenchTab: 'analyze',
+  viewportPositions: {},
   configure(options) {
     var opts = options || {};
     _handlers = {
@@ -77,8 +84,13 @@ export const Navigation = {
   },
 
   goToTab(tab) {
+    if (tab === 'workbench') tab = this.lastWorkbenchTab;
+    const previous = document.querySelector('.main')?.dataset.activeTab;
+    if (previous) this.viewportPositions[previous] = window.scrollY;
     if (!_activateMainTab(tab)) return false;
+    if (['analyze', 'study', 'practice'].includes(tab)) this.lastWorkbenchTab = tab;
     _handlers.onTab(tab);
+    if (previous !== tab) window.scrollTo({ top: this.viewportPositions[tab] || 0, behavior: 'instant' });
     return true;
   },
 
@@ -88,9 +100,9 @@ export const Navigation = {
     return true;
   },
 
-  goToHand(handId) {
-    if (!this.goToReviewSubtab('hand', { resetPage: true })) return false;
-    _handlers.onTargetHand(handId);
+  goToHand(handId, context = null) {
+    if (!this.goToTab('analyze')) return false;
+    _handlers.onTargetHand(handId, context);
     return true;
   },
 
@@ -101,9 +113,9 @@ export const Navigation = {
   },
 
   goToLearningTarget(target) {
-    var moved = this.goToReviewSubtab('discover', { learningTarget: target });
-    if (moved) _handlers.onLearningTarget(target);
-    return moved;
+    if (!target) return false;
+    _handlers.onLearningTarget(target);
+    return true;
   },
 
   goToStrategy(strategyId) {

@@ -56,9 +56,11 @@ export const Timer = {
   // [V7.7.2 新增] Keep the primary Timer action accessible without changing timer semantics.
   syncPrimaryAction() {
     const isRunning = !!this.running;
-    this.startBtn.textContent = isRunning ? '暂停计时' : '开始专注';
+    const state = document.getElementById('timerRunState');
+    if (state) state.textContent = isRunning ? '计时进行中' : this.restorePending ? '已恢复 · 等待继续' : this.paused ? '已暂停' : '准备开始';
+    this.startBtn.textContent = isRunning ? '暂停计时' : this.restorePending ? '继续恢复的计时' : '开始专注'; // [V7.16.0 修改]
     this.startBtn.setAttribute('aria-pressed', String(isRunning));
-    this.startBtn.setAttribute('aria-label', isRunning ? '暂停计时' : '开始专注计时');
+    this.startBtn.setAttribute('aria-label', isRunning ? '暂停计时' : this.restorePending ? '继续恢复的计时' : '开始专注计时');
   },
   // [V7.8.0 修复] 暂停状态保存剩余时长，不再让绝对 endTime 在暂停期间继续流逝。
   getPhaseDurationMs() {
@@ -76,6 +78,7 @@ export const Timer = {
   },
   restoreState() {
     const state = Store.timer.get();
+    this.restorePending = !!state.restorePending; // [V7.16.0 新增] Restored timers only continue after an explicit action.
     if (state && state.longBreak) {
       this.longBreakCheck.checked = state.longBreak.enabled;
       this.longBreakInterval.value = state.longBreak.interval;
@@ -240,6 +243,7 @@ export const Timer = {
       this.updateDisplay();
     } else {
       if (Notification.permission === 'default') Notification.requestPermission();
+      this.restorePending = false; // [V7.16.0 修改]
       const now = Date.now();
       if (this.paused && this.remainingMs != null && this.remainingMs > 0) {
         this.endTime = now + this.remainingMs;
@@ -257,6 +261,7 @@ export const Timer = {
     }
   },
   reset() {
+    this.restorePending = false; // [V7.16.0 修改]
     clearInterval(this.interval);
     this.interval = null;
     this.running = false;
@@ -342,8 +347,8 @@ export const Timer = {
       Store.logs.save(t, l);
     }
   },
-  clearTodayLogs() {
-    if (confirm('确定清除今日所有站立记录吗？')) {
+  async clearTodayLogs() {
+    if (await Utils.confirmAction({ title: '清除今日活动记录？', message: '将删除今天的专注与站立日志，不影响其他日期的记录。此操作无法撤销。', confirmLabel: '清除今日记录', danger: true })) {
       Store.logs.save(Utils.getLocalDate(), []);
       this.renderLog();
     }

@@ -20,16 +20,19 @@
   </head>
   <body>
     <div id="healthWarningBar" class="warning-bar" style="display: none"></div>
+    <!-- [V7.16.0 新增] Incomplete restores remain visible after a reload. -->
+    <div id="restoreNotice" class="backup-notice" hidden>上次恢复尚未完成。<button type="button" class="btn--mini">查看恢复副本</button></div>
     <div class="app">
       <aside class="app__sidebar" aria-label="应用导航">
         <div class="app__settings">
-          <button class="app__settings-btn" id="settingsBtn" aria-label="提醒设置">Settings</button>
-          <div class="app__settings-menu" id="settingsMenu">
-            <button class="app__settings-option is-active" id="soundOption">Sound</button
-            ><button class="app__settings-option is-active" id="vibrateOption">Vibration</button
-            ><button class="app__settings-option" id="testNotifyOption">Test notification</button
+          <button class="app__settings-btn" id="settingsBtn" aria-label="应用设置">设置</button>
+          <div class="app__settings-menu" id="settingsMenu" aria-label="应用设置选项">
+            <button class="app__settings-option is-active" id="soundOption">声音提醒</button
+            ><button class="app__settings-option is-active" id="vibrateOption">振动提醒</button
+            ><button class="app__settings-option" id="testNotifyOption">测试通知</button
             ><button class="app__settings-option" id="colorSchemeOption" title="切换配色方案 (Pale / Nimbus / Ember)">Theme</button
-            ><button class="app__settings-option" id="shareSiteBtn">Share</button>
+            ><button class="app__settings-option" id="shareSiteBtn" data-menu-dismiss>分享网站</button>
+            <button class="app__settings-option" id="backupSettingsBtn" data-menu-dismiss>备份与恢复</button>
           </div>
         </div>
         <h1 class="app__title">
@@ -37,9 +40,10 @@
           ><span id="storageHealth" class="storage-health" title="存储状态"></span>
         </h1>
         <nav class="nav">
-          <button class="nav__btn nav__btn--active" data-tab="timer">Timer</button
+          <button class="nav__btn nav__btn--active" data-tab="timer" aria-current="page">Timer</button
           ><button class="nav__btn" data-tab="odds">Odds</button
-          ><button class="nav__btn" data-tab="review">Review</button
+          ><button class="nav__btn" data-tab="review">记录与统计</button
+          ><button class="nav__btn" data-tab="workbench">复盘与学习</button
           ><button
             id="quickCaptureBtn"
             class="quick-capture-trigger"
@@ -52,50 +56,64 @@
       </aside>
       <main class="main" data-active-tab="timer">
         <section id="timerPanel" class="panel is-visible">
-          <!-- [V7.7.2 修改] PC-first Timer workspace -->
+          <link rel="stylesheet" href="/src/timerWorkspace.css" />
           <header class="timer-workspace__header">
             <div>
               <h2 class="timer-workspace__title">专注与站立循环</h2>
-              <p class="timer-workspace__description">用清晰的工作与休息节奏保持注意力，也让身体定时离开座位。</p>
+              <p class="timer-workspace__description">按自己的节奏专注，休息时离开座位活动一下。</p>
             </div>
-            <button id="emergencyBtn" class="btn btn--emergency timer-rescue">
+            <button id="emergencyBtn" class="btn btn--emergency timer-rescue" type="button">
               暂停 30 秒冷静
             </button>
           </header>
+
           <div class="timer-workspace">
-            <section class="timer-stage" aria-label="当前计时阶段">
+            <section class="timer-stage timer-hero" aria-label="当前计时阶段">
+              <p class="timer-hero__eyebrow" id="timerRunState" role="status">尚未开始</p>
               <div id="phaseBdg" class="timer__phase timer__phase--work" aria-live="polite">
                 专注中
               </div>
               <div id="timerDisplay" class="timer__display" role="timer" aria-label="剩余时间">
                 25:00
               </div>
-              <div class="timer-stage__actions">
-                <button id="startBtn" class="btn timer-stage__primary" aria-pressed="false">
+              <div class="timer-stage__actions timer-hero__actions">
+                <button id="startBtn" class="btn timer-stage__primary" type="button" aria-pressed="false">
                   开始专注
                 </button>
-                <button id="resetTimerBtn" class="btn btn--secondary timer-stage__secondary">
+                <button id="resetTimerBtn" class="btn btn--secondary timer-stage__secondary" type="button">
                   重新开始
                 </button>
               </div>
               <button
                 id="skipBreakBtn"
-                class="btn timer-stage__skip"
+                class="btn timer-stage__skip timer-hero__skip"
+                type="button"
                 style="display: none"
               >
                 跳过休息，开始专注
               </button>
             </section>
 
-            <aside class="timer-rail" aria-label="今日摘要与周期设置">
-              <section class="timer-surface timer-summary">
-                <div class="timer-surface__title">今日进度</div>
+            <section class="timer-after-play" aria-label="牌局操作">
+              <div>
+                <p class="timer-after-play__eyebrow">牌局操作</p>
+                <p class="timer-after-play__hint">疑问先快记；牌局结束后，再整理本场。</p>
+              </div>
+              <div class="timer-after-play__actions">
+                <button id="finishPlayBtn" class="btn btn--secondary" type="button">结束牌局，去收尾</button>
+                <button class="btn btn--secondary timer-after-play__capture" type="button" data-timer-capture>快速记下一个疑问</button>
+              </div>
+            </section>
+
+            <div class="timer-lower">
+              <section class="timer-surface timer-summary" aria-label="今日进度">
+                <h3 class="timer-surface__title">今日进度</h3>
                 <div class="timer-summary__grid">
                   <div class="timer__stats">
                     <div class="timer__stats-label">站立次数</div>
                     <div id="todayCount" class="timer__stats-number">0</div>
                     <div class="timer-summary__unit">次</div>
-                    <button id="resetCountBtn" class="timer__reset-btn">重置次数</button>
+                    <button id="resetCountBtn" class="timer__reset-btn" type="button">重置次数</button>
                   </div>
                   <div class="timer-cycle">
                     <div class="timer__stats-label">当前循环</div>
@@ -105,82 +123,44 @@
                 </div>
               </section>
 
-              <section class="timer-surface timer-settings">
-                <div class="timer-surface__title">周期设置</div>
-                <div class="timer-settings__grid">
-                  <label class="field timer-settings__field">
-                    专注时长（分钟）
-                    <input
-                      type="number"
-                      id="workMin"
-                      class="input"
-                      value="20"
-                      min="1"
-                      max="120"
-                      step="1"
-                      required
-                    />
-                  </label>
-                  <label class="field timer-settings__field">
-                    站立时长（分钟）
-                    <input
-                      type="number"
-                      id="breakMin"
-                      class="input"
-                      value="2"
-                      min="1"
-                      max="30"
-                      step="1"
-                      required
-                    />
-                  </label>
-                </div>
-                <details id="longBreakDetails" class="timer-long-break">
-                  <summary>长休息 <span id="longBreakSummary"></span></summary>
-                  <div class="timer-long-break__controls">
-                    <label class="timer-long-break__toggle">
-                      <input type="checkbox" id="longBreakCheck" />
-                      启用长休息
+              <details class="timer-surface timer-settings timer-configuration">
+                <summary class="timer-settings__summary">周期设置 <span>专注、站立与长休息时长</span></summary>
+                <div class="timer-settings__content">
+                  <div class="timer-settings__grid">
+                    <label class="field timer-settings__field">
+                      专注时长（分钟）
+                      <input type="number" id="workMin" class="input" value="20" min="1" max="120" step="1" required />
                     </label>
-                    <label class="timer-long-break__field">
-                      每
-                      <input
-                        type="number"
-                        id="longBreakInterval"
-                        class="input"
-                        value="4"
-                        min="1"
-                        max="10"
-                        step="1"
-                      />
-                      次
-                    </label>
-                    <label class="timer-long-break__field">
-                      休息
-                      <input
-                        type="number"
-                        id="longBreakMin"
-                        class="input"
-                        value="15"
-                        min="5"
-                        max="60"
-                        step="1"
-                      />
-                      分钟
+                    <label class="field timer-settings__field">
+                      站立时长（分钟）
+                      <input type="number" id="breakMin" class="input" value="2" min="1" max="30" step="1" required />
                     </label>
                   </div>
-                </details>
-              </section>
-            </aside>
+                  <details id="longBreakDetails" class="timer-long-break">
+                    <summary>长休息设置 <span id="longBreakSummary"></span></summary>
+                    <div class="timer-long-break__controls">
+                      <label class="timer-long-break__toggle">
+                        <input type="checkbox" id="longBreakCheck" />
+                        启用长休息
+                      </label>
+                      <label class="timer-long-break__field">
+                        每
+                        <input type="number" id="longBreakInterval" class="input" value="4" min="1" max="10" step="1" />
+                        次
+                      </label>
+                      <label class="timer-long-break__field">
+                        休息
+                        <input type="number" id="longBreakMin" class="input" value="15" min="5" max="60" step="1" />
+                        分钟
+                      </label>
+                    </div>
+                  </details>
+                </div>
+              </details>
+            </div>
 
             <section class="timer-surface timer-log" aria-label="今日日志">
-              <button
-                type="button"
-                id="logToggle"
-                class="log__toggle"
-                aria-expanded="false"
-                aria-controls="logWrap"
-              >
+              <button type="button" id="logToggle" class="log__toggle" aria-expanded="false" aria-controls="logWrap">
                 <span id="logArrow">+</span>
                 今日活动记录
               </button>
@@ -199,7 +179,7 @@
                   </thead>
                   <tbody id="logBody"></tbody>
                 </table>
-                <button id="clearLogBtn" class="btn--mini btn--danger timer-log__clear">
+                <button id="clearLogBtn" class="btn--mini btn--danger timer-log__clear" type="button">
                   清除今日记录
                 </button>
               </div>
@@ -295,7 +275,7 @@
                   max="25"
                   required /></label
               ><label class="field"
-                >4️⃣有效筹码 (SPR)
+                >4️⃣本街下注前有效筹码 (BB)
                 <input type="number" id="stackInput" class="input" value="100" step="1" min="1"
               /></label>
             </div>
@@ -313,8 +293,8 @@
             </div>
             <div id="sprDisplay" class="text-muted" style="margin: 4px 0; min-height: 18px"></div>
             <div class="radio-group">
-              <label><input type="radio" name="street" value="one" checked /> 一张牌</label
-              ><label><input type="radio" name="street" value="two" /> 两张牌</label
+              <label><input type="radio" name="street" value="one" checked /> 转牌：一张牌</label
+              ><label><input type="radio" name="street" value="two" /> 翻牌：两张牌</label
               ><label
                 style="
                   display: flex;
@@ -324,7 +304,7 @@
                   white-space: nowrap;
                 "
                 ><input type="checkbox" id="comboCheck" style="width: auto; margin: 0" />
-                后续再下注</label
+                固定支付翻牌与转牌</label
               >
             </div>
             <div id="comboRow" style="display: none; margin-top: 8px">
@@ -419,7 +399,7 @@
               </div>
             </details>
             <details style="margin-top:12px" id="outsRefDetails">
-              <summary class="tech-summary">📊 Outs → Equity</summary>
+              <summary class="tech-summary">📊 Outs → 补牌命中率</summary>
               <div style="max-height:300px;overflow-y:auto">
                 <table class="cheatsheet" id="outsRefTbl">
                   <thead><tr><th>Outs</th><th>Flop (2 cards)</th><th>Turn (1 card)</th></tr></thead>
@@ -438,25 +418,34 @@
                   style="display:inline-block;width:auto;padding:10px 20px;text-decoration:none;font-size:0.85em"
                   >📊 GTO 范围表</a
                 >
-                <div class="text-muted" style="margin-top:10px">基于 Chip EV 计算：geecegto.com</div>
+                <div class="text-muted" style="margin-top:10px">基于筹码期望值计算：geecegto.com</div>
               </div>
             </details>
           </div>
         </section>
+        <!-- [V7.15.0 新增] A single task shell wraps the existing local views. -->
+        <section id="decisionWorkbench" class="workspace decision-workbench" aria-label="复盘与学习" hidden>
+          <header class="ws-header"><div><p class="ws-eyebrow">复盘 / 学习 / 练习</p><h2>从整场回看，到具体判断</h2></div><div class="ws-tabs" aria-label="工作台模式"><button type="button" data-tab="analyze" aria-pressed="true">场次复盘</button><button type="button" data-tab="study" aria-pressed="false">主题学习</button><button type="button" data-tab="practice" aria-pressed="false">专项练习</button></div></header>
+          <div data-workbench-context></div>
+        </section>
+        <section id="analyzePanel" class="panel" aria-label="分析工作区"><div id="analyzeWorkspace" class="workspace"></div></section>
+        <section id="studyPanel" class="panel" aria-label="学习工作区"><div id="studyWorkspace" class="workspace"></div></section>
+        <section id="practicePanel" class="panel" aria-label="练习工作区"><div id="practiceWorkspace" class="workspace"></div></section>
         <section id="reviewPanel" class="panel">
           <!-- [V7.7.2 修改] Review desktop analysis workspace -->
           <header class="review-workspace__header">
-            <h2>Review 工作台</h2>
-            <p>在同一工作区整理手牌、关联 Session、发现模式并进入针对性训练。</p>
+            <h2>牌局记录与统计</h2>
+            <p>这里管理记录、关联场次和查看统计；逐场挑牌与深入分析在「复盘与学习」继续。</p>
+            <button id="browseSessionReviewBtn" type="button" class="ws-button">按场次开始复盘</button>
           </header>
           <nav class="subnav review-rail" id="reviewSubNav" aria-label="Review 工作流">
             <div class="review-rail__group">
-              <div class="review-rail__label">复盘</div>
-              <button class="subnav__btn subnav__btn--active" data-sub="hand">手牌</button>
-              <button class="subnav__btn" data-sub="session">Session</button>
+              <div class="review-rail__label">数据管理</div>
+              <button class="subnav__btn subnav__btn--active" data-sub="hand">手牌管理</button>
+              <button class="subnav__btn" data-sub="session">场次管理</button>
             </div>
             <div class="review-rail__group">
-              <div class="review-rail__label">学习</div>
+              <div class="review-rail__label">发现与资料</div>
               <button class="subnav__btn" data-sub="discover">Discover 与 Quiz</button>
               <button class="subnav__btn" data-sub="strategy">策略</button><!-- [V7.9.3 新增] Evidence & Strategy -->
             </div>
@@ -498,27 +487,27 @@
               <!-- [V7.7.2 新增] Mobile quick capture header; desktop hidden. -->
               <header class="quick-capture__header">
                 <button id="quickCaptureCloseBtn" class="quick-capture__header-btn" type="button">关闭</button>
-                <h2 id="quickCaptureTitle">快速记录 Mark</h2>
+                <h2 id="quickCaptureTitle">快速记录</h2>
                 <button id="quickCaptureFullBtn" class="quick-capture__header-btn" type="button">完整编辑</button>
               </header>
               <div class="card__title hand-detail-title">手牌详情与反思</div>
               <div class="row hand-core-fields" style="margin-bottom: 8px">
                 <label class="field"
-                  >Pot Type<select id="handPotType" class="select">
+                  >底池类型<select id="handPotType" class="select">
                     <option value="">--</option>
-                    <option value="limp">Limp Pot</option>
-                    <option value="SIA">SIA (SRP IP Aggressive)</option>
-                    <option value="SID">SID (SRP IP Defend)</option>
-                    <option value="SOA">SOA (SRP OOP Aggressive)</option>
-                    <option value="SOD">SOD (SRP OOP Defend)</option>
-                    <option value="3IA">3IA (3-Bet IP Aggressive)</option>
-                    <option value="3ID">3ID (3-Bet IP Defend)</option>
-                    <option value="3OA">3OA (3-Bet OOP Aggressive)</option>
-                    <option value="3OD">3OD (3-Bet OOP Defend)</option>
-                    <option value="4IA">4IA (4-Bet IP Aggressive)</option>
-                    <option value="4ID">4ID (4-Bet IP Defend)</option>
-                    <option value="4OA">4OA (4-Bet OOP Aggressive)</option>
-                    <option value="4OD">4OD (4-Bet OOP Defend)</option>
+                    <option value="limp">平跟底池</option>
+                    <option value="SIA">SRP · IP 进攻</option>
+                    <option value="SID">SRP · IP 防守</option>
+                    <option value="SOA">SRP · OOP 进攻</option>
+                    <option value="SOD">SRP · OOP 防守</option>
+                    <option value="3IA">3-bet pot · IP 进攻</option>
+                    <option value="3ID">3-bet pot · IP 防守</option>
+                    <option value="3OA">3-bet pot · OOP 进攻</option>
+                    <option value="3OD">3-bet pot · OOP 防守</option>
+                    <option value="4IA">4-bet pot · IP 进攻</option>
+                    <option value="4ID">4-bet pot · IP 防守</option>
+                    <option value="4OA">4-bet pot · OOP 进攻</option>
+                    <option value="4OD">4-bet pot · OOP 防守</option>
                     <option value="其他">其他</option>
                   </select></label
                 >
@@ -548,7 +537,7 @@
                 >
               </div>
               <label class="field hand-session-field"
-                >关联Session (可选)<select id="handSessionSelect" class="select">
+                >关联场次（可选）<select id="handSessionSelect" class="select">
                   <option value="">-- 不关联 --</option>
                 </select></label
               >
@@ -590,7 +579,7 @@ OTR河牌 牌面：    行动：</textarea
               <details class="hand-extended-field" id="actionLineDetails" style="font-size: 0.75em; margin-top: 8px">
                 <summary style="color: #94a3b8; cursor: pointer">行动线速查</summary>
                 <!-- [V7.11.13 新增] Preserve the notes while showing their evidence status at the old entry. -->
-                <p class="text-muted">原行动线笔记尚未验证，缺少来源与样本，不能直接当作对手倾向。</p>
+                <p class="text-muted">原行动线笔记缺少来源与样本。</p>
                 <button type="button" class="btn--mini" data-strategy-topic="adjustment">查看策略体系与待证经验</button>
                 <table
                   class="srp-table"
@@ -616,7 +605,7 @@ OTR河牌 牌面：    行动：</textarea
               <label class="field hand-mistake-label">错误类型 </label>
               <div class="toggle-group" id="handMistakeGroup">
                 <button class="toggle-btn" data-mistake="open过宽">open过宽</button>
-                <button class="toggle-btn" data-mistake="OOP defend过宽">OOP defend过宽</button>
+                <button class="toggle-btn" data-mistake="OOP defend过宽">OOP 防守过宽</button>
                 <button class="toggle-btn" data-mistake="4bet逻辑混乱">4bet逻辑混乱</button>
                 <button class="toggle-btn" data-mistake="情绪型raise">情绪型raise</button>
                 <button class="toggle-btn" data-mistake="错误CB">错误CB</button>
@@ -659,10 +648,10 @@ OTR河牌 牌面：    行动：</textarea
                   <thead>
                     <tr>
                       <th>Time</th>
-                      <th>Session</th>
+                      <th>场次</th>
                       <th>Hand</th>
-                      <th>Profit</th>
-                      <th>Errors</th>
+                      <th>盈亏</th>
+                      <th>错误类型</th>
                       <th>操作</th>
                     </tr>
                   </thead>
@@ -701,7 +690,7 @@ OTR河牌 牌面：    行动：</textarea
                     class="select"
                     style="font-size: 0.7em; padding: 4px 8px"
                   >
-                    <option value="all">全部 Session</option>
+                    <option value="all">全部场次</option>
                     <option value="unlinked">未分类</option>
                   </select>
                 </div>
@@ -711,11 +700,11 @@ OTR河牌 牌面：    行动：</textarea
                       <tr>
                         <th>Time</th>
                         <th>Type</th>
-                        <th>Session</th>
+                        <th>场次</th>
                         <th>Hand</th>
-                        <th>Profit</th>
-                        <th>Errors</th>
-                        <th>Edit</th>
+                        <th>盈亏</th>
+                        <th>错误类型</th>
+                        <th>编辑</th>
                       </tr>
                     </thead>
                     <tbody id="handBody"></tbody>
@@ -742,7 +731,7 @@ OTR河牌 牌面：    行动：</textarea
                       id="handBatchSessionSelect"
                       style="font-size: 0.75em; min-width: 140px"
                     >
-                      <option value="">-- 关联到 Session --</option></select
+                      <option value="">-- 关联到场次 --</option></select
                     ><button id="handBatchLinkBtn" class="btn--mini">关联</button>
                   </div>
                 </div>
@@ -768,7 +757,7 @@ OTR河牌 牌面：    行动：</textarea
             <div class="card learning-radar-pane" id="discoverRadarCard" style="display:none">
               <div class="card__title">🎯 Decision Radar</div>
               <div class="learning-findings__summary">
-                信号 = Spot 频率 vs 你自己的场景基线（归属为启发式）；对可疑信号「建档研究」，记录假设、反例与下一步取证。
+                Radar 对比 Spot 频率与个人场景基线；可记录假设、反例和下一步取证。
               </div>
               <div id="radarBody"></div>
             </div>
@@ -811,8 +800,9 @@ OTR河牌 牌面：    行动：</textarea
             </div>
           </div>
           <div id="subSession" class="sub-panel">
+            <section id="closeoutInbox" class="card closeout-inbox" aria-label="本场收尾"></section>
             <div class="card session-detail-pane" id="sessionDetailPane" tabindex="-1">
-              <div class="card__title">新建或编辑 Session</div>
+              <div class="card__title">新建或编辑场次</div>
               <div class="row">
                 <label class="field">日期 <input type="date" id="sessDate" class="input" /></label
                 ><label class="field"
@@ -907,13 +897,13 @@ OTR河牌 牌面：    行动：</textarea
                 >备注 <input type="text" id="sessRemark" class="input" placeholder="特殊情况..."
               /></label>
               <div class="row" style="margin-top: 12px">
-                <button id="addSessionBtn" class="btn" data-state="create">保存 Session</button
+                <button id="addSessionBtn" class="btn" data-state="create">保存场次</button
                 ><button id="clearSessionBtn" class="btn btn--secondary">清空表单</button>
               </div>
             </div>
             <div class="card session-master-pane">
               <div class="card__title card__title--flex">
-                <span>本场统计 Session Stats</span>
+                <span>本场统计</span>
                 <div style="position: relative">
                   <button id="migrateBtn" class="btn--mini">数据迁移</button>
                   <div
@@ -931,16 +921,16 @@ OTR河牌 牌面：    行动：</textarea
                 </div>
               </div>
               <div id="statsArea">
-                <div class="text-muted">点击 Session 行或从 Picks 选择查看</div>
+                <div class="text-muted">点击场次，或从精选手牌中选择查看</div>
               </div>
               <div class="filter-row">
                 <!-- [V7.9.1 新增] 桌面端 Mark 入口（Review 内，不开新 tab） -->
                 <button
                   id="quickMarkBtn"
                   class="btn--mini btn--accent"
-                  title="快速记录 Mark（时间指针+短备注），收尾时匹配手牌"
+                  title="快速记下想复盘的问题，收尾时关联到牌谱"
                 >
-                  ⚡ 快速记录 Mark
+                  ⚡ 快速记录
                 </button>
                 <span id="closurePendingCount" class="text-muted" style="font-size: 0.75em"></span>
                 <select id="filterLevel" class="select">
@@ -978,8 +968,8 @@ OTR河牌 牌面：    行动：</textarea
             <section class="card strategy-library" id="strategyLibrary" aria-labelledby="strategyLibraryTitle">
               <h2 id="strategyLibraryTitle">策略体系</h2>
               <button type="button" class="btn--mini" data-library-personal>前往个人策略编辑</button>
-              <p class="strategy-library__intro">从已有策略理解出发，对照教材、文章与待验证经验。主线 9max / 200bb cash，次线 6max / 100bb。</p>
-              <p class="strategy-library__source">这是只读参考，不代表你已经掌握，也不会自动写入个人策略。文章需联网；教材页码与内容可离线阅读。</p>
+              <p class="strategy-library__intro">按 9max / 200bb cash 主线学习策略，并用 6max / 100bb 资料作对照。</p>
+              <p class="strategy-library__source">文章需联网；教材页码与内容可离线阅读。</p>
               <div class="strategy-library__layout">
                 <nav id="strategyTopicNav" aria-label="策略主题"></nav>
                 <article id="strategyTopicBody" aria-labelledby="strategyTopicTitle"></article>
@@ -989,11 +979,9 @@ OTR河牌 牌面：    行动：</textarea
             <div class="card strategy-master-pane">
               <div class="card__title">策略修订</div>
               <div id="strategyPendingHint" class="learning-findings__summary"></div>
-              <div id="strategyList"><div class="empty-state">还没有策略修订。从 Radar 信号建档转化，或直接新建。</div></div>
+              <div id="strategyList"><div class="empty-state">还没有策略修订。可从 Radar 信号创建研究记录，再转为策略修订；也可直接新建。</div></div>
               <div class="card__title" style="margin-top:14px">🌐 GTO 基线参考</div>
-              <div class="learning-findings__summary">
-                带来源、条件与转移边界的 GTO 参考；当前条目均为结构性参考，来源频率不与当前样本直接比较。
-              </div>
+
               <!-- [V7.10.4 新增] GTO 基线管理区 -->
               <button id="addGtoBaselineBtn" class="btn--mini" style="margin-bottom:6px">+ 新增 GTO 基线</button>
               <div id="gtoBaselineEditor" style="display:none;border:1px solid #1e3a5f;border-radius:8px;padding:8px;margin-bottom:8px">
@@ -1018,7 +1006,7 @@ OTR河牌 牌面：    行动：</textarea
                 <label class="field">来源标题<input id="gtoSourceTitle" class="input" /></label>
                 <label class="field">来源链接<input id="gtoSourceUrl" class="input" /></label>
                 <label class="field">文章日期<input id="gtoSourceDate" class="input" type="date" /></label>
-                <label class="field">转移边界<textarea id="gtoBoundary" class="textarea" rows="2" placeholder="不能推广到哪里"></textarea></label>
+                <label class="field">适用条件与差异<textarea id="gtoBoundary" class="textarea" rows="2" placeholder="填写来源条件与当前主线差异"></textarea></label>
                 <div class="row" style="gap:8px">
                   <button id="saveGtoBaselineBtn" class="btn--mini btn--accent" data-state="create">保存 GTO 基线</button>
                   <button id="cancelGtoBaselineBtn" class="btn--mini">取消</button>
@@ -1029,7 +1017,7 @@ OTR河牌 牌面：    行动：</textarea
             <div class="card strategy-detail-pane" id="strategyEditorPane" tabindex="-1">
               <div class="card__title">策略编辑</div>
               <label class="field">标题<input id="stratTitle" class="input" placeholder="如：BTNvsBB 翻牌 C-bet 策略" /></label>
-              <label class="field">Family（场景|街道）<input id="stratFamily" class="input" placeholder="BTNvsBB|flop" /></label>
+              <label class="field">策略分类<input id="stratFamily" class="input" placeholder="场景|街道，例如 BTNvsBB|flop" /></label>
               <label class="field">状态
                 <select id="stratStatus" class="select">
                   <option value="research">研究中</option>
@@ -1072,12 +1060,12 @@ OTR河牌 牌面：    行动：</textarea
                 <label class="field">方法/样本<textarea id="evMethodSample" class="textarea" rows="2" placeholder="方法与样本量（solver 配置/视频手数/样本期）"></textarea></label>
                 <label class="field">取证时间<input id="evCapturedAt" class="input" type="date" /></label>
                 <label class="field">复查日期（MDA 等易过时资料）<input id="evReviewDueAt" class="input" type="date" /></label>
-                <label class="field">转移边界<textarea id="evTransferBoundary" class="textarea" rows="2" placeholder="不能推广到哪里（如：6max 数据勿用于 9max 主线）"></textarea></label>
+                <label class="field">适用条件与差异<textarea id="evTransferBoundary" class="textarea" rows="2" placeholder="填写来源条件与当前场景差异"></textarea></label>
                 <label class="field">要点<textarea id="evKeyPoints" class="textarea" rows="2" placeholder="核心结论摘录"></textarea></label>
                 <details style="margin:8px 0"><summary class="tech-summary">Radar 匹配（可选）</summary>
                   <div class="text-muted" style="font-size:0.75em;margin:6px 0">三个条件齐全时，才会被同类 Signal 自动引用；条件匹配证据必须填写这一组。</div>
                   <label class="field">场景<select id="evScenario" class="select"><option value="">不自动匹配</option><option value="BTNvsBB">BTN vs BB</option><option value="SBvsBB">SB vs BB</option><option value="COvsBTN">CO vs BTN</option></select></label>
-                  <label class="field">Hero 决策<select id="evQuestion" class="select"><option value="">不自动匹配</option><option value="cbet">C-Bet</option><option value="facebet">面对下注弃牌</option></select></label>
+                  <label class="field">Hero 决策<select id="evQuestion" class="select"><option value="">未选择</option><option value="cbet">C-bet</option><option value="facebet">面对下注弃牌</option></select></label>
                   <label class="field">牌面类别<select id="evBoardCategory" class="select"><option value="">不自动匹配</option><option value="made_straight">三连张面</option><option value="flushy_dry">两花干面</option><option value="flushy_straighty">两花连张面</option><option value="straighty">连张面</option><option value="paired_low">低对子面</option><option value="paired_high">高对子面</option><option value="monotone">同花面</option><option value="dryAHigh">A 高干面</option><option value="dry_low">低张干面</option><option value="trips_board">三条公对</option></select></label>
                 </details>
                 <div class="row" style="gap:8px">
@@ -1113,7 +1101,7 @@ OTR河牌 牌面：    行动：</textarea
                   id="weeklyWeakness"
                   class="textarea"
                   rows="2"
-                  placeholder="例如：OOP单挑、3bet pot、翻前范围问题等"
+                  placeholder="例如：OOP 单挑、3-bet pot、翻前范围问题"
                 ></textarea></label
               ><label class="field"
                 >改进计划：<textarea
@@ -1188,19 +1176,17 @@ OTR河牌 牌面：    行动：</textarea
     </div>
     <div class="share-overlay" id="shareOverlay">
       <div class="share-dialog">
-        <div style="font-size: 1.1em; color: #f97316; font-weight: bold">🌐 分享网站</div>
+        <h2 class="ui-dialog-title" data-dialog-title>分享网站</h2>
         <div class="share-dialog__url" id="shareUrlDisplay">https://mxpoker.netlify.app/</div>
         <div class="row" style="gap: 8px">
-          <button id="shareCopyBtn" class="btn">📋 复制链接</button
+          <button id="shareCopyBtn" class="btn">复制链接</button
           ><button id="shareCloseBtn" class="btn btn--secondary">关闭</button>
         </div>
       </div>
     </div>
     <div class="share-overlay" id="ggImportOverlay">
-      <div class="share-dialog" style="max-width: 480px; max-height: 80vh; overflow-y: auto">
-        <div style="font-size: 1.1em; color: #f97316; font-weight: bold; margin-bottom: 12px">
-          📥 从 GG 牌谱导入
-        </div>
+      <div class="share-dialog ui-import-dialog">
+        <h2 class="ui-dialog-title" data-dialog-title>导入 GG 手牌</h2>
         <div
           style="
             font-size: 0.75em;
@@ -1211,7 +1197,7 @@ OTR河牌 牌面：    行动：</textarea
           "
         >
           拖拽 .txt 牌谱文件到下方区域，或粘贴 GG 手牌历史文本。导入后自动按 1 小时间隔分配到
-          Session。
+          场次。
         </div>
         <!-- [V6.14.0] 文件拖放区 -->
         <div
@@ -1265,12 +1251,13 @@ OTR河牌 牌面：    行动：</textarea
         <td data-bind="mistake"></td>
         <td>
           <button class="btn--mini" data-expand-id="">▶</button>
+          <button class="btn--mini" data-session-review="">复盘本场</button>
           <!-- [V7.9.1 新增] 每场收尾入口 -->
           <button class="btn--mini" data-closure-sid="" title="本场收尾">🏁</button>
           <button
             class="btn--mini"
             data-import-sid=""
-            title="导入牌谱到此 Session"
+            title="导入牌谱到此场次"
             style="background: #334155"
           >
             📥
@@ -1289,10 +1276,13 @@ OTR河牌 牌面：    行动：</textarea
         <td data-bind="profitHtml"></td>
         <td data-bind="mistake"></td>
         <td>
-          <button class="btn--mini" data-hand-expand="" title="展开">▶</button>
-          <button class="btn--mini hand-mark-btn" data-hand-mark="" title="标记">☆</button>
-          <button class="btn--mini" data-hand-edit="">✎</button>
-          <button class="btn--mini btn--danger" data-hand-delete="">✕</button>
+          <!-- [V7.12.0 修改] Fixed action grid keeps dense rows scan-friendly. -->
+          <div class="hand-row-actions">
+            <button class="btn--mini" data-hand-expand="" title="展开" aria-label="展开手牌">▶</button>
+            <button class="btn--mini hand-mark-btn" data-hand-mark="" title="标记" aria-label="标记手牌">☆</button>
+            <button class="btn--mini" data-hand-edit="" title="编辑" aria-label="编辑手牌">✎</button>
+            <button class="btn--mini btn--danger" data-hand-delete="" title="删除" aria-label="删除手牌">✕</button>
+          </div>
         </td>
       </tr>
     </template>
@@ -1316,7 +1306,7 @@ OTR河牌 牌面：    行动：</textarea
         <button id="statTooltipClose" class="btn--mini">Close</button>
       </div>
     </div>
-    <div id="toast" class="toast"></div>
+    <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

@@ -1,4 +1,5 @@
 import { CONSTANTS, EQUITY_FLOP, EQUITY_TURN } from './constants.js';
+import { bindDropdown, confirmAction, withBusy } from './modules/uiInteractions.js';
 
 // #region Utils
 /* ==================== 工具函数 ==================== */
@@ -11,15 +12,10 @@ export const Utils = {
     };
   },
   initDropdown(toggleBtn, menuEl) {
-    toggleBtn.addEventListener('click', function (e) {
-      e.stopPropagation();
-      menuEl.classList.toggle('is-visible');
-    });
-    document.addEventListener('click', function (e) {
-      if (!toggleBtn.contains(e.target) && !menuEl.contains(e.target))
-        menuEl.classList.remove('is-visible');
-    });
+    bindDropdown(toggleBtn, menuEl);
   },
+  confirmAction,
+  withBusy,
   initToggleGroup(containerId) {
     document.getElementById(containerId).addEventListener('click', function (e) {
       var btn = e.target.closest('.toggle-btn');
@@ -95,10 +91,10 @@ export const Utils = {
     return isNaN(num) || !isFinite(num) ? '--' : num.toFixed(digits);
   },
   /**
-   * 查表取精确胜率，outs 超过 20 自动回落组合公式
+   * Fixed-outs hit probability; above 20 outs use the combination formula.
    * @param {number} outs - 听牌数 (0-25)
    * @param {boolean} isFlop - true=翻牌(两张牌), false=转牌(一张牌)
-   * @returns {number} 胜率百分比 (0-100)
+   * @returns {number|string} 补牌命中概率百分比 (0-100)
    */
   getEquity(outs, isFlop) {
     if (outs <= 0) return 0;
@@ -401,12 +397,36 @@ export const Utils = {
   showToast(msg, duration) {
     var el = document.getElementById('toast');
     if (!el) { alert(msg); return; }
-    el.textContent = msg;
-    el.classList.add('toast--visible');
-    clearTimeout(el._timer);
-    el._timer = setTimeout(function () {
+    const options = typeof duration === 'object' && duration !== null ? duration : { duration };
+    const tone = ['neutral', 'success', 'error', 'warning'].includes(options.tone) ? options.tone : 'neutral';
+    const time = options.duration || Math.min(12000, Math.max(3500, String(msg).length * 70));
+    clearTimeout(el._timer); clearTimeout(el._hideTimer);
+    el.hidden = false;
+    el.dataset.tone = tone;
+    el.setAttribute('role', tone === 'error' ? 'alert' : 'status');
+    el.setAttribute('aria-live', tone === 'error' ? 'assertive' : 'polite');
+    el.setAttribute('aria-atomic', 'true');
+    const text = document.createElement('span'); text.textContent = String(msg);
+    const dismiss = document.createElement('button'); dismiss.type = 'button'; dismiss.className = 'toast__dismiss';
+    dismiss.setAttribute('aria-label', '关闭通知');
+    el.replaceChildren(text, dismiss);
+    const hide = () => {
+      clearTimeout(el._timer);
       el.classList.remove('toast--visible');
-    }, duration || 2500);
+      if (el.contains(document.activeElement)) document.activeElement.blur();
+      el._hideTimer = setTimeout(() => { el.hidden = true; }, 180);
+    };
+    const resume = () => {
+      clearTimeout(el._timer);
+      if (!el.matches(':hover') && !el.contains(document.activeElement)) el._timer = setTimeout(hide, time);
+    };
+    el.onmouseenter = () => clearTimeout(el._timer);
+    el.onmouseleave = resume;
+    el.onfocusin = () => clearTimeout(el._timer);
+    el.onfocusout = resume;
+    dismiss.addEventListener('click', hide);
+    el.classList.add('toast--visible');
+    resume();
   },
   // [V6.19.2] 统一盈亏格式化（带颜色和符号的 HTML）
   formatProfitHTML(pBB) {

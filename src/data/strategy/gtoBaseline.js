@@ -12,7 +12,7 @@ var SCENARIOS = { BTNvsBB: BTNvsBB, SBvsBB: SBvsBB };
 // gtoRaw 未记录筹码深度/桌型/盲注级别，未经 9max/200bb 主线档案验证，仅作结构性参考。
 export var GTO_LEGACY_SCOPE = {
   status: 'legacy-reference',
-  note: '旧 GTO 参考数据：条件未记录，未经 9max/200bb 主线档案验证，仅作结构性参考。',
+  note: '旧版数据未记录桌型、筹码深度和盲注级别。',
 };
 
 /**

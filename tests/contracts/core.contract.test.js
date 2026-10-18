@@ -247,6 +247,22 @@ test('storage import rejects malformed collection shapes', () => {
   assert.throws(() => Store.importAll({ handReviews: {} }), /handReviews 应为数组/);
 });
 
+// [V7.14.0 新增] Restore validation precedes collection writes; dictionary conflicts retain local values.
+test('learning restore validates before collection mutations and preserves local dictionary identities', async () => {
+  localStorage.clear();
+  await initStorage({ safeMode: true });
+  HandRepo.saveAll([{ id: 'local-fact' }]);
+  assert.throws(() => Store.importAll({ handReviews: [{ id: 'not-written' }], learningState: { version: 99, values: {} } }), /学习备份格式/);
+  assert.deepEqual(HandRepo.getAll(), [{ id: 'local-fact' }]);
+  for (const key of ['opponentAliases', 'opponentLiveFlags', 'opponentMerges']) {
+    Store[key].save({ shared: key === 'opponentMerges' ? ['local'] : key === 'opponentLiveFlags' ? true : 'local' });
+  }
+  Store.importAll({ opponentAliases: { shared: 'backup', added: 'new' }, opponentLiveFlags: { shared: false, added: true }, opponentMerges: { shared: ['backup'], added: ['new'] } });
+  assert.deepEqual(Store.opponentAliases.get(), { shared: 'local', added: 'new' });
+  assert.deepEqual(Store.opponentLiveFlags.get(), { shared: true, added: true });
+  assert.deepEqual(Store.opponentMerges.get(), { shared: ['local'], added: ['new'] });
+});
+
 test('storage migration derives board fields from legacy hand descriptions', async () => {
   localStorage.clear();
   localStorage.setItem('pa_handReviews', JSON.stringify([

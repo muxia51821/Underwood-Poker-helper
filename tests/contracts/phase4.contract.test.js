@@ -6,6 +6,45 @@ import { GGParser } from '../../src/parsers/ggParser.js';
 import { Utils } from '../../src/utils.js';
 import { STRATEGY_TOPICS, STRATEGY_HYPOTHESES, resolveTopic, resolveFrameworkSource, topicForSpot } from '../../src/data/strategyFramework.js';
 import { getTopicHandReferences, getStrategyLearningTarget, POSITION_REFERENCES } from '../../src/modules/strategyStudy.js';
+import { matchTurnSpot } from '../../src/modules/spotMatcher.js';
+import { Odds } from '../../src/modules/odds.js';
+
+// [V7.11.16 新增] Reproduce misleading theory output with actual calculator inputs.
+test('odds labels hit probability as a model and derives future streets from the selected street', (t) => {
+  const nodes = new Map();
+  for (const [id, value] of Object.entries({ potInput: '10', betInput: '5', outsInput: '9', stackInput: '100', multiWaySelect: '1', impliedInput: '0', comboCheck: '0', turnBetInput: '10' })) nodes.set(id, { value, checked: false, innerHTML: '', textContent: '' });
+  for (const id of ['impliedResult', 'betRatio', 'oddsResult', 'sprDisplay', 'sizingTable']) nodes.set(id, { innerHTML: '', textContent: '' });
+  let street = 'one';
+  const previousDocument = globalThis.document;
+  const keys = ['potInput', 'betInput', 'outsInput', 'stackInput'];
+  const previousFields = Object.fromEntries(keys.map((key) => [key, Odds[key]]));
+  t.after(() => { globalThis.document = previousDocument; for (const key of keys) Odds[key] = previousFields[key]; });
+  globalThis.document = { getElementById: (id) => nodes.get(id), querySelector: () => ({ value: street }) };
+  for (const key of keys) Odds[key] = nodes.get(key);
+  t.mock.method(Odds, 'renderOutsTable', () => {});
+  t.mock.property(Odds, 'lastCalc', {});
+  Odds.calc();
+  let html = nodes.get('oddsResult').innerHTML;
+  assert.match(nodes.get('sprDisplay').innerHTML, /SPR: <span class="highlight">10\.0<\/span>/);
+  assert.match(html, /补牌命中率/);
+  assert.ok(!/精确|EV 跟注|EV 弃牌|当前下注需防守|最终需防守/.test(html));
+  assert.ok(!html.includes('Flop:') && !html.includes('Turn:') && html.includes('River:'));
+  assert.match(html, /跟注后/);
+  assert.match(html, /零权益诈唬/);
+  const hu = Odds.lastCalc.estWin;
+  nodes.get('multiWaySelect').value = '2';
+  Odds.calc();
+  assert.equal(Odds.lastCalc.estWin, hu * 0.96);
+  assert.match(nodes.get('oddsResult').innerHTML, /个人设定系数/);
+  street = 'two';
+  Odds.calc();
+  html = nodes.get('oddsResult').innerHTML;
+  assert.ok(html.includes('Turn:') && html.includes('River:') && !html.includes('Flop:'));
+  nodes.get('comboCheck').checked = true;
+  Odds.calc();
+  assert.match(nodes.get('oddsResult').innerHTML, /固定两街支付/);
+  assert.match(nodes.get('oddsResult').innerHTML, /不是实际跟注 EV/);
+});
 
 // [V7.11.15 新增] Exercise the stored strategy-to-learning path, not just the new topic button.
 function strategyLearningRegression(t) {
@@ -69,13 +108,13 @@ test('strategy library keeps source links safe and scopes uncertain textbook rea
   assert.equal(safeSourceUrl('https://example.com/'), 'https://example.com/');
   StrategyLibrary.select('preflop');
   let html = document.getElementById('strategyTopicBody').innerHTML;
-  assert.ok(html.includes('三个例子分别读'));
+  assert.ok(html.includes('p168–170 是 BTN 开局 100/200bb 比较'));
   assert.ok(!html.includes('premium 手 preflop 价值上升'));
   assert.ok(html.includes('阅读器页 168-170'));
   StrategyLibrary.select('turn');
   html = document.getElementById('strategyTopicBody').innerHTML;
   assert.ok(html.includes('不等于没有强牌或陷阱'));
-  assert.ok(html.includes('未经验证'));
+  assert.ok(html.includes('待核实'));
   assert.ok(!html.includes('他的 range 不含强 trap'));
   assert.ok(!html.includes('data-strategy-edit'));
 });
@@ -117,6 +156,8 @@ test('parsed nine-seat histories preserve hero decisions through observations an
     { scenario: 'SBvsBB', heroSeat: 3, actions: ['SB: bets $0.10', 'BB: folds'], action: 'fold', topic: 'defense' },
     { scenario: 'BTNvsBB', heroSeat: 1, actions: ['BB: checks', 'BTN: bets $0.10', 'BB: calls $0.10'], action: 'bet', topic: 'flop' },
     { scenario: 'BTNvsBB', heroSeat: 3, actions: ['BB: checks', 'BTN: bets $0.10', 'BB: calls $0.10'], action: 'call', topic: 'defense' },
+    { scenario: 'BTNvsBB', heroSeat: 3, actions: ['BB: checks', 'BTN: checks'], turnActions: ['BB: bets $0.20', 'BTN: calls $0.20'], action: null, topic: 'turn', turn: 'probe' },
+    { scenario: 'BTNvsBB', heroSeat: 1, actions: ['BB: checks', 'BTN: checks'], turnActions: ['BB: checks', 'BTN: bets $0.20', 'BB: calls $0.20'], action: 'check', topic: 'turn', turn: 'delayed' },
   ];
   for (const [index, sample] of cases.entries()) {
     const names = ['BTN', 'SB', 'BB', 'P4', 'P5', 'P6', 'P7', 'P8', 'P9'];
@@ -137,7 +178,7 @@ test('parsed nine-seat histories preserve hero decisions through observations an
       ...(opener === 'BTN' ? ['SB: folds'] : []), 'BB: calls $0.10',
       '*** FLOP *** [Ah 7c 2d]', ...sample.actions,
       ...(folded ? ['Uncalled bet ($0.10) returned to ' + opener] : [
-        '*** TURN *** [Ah 7c 2d] [4s]', ...order.map((name) => name + ': checks'),
+        '*** TURN *** [Ah 7c 2d] [4s]', ...(sample.turnActions || order.map((name) => name + ': checks')),
         '*** RIVER *** [Ah 7c 2d 4s] [8h]', ...order.map((name) => name + ': checks'),
         '*** SHOWDOWN ***', 'Hero: shows [As Kd] (a pair of Aces)',
       ]),
@@ -152,8 +193,9 @@ test('parsed nine-seat histories preserve hero decisions through observations an
     assert.equal(hand.preflopScenario, sample.scenario);
     hand.id = 'imported-' + hand.ggId;
     const result = buildFlopObservations([hand]);
-    assert.equal(result.observations.length, 1, 'sample ' + index);
-    assert.equal(result.observations[0].actionClass, sample.action, 'sample ' + index);
+    assert.equal(result.observations.length, sample.action ? 1 : 0, 'sample ' + index);
+    if (sample.action) assert.equal(result.observations[0].actionClass, sample.action, 'sample ' + index);
+    if (sample.turn) assert.equal(matchTurnSpot(hand)?.decision, sample.turn);
     assert.equal(getTopicHandReferences(sample.topic, [hand], '9max').length, 1);
   }
 });
@@ -308,7 +350,8 @@ test('retest evaluation compares baseline snapshot against current signal', () =
   assert.equal(same.due, false);
   const stale = DecisionRadar.evaluateRetest({ freq: 80, sample: 10 }, null);
   assert.equal(stale.due, true);
-  assert.ok(stale.reasons.join('').includes('旧基线'));
+  assert.ok(stale.reasons.join('').includes('观察口径已更新'));
+  assert.ok(stale.reasons.join('').includes('重新建档复测'));
   assert.ok(!stale.reasons.join('').includes('已改善'));
 });
 
@@ -578,6 +621,85 @@ function syntheticHand(overrides) {
   }, overrides);
 }
 
+// [V7.11.16 新增] Reproduce the missing turn cards before changing the matcher.
+test('turn decisions distinguish barrels, probes, delays and donks by actors and prior line', async () => {
+  const { matchTurnSpot } = await import('../../src/modules/spotMatcher.js');
+  const cases = [
+    ['X-B33-C', 'X-B75-F', 'BTN', 'barrel'],
+    ['X-B33-C', 'X-B75-C', 'BB', 'facebarrel'],
+    ['X-X', 'B75-F', 'BB', 'probe'],
+    ['X-X', 'B75-C', 'BTN', 'faceprobe'],
+    ['X-X', 'X-B50-C', 'BTN', 'delayed'],
+    ['X-X', 'X-B50-C', 'BB', 'facedelayed'],
+    ['X-B33-C', 'B50-C', 'BB', 'donk'],
+    ['X-B33-C', 'X-X', 'BTN', 'barrel'],
+    ['X-X', 'X-X', 'BB', 'probe'],
+  ];
+  for (const [actionLineOTF, actionLineOTT, heroPosition, decision] of cases) {
+    const hand = syntheticHand({ actionLineOTF, actionLineOTT, heroPosition });
+    const before = JSON.stringify(hand);
+    const match = matchTurnSpot(hand);
+    assert.equal(match?.decision, decision, JSON.stringify(hand));
+    assert.ok(POKER_LOGIC_SEEDS.some((seed) => seed.id === match.spotId));
+    assert.equal(topicForSpot(match.spotId), 'turn');
+    assert.equal(matchHandSpot(hand)?.spotId, match.spotId);
+    assert.equal(JSON.stringify(hand), before);
+  }
+  for (const [preflopScenario, heroPosition, actionLineOTF, actionLineOTT, decision] of [
+    ['SBvsBB', 'SB', 'B33-C', 'B75-C', 'barrel'],
+    ['SBvsBB', 'BB', 'B33-C', 'B75-C', 'facebarrel'],
+    ['COvsBTN', 'CO', 'X-X', 'B50-C', 'delayed'],
+    ['COvsBTN', 'BTN', 'X-X', 'B50-C', 'facedelayed'],
+  ]) assert.equal(matchTurnSpot(syntheticHand({ preflopScenario, heroPosition, actionLineOTF, actionLineOTT }))?.decision, decision);
+  for (const patch of [
+    { actionLineOTF: 'X-B33-F' }, { actionLineOTF: 'X-B33-R100-C' },
+    { actionLineOTF: 'B33-C' }, { actionLineOTT: 'X-X-B50-C' },
+    { actionLineOTF: 'X-X', actionLineOTT: 'X' },
+    { potType: '3BP' }, { preflopScenario: 'other' }, { heroPosition: 'UTG' },
+  ]) assert.equal(matchTurnSpot(syntheticHand({ actionLineOTF: 'X-B33-C', actionLineOTT: 'X-B75-C', ...patch })), null, JSON.stringify(patch));
+  const hu = syntheticHand({ preflopScenario: 'SBvsBB', tableMax: 2, heroPosition: 'SB', actionLineOTF: 'X-X', actionLineOTT: 'X-B50-C' });
+  assert.equal(matchTurnSpot(hu)?.decision, 'delayed');
+  assert.equal(matchTurnSpot({ ...hu, tableMax: 0 }), null);
+});
+
+test('turn learning stays visible when a hand also has a river reference', () => {
+  const hand = syntheticHand({ actionLineOTF: 'X-B33-C', actionLineOTT: 'X-B75-C', actionLineOTR: 'X-B75-C' });
+  const html = PokerLogic.renderForHand(hand);
+  assert.match(html, /二枪：不是把翻牌下注再做一次/);
+  assert.match(html, /BTN 河牌下注/);
+  assert.match(html, /data-strategy-topic="turn"/);
+  assert.ok(!html.slice(0, html.indexOf('BTN 河牌下注')).includes('频率对照请回 Decision Radar'));
+});
+
+test('reading paths resolve sources and concepts without synthesizing personal strategies', async () => {
+  const { TOPIC_LESSONS, TURN_DECISIONS, TURN_SPOTS } = await import('../../src/data/strategyLessons.js');
+  const known = new Set(CONCEPT_SEEDS.map((concept) => concept.id));
+  for (const topic of STRATEGY_TOPICS) {
+    const lessons = resolveTopic(topic.id).lessons;
+    assert.ok(lessons.length > 0, topic.id);
+    for (const lesson of lessons) {
+      assert.ok(lesson.title && lesson.question && lesson.answer);
+      const refs = lesson.steps ? Object.values(lesson.steps).map((step) => step.sourceRef) : [lesson.sourceRef];
+      for (const ref of refs) assert.ok(['ddog', 'aonlh'].includes(ref.kind) && ref.lesson && ref.readerPages);
+    }
+  }
+  assert.equal(Object.keys(TOPIC_LESSONS).length, 7);
+  assert.equal(TURN_DECISIONS.length, 7);
+  for (const { id, decision } of TURN_SPOTS) {
+    const seed = POKER_LOGIC_SEEDS.find((item) => item.id === id);
+    for (const [key, step] of Object.entries(decision.steps)) {
+      assert.ok(step.conceptIds.every((cid) => known.has(cid)));
+      const app = CONCEPT_APPLICATIONS.find((item) => item.id === seed.steps[key].applicationIds[0]);
+      assert.equal(app.text, step.text);
+      assert.deepEqual(app.sourceRef, step.sourceRef);
+    }
+  }
+  const probe = CONCEPT_SEEDS.find((item) => item.id === 'concept-probe');
+  assert.match(probe.selfChecks[0].question, /BTN vs BB.*straddle/);
+  assert.ok(!probe.mechanism.includes('HJ vs BB 的砖牌例子'));
+  assert.ok(!CONCEPT_SEEDS.find((item) => item.id === 'concept-delayed-cbet').mechanism.includes('天然更极化'));
+});
+
 // [V7.11.14 新增] Regression inputs reproduce actor attribution and source-scope conflicts.
 test('postflop attribution distinguishes regular blind battles from heads-up tables', async () => {
   const { buildFlopObservations } = await import('../../src/modules/analysisReadModel.js');
@@ -650,7 +772,7 @@ test('topic quizzes filter concepts and wrong-answer views while preserving unre
 });
 
 test('v7.11.0 spot matcher routes hands to logic cards by role and street', () => {
-  assert.equal(SPOT_MATCHER_VERSION, 2);
+  assert.equal(SPOT_MATCHER_VERSION, 3);
 
   // 翻牌：BTN cbet（BB check 后 BTN 下注、BB 跟注）
   const flopCbet = syntheticHand({ actionLineOTF: 'X-B60-C' });
@@ -659,7 +781,7 @@ test('v7.11.0 spot matcher routes hands to logic cards by role and street', () =
 
   // 翻牌止步 + 打过转牌的手牌不做翻牌牌理（复盘重点在当前街）
   const pastFlop = syntheticHand({ actionLineOTF: 'X-B60-C', actionLineOTT: 'X-X' });
-  assert.equal(matchHandSpot(pastFlop), null);
+  assert.equal(matchHandSpot(pastFlop)?.decision, 'barrel');
 
   // 河牌：BTN 两街下注到河牌再下注（BB check 让路，空白河牌）
   const riverBet = syntheticHand({
@@ -708,8 +830,8 @@ test('v7.11.0 spot matcher routes hands to logic cards by role and street', () =
 });
 
 test('v7.11.4 poker logic seeds assemble from resolvable applications, concepts and evidence', () => {
-  assert.equal(POKER_LOGIC_SEED_VERSION, 'v4');
-  assert.equal(POKER_LOGIC_SEEDS.length, 8);
+  assert.equal(POKER_LOGIC_SEED_VERSION, 'v5');
+  assert.equal(POKER_LOGIC_SEEDS.length, 23);
   const ids = POKER_LOGIC_SEEDS.map((s) => s.id);
   assert.equal(new Set(ids).size, ids.length);
   const resolvable = new Set(
@@ -720,7 +842,7 @@ test('v7.11.4 poker logic seeds assemble from resolvable applications, concepts 
   const apps = new Map(CONCEPT_APPLICATIONS.map((a) => [a.id, a]));
   POKER_LOGIC_SEEDS.forEach((seed) => {
     assert.ok(seed.boundary, seed.id + ' needs boundary');
-    assert.ok(seed.evidenceRefs.length, seed.id + ' needs evidence refs');
+    if (seed.street !== 'turn') assert.ok(seed.evidenceRefs.length, seed.id + ' needs evidence refs');
     seed.evidenceRefs.forEach((ref) => {
       assert.ok(resolvable.has(ref), seed.id + ' references unknown evidence ' + ref);
     });
@@ -745,11 +867,12 @@ test('v7.11.4 poker logic seeds assemble from resolvable applications, concepts 
   // 三条河牌卡 + 五条翻牌卡
   assert.equal(POKER_LOGIC_SEEDS.filter((s) => s.street === 'river').length, 3);
   assert.equal(POKER_LOGIC_SEEDS.filter((s) => s.street === 'flop').length, 5);
+  assert.equal(POKER_LOGIC_SEEDS.filter((s) => s.street === 'turn').length, 15);
 });
 
 test('v7.11.10 concept seeds carry teaching dimensions with source discipline', () => {
-  assert.equal(CONCEPT_SEED_VERSION, 'v13');
-  assert.equal(CONCEPT_SEEDS.length, 54);
+  assert.equal(CONCEPT_SEED_VERSION, 'v15');
+  assert.equal(CONCEPT_SEEDS.length, 56);
   const ids = CONCEPT_SEEDS.map((c) => c.id);
   assert.equal(new Set(ids).size, ids.length, 'concept ids must be unique');
   const cardIds = new Set(POKER_LOGIC_SEEDS.map((s) => s.id));
@@ -814,7 +937,7 @@ test('v7.11.2 spot applications are spot-scoped with provenance', () => {
     assert.ok(a.text && a.text.length >= 10, a.id + ' needs substantive text');
     assert.ok(a.sourceRef && a.sourceRef.lesson, a.id + ' needs provenance');
     assert.ok(
-      a.sourceRef.kind === 'ddog' ? (a.sourceRef.chapter && a.sourceRef.readerPages) : a.sourceRef.kind === 'gwblog' ? a.sourceRef.url : false,
+      a.sourceRef.kind === 'ddog' ? (a.sourceRef.chapter && a.sourceRef.readerPages) : a.sourceRef.kind === 'gwblog' ? a.sourceRef.url : a.sourceRef.kind === 'aonlh' && a.sourceRef.book && a.sourceRef.readerPages,
       a.id + ' sourceRef malformed',
     );
     (a.conceptIds || []).forEach((cid) => assert.ok(conceptIds.has(cid), a.id + ' references unknown concept ' + cid));
@@ -844,6 +967,29 @@ test('v7.11.10 concept quiz items derive from selfChecks with valid answers', ()
   // 确定性排序（cluster + id）
   const second = ConceptQuiz.getItems().map((i) => i.id);
   assert.deepEqual(items.map((i) => i.id), second, 'getItems must be deterministic');
+});
+
+// [V7.11.16 新增] Protect graph readings and the corrected question identity, not just source presence.
+test('theory corrections retain exact combos, EV comparisons and the GTO learning boundary', () => {
+  const byId = (id) => CONCEPT_SEEDS.find((concept) => concept.id === id);
+  const combo = byId('concept-combo-eqr');
+  assert.equal(combo.selfChecks[0].answer, 'K♥J♦');
+  assert.deepEqual(combo.selfChecks[0].options, ['K♠J♣', 'K♦J♠', 'K♣J♥', 'K♥J♦']);
+  assert.match(combo.mechanism, /85.9%／59.3%/);
+  assert.match(combo.contrastExamples[0].text, /26.6/);
+  const items = ConceptQuiz.getItems();
+  assert.ok(items.some((item) => item.id === 'concept-combo-eqr#r2' && item.answer === 'K♥J♦'));
+  assert.ok(!items.some((item) => item.id === 'concept-combo-eqr'));
+  const owning = byId('concept-owning-draws');
+  assert.match(owning.selfChecks[0].answerNote, /0.41bb/);
+  assert.match(owning.contrastExamples[0].text, /A♥.*过牌 4.1bb.*全下 1.93bb/);
+  assert.ok(!owning.mechanism.includes('EV 4.1'));
+  const pure = byId('concept-pure-vs-frequency-mistakes');
+  assert.match(pure.mechanism, /相对固定 Nash/);
+  assert.match(pure.applicability, /低 EV 动作不纳入建议/);
+  const river = POKER_LOGIC_SEEDS.find((seed) => seed.id === 'btnvsbb-raiser-riverbet');
+  assert.match(river.steps.scope.note, /过牌也能兑现摊牌收益/);
+  assert.ok(!river.steps.deviation.note.includes('放弃收租窗口'));
 });
 
 test('v7.11.6 concept quiz error book records, dedupes and clears', () => {
@@ -883,7 +1029,7 @@ test('v7.11.0 poker logic renders a framed card only for matched hands', async (
   assert.ok(html.includes('牌理参考'));
   assert.ok(html.includes('BTN 河牌下注'));
   assert.ok(html.includes('空白河牌'));
-  assert.ok(html.includes('边界'));
+  assert.ok(html.includes('适用边界'));
   // v3：应用要点 + 概念卡（标题/机制/误解/对比例/自测折叠/出处行）
   assert.ok(html.includes('Equity Buckets'), 'streets step renders concept card');
   assert.ok(html.includes('常见误解'), 'concept misconception renders');

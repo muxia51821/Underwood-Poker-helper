@@ -4,7 +4,7 @@
 // 河牌惊悚/空白为启发式二分：完成 3 同花或 3 连张窗口=惊悚。识别结果仅供牌理参考展示，不写回手牌数据。
 import { normalizeLearningHand, getPostflopOrder, deriveFlopDecision } from './analysisReadModel.js';
 
-export var SPOT_MATCHER_VERSION = 2;
+export var SPOT_MATCHER_VERSION = 3;
 
 var RANK_ORDER = '23456789TJQKA';
 
@@ -77,6 +77,44 @@ function boardCardsFromDesc(desc) {
   };
 }
 
+// [V7.11.16 新增] Only unraised, completed flop lines establish these SRP turn families.
+export function matchTurnSpot(hand) {
+  var h = normalizeLearningHand(hand);
+  if (h.potType && !['SRP', 'SIA', 'SID', 'SOA', 'SOD'].includes(h.potType)) return null;
+  var order = getPostflopOrder(h);
+  if (!order) return null;
+  var positions = h.preflopScenario.split('vs');
+  if (!positions.includes(h.heroPosition)) return null;
+  var flop = streetTwoWay(h.actionLineOTF);
+  var turn = streetTwoWay(h.actionLineOTT);
+  if (!flop || !turn) return null;
+  var f = flop.map((token) => token[0]).join('');
+  var t = turn.map((token) => token[0]).join('');
+  // Completed heads-up street patterns: checks, bet/call or fold, optionally raised.
+  if (!/^(XX|BC|XBC)$/.test(f) || !/^(XX|B[CF]|XB[CF]|BR[CF]|XBR[CF]|XBRC|BRRC)$/.test(t)) return null;
+  var role = h.heroPosition === positions[0] ? 'raiser' : 'caller';
+  var raiserFirst = positions[0] === order.first;
+  var heroFirst = h.heroPosition === order.first;
+  var decision = null;
+  if (f === 'XX') {
+    if (!raiserFirst && t[0] === 'B') decision = role === 'caller' ? 'probe' : 'faceprobe';
+    else if ((raiserFirst && t[0] === 'B') || (!raiserFirst && t.startsWith('XB'))) decision = role === 'raiser' ? 'delayed' : 'facedelayed';
+    else if (t === 'XX') decision = role === 'raiser' ? 'delayed' : !raiserFirst ? 'probe' : null;
+  } else {
+    var expectedFlop = raiserFirst ? 'BC' : 'XBC';
+    if (f !== expectedFlop) return null;
+    if (!raiserFirst && t[0] === 'B') decision = role === 'caller' ? 'donk' : null;
+    else if ((raiserFirst && t[0] === 'B') || (!raiserFirst && t.startsWith('XB'))) decision = role === 'raiser' ? 'barrel' : 'facebarrel';
+    else if (t === 'XX' && role === 'raiser') decision = 'barrel';
+  }
+  if (!decision) return null;
+  if (['probe', 'faceprobe', 'donk'].includes(decision) && h.preflopScenario !== 'BTNvsBB') return null;
+  return { spotId: h.preflopScenario.toLowerCase() + '-' + role + '-turn-' + decision,
+    street: 'turn', scenario: h.preflopScenario, role, question: decision,
+    decision, line: h.actionLineOTF + ' → ' + h.actionLineOTT, riverType: null,
+    heroAction: actionsAt(turn, heroFirst).hero[0] };
+}
+
 /**
  * 判定单手牌命中的牌理参考 spot。
  * @returns {{ spotId, street, scenario, role, question, line, riverType }|null}
@@ -129,7 +167,7 @@ export function matchHandSpot(hand) {
 
   // 翻牌 spot（与 Radar 五 spot 对齐；到达河牌但未命中河牌卡的不回落翻牌卡）
   var ottEarly = streetTwoWay(h.actionLineOTT);
-  if (ottEarly) return null;  // 打过转牌的手牌不做翻牌牌理参考（复盘重点是当前街）
+  if (ottEarly) return matchTurnSpot(h);
   // [V7.11.14 修改] Share checked-then-faced-bet attribution with Radar instead of dropping OOP callers.
   var decision = deriveFlopDecision(h);
   if (decision.excluded) return null;

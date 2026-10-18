@@ -1,0 +1,1367 @@
+{
+  "format": "poker-solution-pack",
+  "version": 1,
+  "id": "river-half-pot",
+  "revision": 1,
+  "title": "河牌样例 A · 下注 5bb",
+  "modelLabel": "受限模型验证样例",
+  "conditions": {
+    "id": "river-half-pot",
+    "board": [
+      "Ks",
+      "7d",
+      "2c",
+      "8h",
+      "3d"
+    ],
+    "ranges": [
+      "KK,A4s,A5s",
+      "TT,JJ"
+    ],
+    "potBb": 10,
+    "stackBb": 20,
+    "betBb": 5,
+    "rake": 0,
+    "icm": false,
+    "players": 2,
+    "street": "river",
+    "futureCards": false,
+    "tableMax": null,
+    "originalStackBb": null
+  },
+  "ev": {
+    "unit": "bb",
+    "baseline": "solve-start-zero-sum-half-pot",
+    "continuation": "solved-average-strategy",
+    "approximateEqualityBb": 0.002
+  },
+  "boundary": "只适用于给定双方范围、公共牌及受限动作树。过牌后摊牌，不能加注、全下或继续发牌；不代表完整 9max／200bb 策略，也不评价来源手牌。",
+  "provenance": {
+    "method": "self-generated; independently enumerated analytic benchmark and dual-engine verification",
+    "primary": {
+      "repository": "https://github.com/ucsandman/postflop",
+      "commit": "5fc7ee3d92b823b6c58e4f58cbee7d50d5e9e6de",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2026 Wes Sander"
+    },
+    "reference": {
+      "repository": "https://github.com/b-inary/postflop-solver",
+      "commit": "9d1509fe5077d019825f833eed04b16d342dfda1",
+      "license": "AGPL-3.0-or-later",
+      "role": "offline cross-check only"
+    },
+    "data": "Synthetic lab fixtures; no personal hand histories or third-party strategy archives"
+  },
+  "rootEvBb": [
+    -1.3636363744735718,
+    1.3636363744735718
+  ],
+  "ranges": [
+    {
+      "player": 0,
+      "combos": [
+        {
+          "cards": "Ac4c",
+          "weight": 1
+        },
+        {
+          "cards": "Ad4d",
+          "weight": 1
+        },
+        {
+          "cards": "Ah4h",
+          "weight": 1
+        },
+        {
+          "cards": "As4s",
+          "weight": 1
+        },
+        {
+          "cards": "Ac5c",
+          "weight": 1
+        },
+        {
+          "cards": "Ad5d",
+          "weight": 1
+        },
+        {
+          "cards": "Ah5h",
+          "weight": 1
+        },
+        {
+          "cards": "As5s",
+          "weight": 1
+        },
+        {
+          "cards": "KdKc",
+          "weight": 1
+        },
+        {
+          "cards": "KhKc",
+          "weight": 1
+        },
+        {
+          "cards": "KhKd",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "player": 1,
+      "combos": [
+        {
+          "cards": "TdTc",
+          "weight": 1
+        },
+        {
+          "cards": "ThTc",
+          "weight": 1
+        },
+        {
+          "cards": "TsTc",
+          "weight": 1
+        },
+        {
+          "cards": "ThTd",
+          "weight": 1
+        },
+        {
+          "cards": "TsTd",
+          "weight": 1
+        },
+        {
+          "cards": "TsTh",
+          "weight": 1
+        },
+        {
+          "cards": "JdJc",
+          "weight": 1
+        },
+        {
+          "cards": "JhJc",
+          "weight": 1
+        },
+        {
+          "cards": "JsJc",
+          "weight": 1
+        },
+        {
+          "cards": "JhJd",
+          "weight": 1
+        },
+        {
+          "cards": "JsJd",
+          "weight": 1
+        },
+        {
+          "cards": "JsJh",
+          "weight": 1
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "actions": [
+        {
+          "child": "root/check",
+          "id": "check",
+          "amountBb": 0
+        },
+        {
+          "child": "root/bet:5",
+          "id": "bet:5",
+          "amountBb": 5
+        }
+      ],
+      "board": [
+        "Ks",
+        "7d",
+        "2c",
+        "8h",
+        "3d"
+      ],
+      "combos": [
+        {
+          "cards": "Ac4c",
+          "evBb": [
+            -5,
+            -5.00007438659668
+          ],
+          "frequency": [
+            0.8749836683273315,
+            0.12501630187034607
+          ],
+          "opponentMass": 12,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "Ad4d",
+          "evBb": [
+            -5,
+            -5.00007438659668
+          ],
+          "frequency": [
+            0.8749836683273315,
+            0.12501630187034607
+          ],
+          "opponentMass": 12,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "Ah4h",
+          "evBb": [
+            -5,
+            -5.00007438659668
+          ],
+          "frequency": [
+            0.8749836683273315,
+            0.12501630187034607
+          ],
+          "opponentMass": 12,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "As4s",
+          "evBb": [
+            -5,
+            -5.00007438659668
+          ],
+          "frequency": [
+            0.8749836683273315,
+            0.12501630187034607
+          ],
+          "opponentMass": 12,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "Ac5c",
+          "evBb": [
+            -5,
+            -5.00007438659668
+          ],
+          "frequency": [
+            0.8749836683273315,
+            0.12501630187034607
+          ],
+          "opponentMass": 12,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "Ad5d",
+          "evBb": [
+            -5,
+            -5.00007438659668
+          ],
+          "frequency": [
+            0.8749836683273315,
+            0.12501630187034607
+          ],
+          "opponentMass": 12,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "Ah5h",
+          "evBb": [
+            -5,
+            -5.00007438659668
+          ],
+          "frequency": [
+            0.8749836683273315,
+            0.12501630187034607
+          ],
+          "opponentMass": 12,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "As5s",
+          "evBb": [
+            -5,
+            -5.00007438659668
+          ],
+          "frequency": [
+            0.8749836683273315,
+            0.12501630187034607
+          ],
+          "opponentMass": 12,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "KdKc",
+          "evBb": [
+            5,
+            8.333357810974121
+          ],
+          "frequency": [
+            1.4999783531615264e-15,
+            1
+          ],
+          "opponentMass": 12,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "KhKc",
+          "evBb": [
+            5,
+            8.333357810974121
+          ],
+          "frequency": [
+            1.4999783531615264e-15,
+            1
+          ],
+          "opponentMass": 12,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "KhKd",
+          "evBb": [
+            5,
+            8.333357810974121
+          ],
+          "frequency": [
+            1.4999783531615264e-15,
+            1
+          ],
+          "opponentMass": 12,
+          "reachWeight": 1,
+          "status": "reachable"
+        }
+      ],
+      "path": "root",
+      "player": 0,
+      "potBb": 10,
+      "stacksBb": [
+        20,
+        20
+      ]
+    },
+    {
+      "actions": [
+        {
+          "child": "root/check/check",
+          "id": "check",
+          "amountBb": 0
+        }
+      ],
+      "board": [
+        "Ks",
+        "7d",
+        "2c",
+        "8h",
+        "3d"
+      ],
+      "combos": [
+        {
+          "cards": "TdTc",
+          "evBb": [
+            5
+          ],
+          "frequency": [
+            1
+          ],
+          "opponentMass": 6.999869346618652,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "ThTc",
+          "evBb": [
+            5
+          ],
+          "frequency": [
+            1
+          ],
+          "opponentMass": 6.999869346618652,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "TsTc",
+          "evBb": [
+            5
+          ],
+          "frequency": [
+            1
+          ],
+          "opponentMass": 6.999869346618652,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "ThTd",
+          "evBb": [
+            5
+          ],
+          "frequency": [
+            1
+          ],
+          "opponentMass": 6.999869346618652,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "TsTd",
+          "evBb": [
+            5
+          ],
+          "frequency": [
+            1
+          ],
+          "opponentMass": 6.999869346618652,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "TsTh",
+          "evBb": [
+            5
+          ],
+          "frequency": [
+            1
+          ],
+          "opponentMass": 6.999869346618652,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "JdJc",
+          "evBb": [
+            5
+          ],
+          "frequency": [
+            1
+          ],
+          "opponentMass": 6.999869346618652,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "JhJc",
+          "evBb": [
+            5
+          ],
+          "frequency": [
+            1
+          ],
+          "opponentMass": 6.999869346618652,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "JsJc",
+          "evBb": [
+            5
+          ],
+          "frequency": [
+            1
+          ],
+          "opponentMass": 6.999869346618652,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "JhJd",
+          "evBb": [
+            5
+          ],
+          "frequency": [
+            1
+          ],
+          "opponentMass": 6.999869346618652,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "JsJd",
+          "evBb": [
+            5
+          ],
+          "frequency": [
+            1
+          ],
+          "opponentMass": 6.999869346618652,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "JsJh",
+          "evBb": [
+            5
+          ],
+          "frequency": [
+            1
+          ],
+          "opponentMass": 6.999869346618652,
+          "reachWeight": 1,
+          "status": "reachable"
+        }
+      ],
+      "path": "root/check",
+      "player": 1,
+      "potBb": 10,
+      "stacksBb": [
+        20,
+        20
+      ]
+    },
+    {
+      "actions": [
+        {
+          "child": "root/bet:5/fold",
+          "id": "fold",
+          "amountBb": 0
+        },
+        {
+          "child": "root/bet:5/call",
+          "id": "call",
+          "amountBb": 5
+        }
+      ],
+      "board": [
+        "Ks",
+        "7d",
+        "2c",
+        "8h",
+        "3d"
+      ],
+      "combos": [
+        {
+          "cards": "TdTc",
+          "evBb": [
+            -5,
+            -4.999510765075684
+          ],
+          "frequency": [
+            0.33332836627960205,
+            0.666671633720398
+          ],
+          "opponentMass": 4.000130653381348,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "ThTc",
+          "evBb": [
+            -5,
+            -4.999510765075684
+          ],
+          "frequency": [
+            0.33332836627960205,
+            0.666671633720398
+          ],
+          "opponentMass": 4.000130653381348,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "TsTc",
+          "evBb": [
+            -5,
+            -4.999510765075684
+          ],
+          "frequency": [
+            0.33332836627960205,
+            0.666671633720398
+          ],
+          "opponentMass": 4.000130653381348,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "ThTd",
+          "evBb": [
+            -5,
+            -4.999510765075684
+          ],
+          "frequency": [
+            0.33332836627960205,
+            0.666671633720398
+          ],
+          "opponentMass": 4.000130653381348,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "TsTd",
+          "evBb": [
+            -5,
+            -4.999510765075684
+          ],
+          "frequency": [
+            0.33332836627960205,
+            0.666671633720398
+          ],
+          "opponentMass": 4.000130653381348,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "TsTh",
+          "evBb": [
+            -5,
+            -4.999510765075684
+          ],
+          "frequency": [
+            0.33332836627960205,
+            0.666671633720398
+          ],
+          "opponentMass": 4.000130653381348,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "JdJc",
+          "evBb": [
+            -5,
+            -4.999510765075684
+          ],
+          "frequency": [
+            0.33332836627960205,
+            0.666671633720398
+          ],
+          "opponentMass": 4.000130653381348,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "JhJc",
+          "evBb": [
+            -5,
+            -4.999510765075684
+          ],
+          "frequency": [
+            0.33332836627960205,
+            0.666671633720398
+          ],
+          "opponentMass": 4.000130653381348,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "JsJc",
+          "evBb": [
+            -5,
+            -4.999510765075684
+          ],
+          "frequency": [
+            0.33332836627960205,
+            0.666671633720398
+          ],
+          "opponentMass": 4.000130653381348,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "JhJd",
+          "evBb": [
+            -5,
+            -4.999510765075684
+          ],
+          "frequency": [
+            0.33332836627960205,
+            0.666671633720398
+          ],
+          "opponentMass": 4.000130653381348,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "JsJd",
+          "evBb": [
+            -5,
+            -4.999510765075684
+          ],
+          "frequency": [
+            0.33332836627960205,
+            0.666671633720398
+          ],
+          "opponentMass": 4.000130653381348,
+          "reachWeight": 1,
+          "status": "reachable"
+        },
+        {
+          "cards": "JsJh",
+          "evBb": [
+            -5,
+            -4.999510765075684
+          ],
+          "frequency": [
+            0.33332836627960205,
+            0.666671633720398
+          ],
+          "opponentMass": 4.000130653381348,
+          "reachWeight": 1,
+          "status": "reachable"
+        }
+      ],
+      "path": "root/bet:5",
+      "player": 1,
+      "potBb": 15,
+      "stacksBb": [
+        15,
+        20
+      ]
+    }
+  ],
+  "terminals": [
+    {
+      "board": [
+        "Ks",
+        "7d",
+        "2c",
+        "8h",
+        "3d"
+      ],
+      "kind": "Terminal(Showdown { pot: 10.0 })",
+      "path": "root/check/check",
+      "potBb": 10,
+      "stacksBb": [
+        20,
+        20
+      ]
+    },
+    {
+      "board": [
+        "Ks",
+        "7d",
+        "2c",
+        "8h",
+        "3d"
+      ],
+      "kind": "Terminal(Fold { folder: 1, pot: 10.0 })",
+      "path": "root/bet:5/fold",
+      "potBb": 10,
+      "stacksBb": [
+        20,
+        20
+      ]
+    },
+    {
+      "board": [
+        "Ks",
+        "7d",
+        "2c",
+        "8h",
+        "3d"
+      ],
+      "kind": "Terminal(Showdown { pot: 20.0 })",
+      "path": "root/bet:5/call",
+      "potBb": 20,
+      "stacksBb": [
+        15,
+        15
+      ]
+    }
+  ],
+  "verification": {
+    "passed": true,
+    "fixtureHash": "ad0caa479fe913fa090f0816daf3acd1981eddb9140c0af35b8abf955b2fa3ac",
+    "primaryOutputHash": "76138768df7f9d14008214d61f74bb86f45e826056132c04abef1c13e1eb8879",
+    "referenceOutputHash": "73948d4f44e30a30b657cc30a9b998120edc4b8f719cec448332ec26fe7d51bd",
+    "reportHash": "fc1e5e3b270823b1fea4911dc97af8de3d6f6073de08b5f8bc9558a7f7443fd3",
+    "report": {
+      "id": "river-half-pot",
+      "passed": true,
+      "comboCounts": [
+        11,
+        12
+      ],
+      "compatiblePairs": 132,
+      "analyticRootEvBb": [
+        -1.3636363636363638,
+        1.3636363636363638
+      ],
+      "checks": [
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 2.9802322387695312e-8,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 2.9802322387695312e-8,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 2.9802322387695312e-8,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 2.9802322387695312e-8,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 2.9802322387695312e-8,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 2.9802322387695312e-8,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 2.9802322387695312e-8,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 2.9802322387695312e-8,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 1.5543122344752192e-15,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 1.5543122344752192e-15,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 1.5543122344752192e-15,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop independent action EV",
+          "actual": 3.5762786865234375e-7,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop analytic action EV",
+          "actual": 0.0004892349243164062,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop analytic root EV",
+          "actual": 1.0837208019864875e-8,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop independent root EV",
+          "actual": 9.953874835488818e-9,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop independent NashConv",
+          "actual": 3.4679066051135994e-7,
+          "maximum": 0.00001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop NashConv",
+          "actual": 0.00006639957427978516,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop solve seconds",
+          "actual": 0.1861996,
+          "maximum": 300,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop iterations",
+          "actual": 100000,
+          "maximum": 100000,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop value bets",
+          "actual": 0,
+          "maximum": 0.005,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop bluff mix",
+          "actual": 0.000016301870346069336,
+          "maximum": 0.005,
+          "pass": true
+        },
+        {
+          "name": "ucsandman/postflop call mix",
+          "actual": 0.0000049670537313195595,
+          "maximum": 0.005,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 1.4901161193847656e-8,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 1.4901161193847656e-8,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 1.4901161193847656e-8,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 1.4901161193847656e-8,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 1.4901161193847656e-8,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 1.4901161193847656e-8,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 1.4901161193847656e-8,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 1.4901161193847656e-8,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 0,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 5.960464477539063e-8,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 5.960464477539063e-8,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 5.960464477539063e-8,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 5.960464477539063e-8,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 5.960464477539063e-8,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 5.960464477539063e-8,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 5.960464477539063e-8,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 5.960464477539063e-8,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 5.960464477539063e-8,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 5.960464477539063e-8,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 5.960464477539063e-8,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver frequency sum",
+          "actual": 5.960464477539063e-8,
+          "maximum": 0.000001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver independent action EV",
+          "actual": 6.556510925292969e-7,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver analytic action EV",
+          "actual": 0.00042629241943359375,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver analytic root EV",
+          "actual": 1.3004649757064612e-7,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver independent root EV",
+          "actual": 1.2748952915586642e-7,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver independent NashConv",
+          "actual": 2.980232238769531e-7,
+          "maximum": 0.00001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver NashConv",
+          "actual": 0.00007420778274536133,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver solve seconds",
+          "actual": 0.0951221,
+          "maximum": 300,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver iterations",
+          "actual": 100000,
+          "maximum": 100000,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver value bets",
+          "actual": 0,
+          "maximum": 0.005,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver bluff mix",
+          "actual": 0.000014230608940124512,
+          "maximum": 0.005,
+          "pass": true
+        },
+        {
+          "name": "b-inary/postflop-solver call mix",
+          "actual": 0.00001647075017296995,
+          "maximum": 0.005,
+          "pass": true
+        },
+        {
+          "name": "cross-engine root EV",
+          "actual": 1.1920928955078125e-7,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "cross-engine action EV",
+          "actual": 0.00017309188842773438,
+          "maximum": 0.001,
+          "pass": true
+        }
+      ]
+    },
+    "engines": [
+      {
+        "name": "ucsandman/postflop",
+        "iterations": 100000,
+        "seconds": 0.1861996,
+        "nashConvBb": 0.00006639957427978516
+      },
+      {
+        "name": "b-inary/postflop-solver",
+        "iterations": 100000,
+        "seconds": 0.0951221,
+        "nashConvBb": 0.00007390975952148438
+      }
+    ]
+  },
+  "contentHash": "6a4851eec3956f85c488d4f9f305b05cf84765464c8f2b96807019f08006c5cd"
+}

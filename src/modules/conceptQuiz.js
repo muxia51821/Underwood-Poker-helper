@@ -52,7 +52,8 @@ export var ConceptQuiz = {
       .flatMap(function (c) {
         return (c.selfChecks || []).map(function (sc, i) {
           return {
-            id: i === 0 ? c.id : c.id + '#' + (i + 1),
+            // [V7.11.16 修改] A corrected answer can use a new identity without erasing unrelated progress.
+            id: sc.id || (i === 0 ? c.id : c.id + '#' + (i + 1)),
             title: c.title,
             cluster: c.cluster,
             question: sc.question,

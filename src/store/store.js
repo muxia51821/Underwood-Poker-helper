@@ -1,4 +1,6 @@
 import { CONSTANTS } from '../constants.js';
+import { exportLearningState, planLearningImport, applyLearningImport } from './practiceStore.js'; // [V7.14.0 新增]
+import { attachBackupMetadata, backupFingerprint } from './backup.js'; // [V7.16.0 新增]
 import { Utils, PubSub } from '../utils.js';
 import { DB } from './db.js';  // [V6.17.0] DB 独立模块
 import { LocalStorageAdapter, IndexedDBAdapter, PersistenceCoordinator } from './storage.js';
@@ -100,7 +102,8 @@ export const Store = {
     },
   },
   exportAll() {
-    return {
+    return attachBackupMetadata({
+      learningState: exportLearningState(), // [V7.14.0 新增] Include independent learning keys and frozen practice history.
       settings: Store.settings.get(),
       timerState: Store.timer.get(),
       standup: Store.standup.get(),
@@ -120,9 +123,52 @@ export const Store = {
       opponentAliases: Store.opponentAliases.get(),
       opponentLiveFlags: Store.opponentLiveFlags.get(),
       opponentMerges: Store.opponentMerges.get(),
+    });
+  },
+  // [V7.16.0 新增] Restore uses repository APIs and verifies durable values, not only cache contents.
+  backupIO() {
+    return {
+      storage: localStorage,
+      snapshot: () => Store.exportAll(),
+      readCollection: key => BACKUP_REPOS[key].readPersisted(),
+      async writeCollection(key, items) {
+        const repo = BACKUP_REPOS[key];
+        if (DB.isReady()) repo.markIndexedDBReady();
+        repo.replaceCache(items);
+        const result = await repo.persistNow();
+        if (!result.ok) repo.replaceCache(await repo.readPersisted());
+        if (result.ok && result.backend === 'indexeddb' && localStorage.getItem('pa_' + key) !== null) {
+          // [V7.16.0 修改] An older fallback must not resurrect records after an explicit rollback.
+          try { localStorage.setItem('pa_' + key, JSON.stringify(items)); }
+          catch { localStorage.removeItem('pa_' + key); }
+        }
+        return { ...result, retryRequired: DB.isReady() && result.backend !== 'indexeddb' };
+      },
+      saveCheckpoint: value => Store.saveRestoreCheckpoint(value),
+      getCheckpoint: () => Store.getRestoreCheckpoint(),
     };
   },
+  async saveRestoreCheckpoint(value) {
+    const stored = { ...value, updatedAt: new Date().toISOString() }; // [V7.17.0 修改] Order checkpoints across fallback and primary storage.
+    const raw = JSON.stringify(stored);
+    if (DB.isReady()) await DB.saveRestoreCheckpoint(stored);
+    else localStorage.setItem('pa_restore_checkpoint_v1', raw);
+    if (backupFingerprint(await Store.getRestoreCheckpoint()) !== backupFingerprint({ ...stored, ...(DB.isReady() ? { id: 'latest' } : {}) })) throw new Error('恢复前副本未能保存，尚未开始恢复。');
+  },
+  async getRestoreCheckpoint() {
+    const raw = localStorage.getItem('pa_restore_checkpoint_v1');
+    let local = null, localError;
+    try { local = raw ? JSON.parse(raw) : null; } catch (error) { localError = error; }
+    const database = DB.isReady() ? await DB.getRestoreCheckpoint() : null;
+    if (localError && !database) throw new Error('本地恢复副本无法读取，请保留原备份文件。');
+    // [V7.17.0 修改] A healthy database must not hide a newer checkpoint created during fallback.
+    return [database, local].filter(Boolean).sort((a, b) =>
+      (Date.parse(b.updatedAt || b.startedAt) || 0) - (Date.parse(a.updatedAt || a.startedAt) || 0))[0] || null;
+  },
   importAll(data) {
+    // [V7.14.0 新增] Validate the learning supplement before any repository mutation.
+    if (!data || typeof data !== 'object') throw new Error('备份必须是一个数据对象');
+    const learningPlan = planLearningImport(data.learningState);
     // [V6.7] Schema 校验
     if (data.sessions !== undefined && !Array.isArray(data.sessions))
       throw new Error('导入数据格式错误：sessions 应为数组');
@@ -213,11 +259,11 @@ export const Store = {
         }
       });
     }
-    // [V6.11.0] 对手别名合并：导入覆盖本地同 key，保留本地独有
+    // [V7.14.0 修改] Match the restore preview/prompt: keep local values on an existing key.
     function _mergeDictImport(localObj, importObj) {
       var merged = {};
-      Object.keys(localObj).forEach(function (k) { merged[k] = localObj[k]; });
       Object.keys(importObj).forEach(function (k) { merged[k] = importObj[k]; });
+      Object.keys(localObj).forEach(function (k) { merged[k] = localObj[k]; });
       return merged;
     }
     if (data.opponentAliases) {
@@ -231,6 +277,11 @@ export const Store = {
     if (data.opponentMerges) {
       Store.opponentMerges.save(_mergeDictImport(Store.opponentMerges.get(), data.opponentMerges));
     }
+    applyLearningImport(learningPlan);
+  },
+  persistAll() {
+    return Promise.all([SessionRepo, HandRepo, WeeklyRepo, TiltLogRepo, MarksRepo, ClosureRepo,
+      DossierRepo, EvidencePackRepo, StrategyRepo, LearningUnitRepo, OpponentNoteRepo, GtoBaselineRepo].map(repo => repo.persistNow()));
   },
   _collectLogs() {
     const logs = {};
@@ -333,6 +384,11 @@ export class BaseRepo {
   replaceCache(items) {
     this._cache = Array.isArray(items) ? items : [];
   }
+  // [V7.16.0 新增] Read the backend used by this repository, including a local fallback.
+  async readPersisted() {
+    return this._backend === 'indexeddb'
+      ? (await this._storage.loadCollection(this._key)).items : this._storage.readLocal(this._key) || [];
+  }
   getStorageKey() {
     return this._key;
   }
@@ -399,6 +455,10 @@ export const StrategyRepo = new BaseRepo('strategyRevisions');  // [V7.9.3 新�
 export const LearningUnitRepo = new BaseRepo('learningUnits');  // [V7.10.2 新增] 训练/复测单元
 export const OpponentNoteRepo = new BaseRepo('opponentNotes');  // [V7.10.2 新增] 对手观察笔记
 export const GtoBaselineRepo = new BaseRepo('gtoBaselines');  // [V7.10.4 新增] GTO 基线
+// [V7.16.0 新增] One registry for the restore adapter; collection identity remains unchanged.
+const BACKUP_REPOS = { sessions: SessionRepo, handReviews: HandRepo, weeklyReviews: WeeklyRepo, tiltLogs: TiltLogRepo,
+  marks: MarksRepo, sessionClosures: ClosureRepo, dossiers: DossierRepo, evidencePacks: EvidencePackRepo,
+  strategyRevisions: StrategyRepo, learningUnits: LearningUnitRepo, opponentNotes: OpponentNoteRepo, gtoBaselines: GtoBaselineRepo };
 
 async function migrateToIndexedDB() {
   var tables = ['sessions', 'handReviews', 'weeklyReviews', 'tiltLogs', 'marks', 'sessionClosures', 'dossiers', 'evidencePacks', 'strategyRevisions', 'learningUnits', 'opponentNotes', 'gtoBaselines'];  // [V7.10.4 修改]
@@ -623,6 +683,7 @@ export async function initStorage(opts) {
     try {
       await DB.open();
     } catch (e) {
+      if (e.code === 'DB_UPGRADE_BLOCKED') throw e; // [V7.16.0 修改] A blocked upgrade must not silently start with an empty fallback.
       console.warn('IndexedDB unavailable, using localStorage only');
     }
   }

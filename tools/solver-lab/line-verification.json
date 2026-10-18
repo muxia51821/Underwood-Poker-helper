@@ -1,0 +1,324 @@
+{
+  "passed": true,
+  "sameTreeAndCombos": true,
+  "crossEngineRootEvDifferenceBb": 1.0013580322265625e-05,
+  "suitPermutationRootDifferenceBb": 3.5762786865234375e-06,
+  "engines": {
+    "primary": "5fc7ee3d92b823b6c58e4f58cbee7d50d5e9e6de",
+    "reference": "9d1509fe5077d019825f833eed04b16d342dfda1"
+  },
+  "cases": [
+    {
+      "engine": "ucsandman/postflop",
+      "checks": [
+        {
+          "name": "independent all-node action EV",
+          "actual": 2.8978232542442584e-06,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "compatible opponent mass",
+          "actual": 4.76837158203125e-07,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "own reach",
+          "actual": 2.9726606953772716e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "frequency normalization",
+          "actual": 1.1920928955078125e-07,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "independent root EV",
+          "actual": 5.937721947457675e-07,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "normalized NashConv",
+          "actual": 0.0001558065414428711,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "independent NashConv",
+          "actual": 0.00015604495562960457,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "reported versus independent NashConv",
+          "actual": 2.3841418673347433e-07,
+          "maximum": 1e-05,
+          "pass": true
+        },
+        {
+          "name": "solve seconds",
+          "actual": 0.9778148,
+          "maximum": 300,
+          "pass": true
+        },
+        {
+          "name": "iterations",
+          "actual": 2000,
+          "maximum": 100000,
+          "pass": true
+        }
+      ],
+      "passed": true,
+      "comboCounts": [
+        14,
+        16
+      ],
+      "compatiblePairs": 199,
+      "nodes": 580,
+      "chanceNodes": 3,
+      "terminals": 722,
+      "id": "turn-river-half-pot"
+    },
+    {
+      "engine": "b-inary/postflop-solver",
+      "checks": [
+        {
+          "name": "independent all-node action EV",
+          "actual": 3.814697265625e-06,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "compatible opponent mass",
+          "actual": 8.936148654381526e-09,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "own reach",
+          "actual": 2.97422957373783e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "frequency normalization",
+          "actual": 8.940696716308594e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "independent root EV",
+          "actual": 6.812644670617374e-08,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "normalized NashConv",
+          "actual": 0.00015592575073242188,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "independent NashConv",
+          "actual": 0.00015580958374863743,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "reported versus independent NashConv",
+          "actual": 1.161669837844491e-07,
+          "maximum": 1e-05,
+          "pass": true
+        },
+        {
+          "name": "solve seconds",
+          "actual": 0.9950288,
+          "maximum": 300,
+          "pass": true
+        },
+        {
+          "name": "iterations",
+          "actual": 3500,
+          "maximum": 100000,
+          "pass": true
+        }
+      ],
+      "passed": true,
+      "comboCounts": [
+        14,
+        16
+      ],
+      "compatiblePairs": 199,
+      "nodes": 580,
+      "chanceNodes": 3,
+      "terminals": 722,
+      "id": "turn-river-half-pot"
+    },
+    {
+      "engine": "ucsandman/postflop",
+      "checks": [
+        {
+          "name": "independent all-node action EV",
+          "actual": 2.9282007947273314e-06,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "compatible opponent mass",
+          "actual": 4.172325134277344e-07,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "own reach",
+          "actual": 2.941622412322431e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "frequency normalization",
+          "actual": 1.1920928955078125e-07,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "independent root EV",
+          "actual": 1.8700201454002752e-07,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "normalized NashConv",
+          "actual": 0.0001367330551147461,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "independent NashConv",
+          "actual": 0.00013664006059203054,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "reported versus independent NashConv",
+          "actual": 9.29945227155489e-08,
+          "maximum": 1e-05,
+          "pass": true
+        },
+        {
+          "name": "solve seconds",
+          "actual": 1.1407908,
+          "maximum": 300,
+          "pass": true
+        },
+        {
+          "name": "iterations",
+          "actual": 2500,
+          "maximum": 100000,
+          "pass": true
+        }
+      ],
+      "passed": true,
+      "comboCounts": [
+        14,
+        16
+      ],
+      "compatiblePairs": 199,
+      "nodes": 580,
+      "chanceNodes": 3,
+      "terminals": 722,
+      "id": "turn-river-half-pot-suit-swap"
+    },
+    {
+      "engine": "b-inary/postflop-solver",
+      "checks": [
+        {
+          "name": "independent all-node action EV",
+          "actual": 3.814697265625e-06,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "compatible opponent mass",
+          "actual": 8.936148654381526e-09,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "own reach",
+          "actual": 2.97422957373783e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "frequency normalization",
+          "actual": 8.940696716308594e-08,
+          "maximum": 1e-06,
+          "pass": true
+        },
+        {
+          "name": "independent root EV",
+          "actual": 6.812644692821834e-08,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "normalized NashConv",
+          "actual": 0.00015592575073242188,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "independent NashConv",
+          "actual": 0.00015580958374906588,
+          "maximum": 0.001,
+          "pass": true
+        },
+        {
+          "name": "reported versus independent NashConv",
+          "actual": 1.161669833559995e-07,
+          "maximum": 1e-05,
+          "pass": true
+        },
+        {
+          "name": "solve seconds",
+          "actual": 0.9848319,
+          "maximum": 300,
+          "pass": true
+        },
+        {
+          "name": "iterations",
+          "actual": 3500,
+          "maximum": 100000,
+          "pass": true
+        }
+      ],
+      "passed": true,
+      "comboCounts": [
+        14,
+        16
+      ],
+      "compatiblePairs": 199,
+      "nodes": 580,
+      "chanceNodes": 3,
+      "terminals": 722,
+      "id": "turn-river-half-pot-suit-swap"
+    }
+  ],
+  "artifacts": {
+    "results/turn-river-half-pot.primary.json": "72018c276c832d8f4685c8dec4a9407dba3ebc350a174910f61d11367c954ce5",
+    "results/turn-river-half-pot.reference.json": "63706bff54a4dc3d9ab9d80aebce4843d9d625be5220f67264f3512f2984835d",
+    "results/turn-river-half-pot-suit-swap.primary.json": "408a9b7107244fc18879389e4fba03c0c5710d5bf83130a0d065e09a2cc2da39",
+    "results/turn-river-half-pot-suit-swap.reference.json": "0efee49fa20283fd33adcdc525b5a8e89848392fa7715c83784f3b5da320ab39",
+    "line-fixture.json": "4abc729c528e40fff7b79f1ec490b138ce2b73addc5d4b57c6f91dc434446a11",
+    "line-primary.rs": "fc11baa40b2535884fd5dc4f2d89cb8c3a5d72327e5486d88dcd2e7ee407881c",
+    "line-reference.rs": "2fc30aba85f8ef162ab4952c49c45e348cf8ba339e53bc0110e9d7e0b7734e16",
+    "run_line.py": "9898600bfbada90627b1d1fdf873a26b0c02e579556329990d66436aaaa42c20"
+  },
+  "generatedAt": "2026-10-18T15:48:53Z",
+  "evScope": "Every action EV checked against the exporting engine own average-strategy continuation; conditional posteriors are not required to coincide across different equilibria. No analytic mix solution claimed."
+}

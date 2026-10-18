@@ -8,6 +8,8 @@ import { Navigation } from './navigation.js';
 
 var THRESHOLDS = { minSpot: 8, minBaseline: 20, minDeviationPP: 15, maxSignals: 10 };
 var QUESTION_LABELS = { cbet: 'C-Bet', facebet: '面对下注弃牌' };
+var SCENARIO_LABELS = { BTNvsBB: 'BTN vs BB', SBvsBB: 'SB vs BB', COvsBTN: 'CO vs BTN' };
+function _scenarioLabel(value) { return SCENARIO_LABELS[value] || value; }
 
 function _actionCounts(observations) {
   var counts = {};
@@ -38,7 +40,7 @@ function _triage(signal) {
   if (signal.spotCount >= 30 && signal.baselineCount >= 60) {
     return {
       key: 'external', rank: 3, label: 'L3 · 可对照外部证据',
-      note: '个人模式已有足够样本进入 GTO/MDA 条件核验；不等于应立刻改策略。',
+      note: '样本量达到外部资料对照门槛。',
     };
   }
   if (signal.spotCount >= 15 && signal.baselineCount >= 40) {
@@ -300,9 +302,9 @@ export var DecisionRadar = {
     if (!baselineSnapshot) return { due: false, reasons: [], current: null };
     // [V7.11.14 修改] Parser changes are not strategy improvements; preserve but invalidate older baselines.
     if (baselineSnapshot.observationVersion !== OBSERVATION_VERSION) {
-      return { due: true, reasons: ['观察口径已更新，旧基线不可比较；需按当前口径重新建档'], current: null };
+      return { due: true, reasons: ['观察口径已更新，按新口径重新建档复测'], current: null };
     }
-    if (!signal) return { due: true, reasons: ['该 Spot 当前不再触发信号——复查是否已改善'], current: null };
+    if (!signal) return { due: true, reasons: ['该 Spot 当前没有信号，复核后再判读'], current: null };
     var reasons = [];
     var dFreq = signal.spotFreq - baselineSnapshot.freq;
     if (Math.abs(dFreq) >= THRESHOLDS.minDeviationPP) reasons.push('频率变化 ' + (dFreq >= 0 ? '+' : '') + dFreq + 'pp');
@@ -338,25 +340,25 @@ export var DecisionRadar = {
       byFamily[s.scenario].push(s);
     });
     var html = '';
-    html += '<div class="learning-findings__summary">归属为启发式（行动 token 不带玩家名）；基线是你自己的场景均值，样本 ' +
-      scan.stats.attributed + '/' + scan.stats.total + ' 手已归因。</div>';
+    html += '<div class="learning-findings__summary">启发式归因 ' +
+      scan.stats.attributed + '/' + scan.stats.total + ' 手 · 基线为该场景的个人均值。</div>';
     if (!signals.length) {
       html += '<div class="empty-state">样本量或偏差未达阈值，暂无 Spot 级信号。</div>';
     }
     Object.keys(byFamily).forEach(function (family) {
-      html += '<div style="color:#a8afba;font-size:0.75em;margin:8px 0 4px">' + Utils.escapeHtml(family) + '</div>';
+      html += '<div style="color:#a8afba;font-size:0.75em;margin:8px 0 4px">' + Utils.escapeHtml(_scenarioLabel(family)) + '</div>';
       byFamily[family].forEach(function (s) {
         var dossier = self.findDossierForSignal(s, dossiers, hands);
         var questionLabel = QUESTION_LABELS[s.question] || s.question;
         html += '<article class="finding-card finding-card--radar">';
         html += '<div class="finding-card__header"><span><strong>' + Utils.escapeHtml(questionLabel) + ' · ' + Utils.escapeHtml(s.boardCategory) + '</strong>' +
-          (dossier ? ' <span class="status-inline status-inline--success">已建档</span>' : '') + '</span>' +
+          (dossier ? ' <span class="status-inline status-inline--success">已有研究</span>' : '') + '</span>' +
           '<span class="finding-card__count">' + s.spotCount + ' 手</span></div>';
         html += '<div class="finding-card__meta">观察档案：' + Utils.escapeHtml(s.profileLabel || s.profileKey) + '</div>';
         html += '<div class="finding-card__title">你 ' + s.spotFreq + '% vs 基线 ' + s.baselineFreq + '%（偏离 ' + (s.deviationPP >= 0 ? '+' : '') + s.deviationPP + 'pp）</div>';
         html += '<div class="finding-card__meta">行为构成：' + Utils.escapeHtml(_actionSummary(s)) + ' · ' + Utils.escapeHtml(s.triage.label) + '</div>';
         html += '<div class="finding-card__meta">Spot 平均盈亏 ' + (s.avgSpotPBB == null ? '--' : (s.avgSpotPBB >= 0 ? '+' : '') + s.avgSpotPBB + ' BB') +
-          ' · 基线 ' + (s.avgBaselinePBB == null ? '--' : (s.avgBaselinePBB >= 0 ? '+' : '') + s.avgBaselinePBB + ' BB') + '（盈亏只提供语境）</div>';
+          ' · 基线 ' + (s.avgBaselinePBB == null ? '--' : (s.avgBaselinePBB >= 0 ? '+' : '') + s.avgBaselinePBB + ' BB') + '</div>';
         html += '<div class="finding-card__meta">核查路径：' + Utils.escapeHtml(s.investigationPrompt) + '</div>';
         // [V7.10.5 修改] GTO 只显示结构性参考，绝不把来源频率与当前 Spot 做伪精确差值比较。
         const gtoMatches = self.matchGtoBaselines(GtoBaselineRepo.getAll(), s);
@@ -364,25 +366,25 @@ export var DecisionRadar = {
           html += '<div class="finding-card__meta" style="color:#8b949e">🌐 GTO 结构性参考：' + gtoMatches.map((b) => {
             const reference = self.getGtoStructuralReference(b);
             return Utils.escapeHtml(reference.valueText) + ' · 来源：' + Utils.escapeHtml(reference.sourceText) +
-              ' · 条件：' + Utils.escapeHtml(reference.conditionText) + ' · 边界：' + Utils.escapeHtml(reference.boundaryText);
+              ' · 条件：' + Utils.escapeHtml(reference.conditionText) + ' · 参考范围：' + Utils.escapeHtml(reference.boundaryText);
           }).join('；') + '</div>';
         }
         const evidenceMatches = self.matchEvidenceForSignal(EvidencePackRepo.getAll(), s);
         if (evidenceMatches.directMda.length) {
           html += '<div class="finding-card__meta" style="color:#8b949e">🧪 MDA 条件匹配：' + evidenceMatches.directMda.map(function (pack) {
-            return _evidenceLink(pack) + ' · 条件：' + Utils.escapeHtml(pack.conditions || '未填写') + ' · 边界：' + Utils.escapeHtml(pack.transferBoundary || '未填写');
+            return _evidenceLink(pack) + ' · 条件：' + Utils.escapeHtml(pack.conditions || '未填写') + ' · 参考范围：' + Utils.escapeHtml(pack.transferBoundary || '未填写');
           }).join('；') + '</div>';
         } else if (s.triage.rank >= 3) {
-          html += '<div class="finding-card__meta" style="color:#8b949e">🧪 MDA：暂无同场景、同决策、同牌面类别的条件匹配证据；不要用泛化人口结论改策略。</div>';
+          html += '<div class="finding-card__meta" style="color:#8b949e">🧪 MDA：暂无匹配此场景、决策和牌面的证据。</div>';
         }
         if (evidenceMatches.contextual.length) {
-          html += '<div class="finding-card__meta" style="color:#8b949e">↳ 情境参考（非 Hero 直接动作规则）：' + evidenceMatches.contextual.map(function (pack) {
-            return _evidenceLink(pack) + ' · ' + Utils.escapeHtml(pack.transferBoundary || '边界未填写');
+          html += '<div class="finding-card__meta" style="color:#8b949e">↳ 相邻决策参考：' + evidenceMatches.contextual.map(function (pack) {
+            return _evidenceLink(pack) + ' · ' + Utils.escapeHtml(pack.transferBoundary || '参考范围未填写');
           }).join('；') + '</div>';
         }
         html += '<div class="finding-card__actions">' +
           '<button class="btn--mini" data-radar-evidence="' + Utils.escapeHtml(s.id) + '">查看手牌</button>' +
-          '<button class="btn--mini" data-radar-dossier="' + Utils.escapeHtml(s.id) + '">' + (dossier ? '打开建档' : '建档研究') + '</button>' +
+          '<button class="btn--mini" data-radar-dossier="' + Utils.escapeHtml(s.id) + '">' + (dossier ? '查看研究' : '开始研究') + '</button>' +
           '</div>';
         html += '<div class="finding-card__detail" id="radarEvidence-' + Utils.escapeHtml(s.id) + '" style="display:none"></div>';
         html += '<div class="finding-card__detail" id="radarDossier-' + Utils.escapeHtml(s.id) + '" style="display:none"></div>';
@@ -452,17 +454,17 @@ export var DecisionRadar = {
     var questionLabel = QUESTION_LABELS[signal.question] || signal.question;
     var html = '';
     html += '<div data-radar-editor="' + Utils.escapeHtml(signalId) + '" style="padding:8px;border:1px solid #1e3a5f;border-radius:6px;margin-top:6px">';
-    html += '<div style="font-size:0.75em;color:#cbd5e1;margin-bottom:6px">Finding Dossier · ' + Utils.escapeHtml(questionLabel) + ' · ' + Utils.escapeHtml(signal.boardCategory) + ' · ' + Utils.escapeHtml(signal.scenario) + '</div>';
+    html += '<div style="font-size:0.75em;color:#cbd5e1;margin-bottom:6px">Radar 研究 · ' + Utils.escapeHtml(questionLabel) + ' · ' + Utils.escapeHtml(signal.boardCategory) + ' · ' + Utils.escapeHtml(_scenarioLabel(signal.scenario)) + '</div>';
     html += '<label style="font-size:0.7em;color:#a8afba">状态 <select class="select" data-dossier-field="status" style="font-size:0.7em;width:auto">';
     ['open', 'checking', 'resolved', 'maintain'].forEach(function (s) {
-      var labels = { open: '待核查', checking: '核查中', resolved: '已结论', maintain: '维持现状' };
+      var labels = { open: '待核查', checking: '核查中', resolved: '已核实', maintain: '维持现状' };
       html += '<option value="' + s + '"' + (status === s ? ' selected' : '') + '>' + labels[s] + '</option>';
     });
     html += '</select></label>';
     html += '<textarea class="textarea" data-dossier-field="hypothesis" rows="2" placeholder="假设：为什么这里偏离？（如：对手never donk / 我对抗 passive 群体）" style="font-size:0.75em;margin-top:6px">' + Utils.escapeHtml(dossier ? dossier.hypothesis || '' : '') + '</textarea>';
     html += '<textarea class="textarea" data-dossier-field="counterexamples" rows="2" placeholder="反例：哪些手牌/情境不符合该假设？" style="font-size:0.75em;margin-top:6px">' + Utils.escapeHtml(dossier ? dossier.counterexamples || '' : '') + '</textarea>';
     html += '<textarea class="textarea" data-dossier-field="nextSteps" rows="3" placeholder="下一步取证：需要补什么样本或对照？" style="font-size:0.75em;margin-top:6px">' + Utils.escapeHtml(dossier ? dossier.nextSteps || '' : signal.investigationPrompt) + '</textarea>';
-    html += '<button class="btn--mini" data-radar-save="' + Utils.escapeHtml(signalId) + '" style="margin-top:6px">保存建档</button>';
+    html += '<button class="btn--mini" data-radar-save="' + Utils.escapeHtml(signalId) + '" style="margin-top:6px">保存研究记录</button>';
     if (dossier) {
       html += '<button class="btn--mini" data-radar-strategy="' + Utils.escapeHtml(signalId) + '" style="margin-top:6px">转为策略修订</button>';
     }
@@ -498,7 +500,7 @@ export var DecisionRadar = {
         signalId: signalId,
         spotKey: signal.spotKey,
         profileKey: signal.profileKey,
-        title: (QUESTION_LABELS[signal.question] || signal.question) + ' · ' + signal.boardCategory + ' · ' + signal.scenario,
+        title: (QUESTION_LABELS[signal.question] || signal.question) + ' · ' + signal.boardCategory + ' · ' + _scenarioLabel(signal.scenario),
         status: field('status') || 'open',
         hypothesis: field('hypothesis'),
         counterexamples: field('counterexamples'),
@@ -511,7 +513,7 @@ export var DecisionRadar = {
       dossiers.push(dossier);
     }
     DossierRepo.saveAll(dossiers);
-    Utils.showToast('Dossier 已保存');
+    Utils.showToast('研究记录已保存');
     this.renderInto(document.getElementById('radarBody'));
   },
 };

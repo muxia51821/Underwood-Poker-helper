@@ -340,7 +340,7 @@ function _tableEl(model, boardCards, highlightFrom) {
   return table;
 }
 
-function _streetStage(model, street) {
+function _streetStage(model, street, options = {}) {
   var wrap = _el('div', 'replay-street');
   var idx = model.streets.indexOf(street);
   var acc = [];
@@ -355,9 +355,16 @@ function _streetStage(model, street) {
   if (!street.actions.length) {
     acts.appendChild(_el('span', 'replay-pot', street.key === 'preflop' ? '（无翻前动作记录）' : '（本街无动作记录）'));
   }
-  street.actions.forEach(function (a) {
-    var chip = _el('span', 'replay-chip' + (a.kind === 'hero' ? ' replay-chip--hero' : ''), a.label);
+  street.actions.forEach(function (a, index) {
+    var chip = _el(options.onAction ? 'button' : 'span', 'replay-chip' + (a.kind === 'hero' ? ' replay-chip--hero' : ''), a.label);
     chip.title = a.raw;
+    // [V7.15.0 新增] A selected anonymous action is a location, never automatic Hero attribution.
+    if (options.onAction) {
+      chip.type = 'button'; chip.dataset.replayAction = String(index);
+      chip.setAttribute('aria-pressed', String(options.actionIndex === index));
+      chip.title = '研究第 ' + (index + 1) + ' 个动作之前的决策：' + a.label;
+      chip.addEventListener('click', function () { options.onAction(index); });
+    }
     acts.appendChild(chip);
   });
   wrap.appendChild(acts);
@@ -411,10 +418,11 @@ function _resultStage(model) {
   return wrap;
 }
 
-function _buildReplayView(model) {
+function _buildReplayView(model, options = {}) {
   var root = _el('div', 'replay-view');
   var stepCount = model.streets.length + 1;
-  var stepIdx = 0;
+  var stepIdx = options.street === 'result' ? stepCount - 1 : Math.max(0, model.streets.findIndex(function (street) { return street.key === options.street; }));
+  var actionIndex = Number.isInteger(options.actionIndex) ? options.actionIndex : null;
 
   var bar = _el('div', 'replay-steps');
   var prevBtn = _el('button', 'replay-step replay-step--nav', '◀ 上一步');
@@ -427,7 +435,7 @@ function _buildReplayView(model) {
     (function (idx) {
       var b = _el('button', 'replay-step', idx < model.streets.length ? model.streets[idx].label : '结果');
       b.type = 'button';
-      b.addEventListener('click', function () { stepIdx = idx; _paint(); });
+      b.addEventListener('click', function () { if (stepIdx !== idx) actionIndex = null; stepIdx = idx; _paint(); });
       stepBtns.push(b);
       bar.appendChild(b);
     })(i);
@@ -456,11 +464,12 @@ function _buildReplayView(model) {
     for (var j = 0; j < stepBtns.length; j++) stepBtns[j].classList.toggle('replay-step--active', j === stepIdx);
     stage.replaceChildren();
     stage.appendChild(stepIdx < model.streets.length
-      ? _streetStage(model, model.streets[stepIdx])
+      ? _streetStage(model, model.streets[stepIdx], options.onPositionChange ? { actionIndex, onAction: function (index) { actionIndex = index; _paint(); } } : {})
       : _resultStage(model));
+    options.onPositionChange?.({ street: model.streets[stepIdx]?.key || 'result', actionIndex });
   }
-  prevBtn.addEventListener('click', function () { if (stepIdx > 0) { stepIdx--; _paint(); } });
-  nextBtn.addEventListener('click', function () { if (stepIdx < stepCount - 1) { stepIdx++; _paint(); } });
+  prevBtn.addEventListener('click', function () { if (stepIdx > 0) { stepIdx--; actionIndex = null; _paint(); } });
+  nextBtn.addEventListener('click', function () { if (stepIdx < stepCount - 1) { stepIdx++; actionIndex = null; _paint(); } });
   _paint();
   return root;
 }
@@ -576,7 +585,7 @@ function _buildDegraded(model) {
 
 export var HandReplay = {
   parseReplay: parseReplay,
-  render: function (container, hand) {
+  render: function (container, hand, options = {}) {
     if (!container) return;
     var model = parseReplay(hand);
     container.replaceChildren();
@@ -585,7 +594,11 @@ export var HandReplay = {
       container.appendChild(_buildDegraded(model));
       return;
     }
-    container.appendChild(_buildReplayView(model));
-    container.appendChild(_buildFullReview(model));
+    container.appendChild(_buildReplayView(model, options));
+    if (options.collapseReview) {
+      const overview = _el('details', 'replay-overview');
+      overview.appendChild(_el('summary', null, '完整牌局回顾与结果'));
+      overview.appendChild(_buildFullReview(model)); container.appendChild(overview);
+    } else container.appendChild(_buildFullReview(model));
   },
 };

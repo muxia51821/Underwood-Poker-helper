@@ -5,7 +5,7 @@ import { CONSTANTS } from '../constants.js';
 import { Utils } from '../utils.js';
 import { HandRepo, MarksRepo, ClosureRepo } from '../store/store.js';
 
-var REASON_LABELS = { mark: 'Mark', bigloss: '大亏损', leverage: '高杠杆', star: '星标' };
+var REASON_LABELS = { mark: '快记', bigloss: '大额亏损', leverage: '高杠杆', star: '星标' };
 var MATCH_WINDOW_MIN = 5;       // Mark 与手牌的默认匹配窗口（分钟）
 var SESSION_RANGE_PAD_MIN = 30; // 收尾时纳入本场 Mark 的时间外扩（分钟）
 var CANDIDATE_LIMIT = 8;        // 候选手牌上限
@@ -125,7 +125,12 @@ export var SessionClosure = {
 
   ensureDraft: function (sessionId) {
     var closure = this.getClosureFor(sessionId);
-    if (closure) return closure;
+    if (closure) {
+      // [V7.16.0 修改] Older drafts may predate these progress lists.
+      if (closure.reviewedHandIds === undefined) closure.reviewedHandIds = [];
+      if (closure.matchedMarkIds === undefined) closure.matchedMarkIds = [];
+      return closure;
+    }
     closure = {
       id: Utils.generateUUID(),
       sessionId: sessionId,
@@ -193,6 +198,24 @@ export var SessionClosure = {
     return closure;
   },
 
+  // [V7.16.0 新增] A short conclusion belongs to the session draft, never to hand facts.
+  saveNote: function (sessionId, note) {
+    const closure = this.ensureDraft(sessionId);
+    closure.note = note;
+    ClosureRepo.saveAll(ClosureRepo.getAll());
+    return ClosureRepo.persistNow();
+  },
+  renderInbox: function (root, sessions, hands, closures) {
+    const pending = this.getUnfinishedSessions(sessions, hands, closures);
+    const esc = value => Utils.escapeHtml(String(value ?? '')).replaceAll('"', '&quot;');
+    root.innerHTML = '<h2 tabindex="-1">本场收尾</h2><p>导入牌谱，关联快记，挑几手值得研究的牌，最后留下一句总结。</p><div class="closeout-actions"><button class="btn" data-closeout-import>导入本场牌谱</button><span>' + (pending.length ? pending.length + ' 场可以继续收尾' : '暂无待收尾场次，导入后会显示在这里。') + '</span></div>'
+      + pending.slice(0, 6).map(session => {
+        const closure = closures.find(item => item.sessionId === session.id);
+        const count = hands.filter(hand => hand.sessionId === session.id).length;
+        return '<button class="closeout-item" data-closeout-session="' + esc(encodeURIComponent(session.id)) + '"><span>' + esc(session.date) + ' · ' + esc(session.level || '级别未记录') + '</span><span>' + count + ' 手 · ' + (closure ? '继续收尾' : '开始收尾') + '</span></button>';
+      }).join('') + (pending.length > 6 ? '<p>其余 ' + (pending.length - 6) + ' 场可在下方场次表中打开收尾。</p>' : '');
+  },
+
   // ---- 渲染：Session 展开行内的收尾工作区 ----
 
   renderInto: function (td, session) {
@@ -200,7 +223,7 @@ export var SessionClosure = {
     var hands = HandRepo.getAll().filter(function (h) { return h.sessionId === session.id; });
     var marks = MarksRepo.getAll();
     var closure = this.getClosureFor(session.id);
-    var reviewed = closure ? closure.reviewedHandIds : [];
+    var reviewed = Array.isArray(closure?.reviewedHandIds) ? closure.reviewedHandIds : []; // [V7.16.0 修改]
 
     // 本场 Mark：sessionId 匹配，或时间落在本场手牌时间范围 ± 外扩
     var times = hands.map(function (h) { return _toMs(h.date); }).filter(function (t) { return !isNaN(t); });
@@ -233,11 +256,11 @@ export var SessionClosure = {
 
     // Mark 匹配区
     html += '<div style="margin-bottom:10px">';
-    html += '<div style="color:#a8afba;font-size:0.75em;margin-bottom:4px">⚡ Mark 匹配（待处理 ' + openMarks.length + ' · 已关联 ' + matchedMarks.length + (dismissedCount ? ' · 无对应 ' + dismissedCount : '') + '）</div>';
+    html += '<div style="color:#a8afba;font-size:0.75em;margin-bottom:4px">⚡ 快记匹配（待处理 ' + openMarks.length + ' · 已关联 ' + matchedMarks.length + (dismissedCount ? ' · 无对应 ' + dismissedCount : '') + '）</div>';
     if (!hands.length) {
-      html += '<div style="color:#a8afba;font-size:0.75em">本场暂无手牌，先「导入牌谱到此 Session」再匹配 Mark。</div>';
+      html += '<div style="color:#a8afba;font-size:0.75em">本场暂无手牌，请先导入牌谱再匹配快记。</div>';
     } else if (!sessionMarks.length) {
-      html += '<div style="color:#a8afba;font-size:0.75em">本场时间范围内没有 Mark。</div>';
+      html += '<div style="color:#a8afba;font-size:0.75em">本场时间范围内没有快记。</div>';
     }
     openMarks.forEach(function (m) {
       html += '<div style="border:1px solid #1e3a5f;border-radius:6px;padding:6px 8px;margin-bottom:6px">';
@@ -273,9 +296,9 @@ export var SessionClosure = {
 
     // 候选手牌区
     html += '<div style="margin-bottom:10px">';
-    html += '<div style="color:#a8afba;font-size:0.75em;margin-bottom:4px">🎯 候选手牌（已看 ' + reviewedCount + '/' + candidates.length + '，盈亏只提供语境）</div>';
+    html += '<div style="color:#a8afba;font-size:0.75em;margin-bottom:4px">🎯 重点手牌（已看 ' + reviewedCount + '/' + candidates.length + '）</div>';
     if (!candidates.length) {
-      html += '<div style="color:#a8afba;font-size:0.75em">本场没有命中候选条件的手牌。</div>';
+      html += '<div style="color:#a8afba;font-size:0.75em">本场暂无重点手牌。</div>';
     }
     candidates.forEach(function (c) {
       var isReviewed = reviewed.indexOf(c.hand.id) !== -1;
@@ -296,9 +319,11 @@ export var SessionClosure = {
     html += '</div>';
 
     // 收尾操作
+    // [V7.16.0 新增] Keep the conclusion optional and persistent across navigation.
+    html += '<label class="closeout-note">本场总结（选填）<textarea data-closure-note maxlength="2000" rows="3" placeholder="这场最想带走的理解，或下次要核查的问题">' + Utils.escapeHtml(closure?.note || '') + '</textarea></label><p data-closure-note-status role="status"></p>';
     if (!closure || closure.status !== 'closed') {
       html += '<button class="btn" data-closure-confirm style="font-size:0.8em">🏁 确认收尾</button>';
-      html += '<span style="color:#a8afba;font-size:0.7em;margin-left:8px">已看 ' + reviewedCount + '/' + candidates.length + ' · Mark 待处理 ' + openMarks.length + '（可随时回来继续，进度自动保存）</span>';
+      html += '<span style="color:#a8afba;font-size:0.7em;margin-left:8px">已看 ' + reviewedCount + '/' + candidates.length + ' · 快记待处理 ' + openMarks.length + ' · 进度自动保存</span>';
     }
     html += '</div>';
     td.innerHTML = html;
